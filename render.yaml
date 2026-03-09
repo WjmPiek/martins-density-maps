@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: martins-density-map
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --workers 2 --threads 4 --timeout 120
+    healthCheckPath: /health
+    autoDeployTrigger: commit
+    disk:
+      name: app-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 5
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.10
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+      - key: DATA_DIR
+        value: /opt/render/project/src/data

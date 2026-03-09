@@ -1,0 +1,47 @@
+{
+  "no 8 narita street benoni benoni gauteng south africa": {
+    "lat": -26.1369851,
+    "lng": 27.9622093,
+    "formatted_address": "No 8 Narita Street Benoni, Benoni, Gauteng, South Africa",
+    "aliases": [
+      "no 8 narita street benoni benoni gauteng south africa"
+    ],
+    "updated_at": 1773061641
+  },
+  "1241 cornelius street weltevredenpark gauteng south africa": {
+    "lat": -26.1065288,
+    "lng": 27.8113009,
+    "formatted_address": "1241 Cornelius Street, Weltevredenpark, Gauteng, South Africa",
+    "aliases": [
+      "1241 cornelius street weltevredenpark gauteng south africa"
+    ],
+    "updated_at": 1773061641
+  },
+  "j & h farming cc r33 belfast carolina road belfast gauteng south africa": {
+    "lat": -26.1068543,
+    "lng": 27.810501,
+    "formatted_address": "J & H Farming Cc R33 Belfast Carolina Road, Belfast, Gauteng, South Africa",
+    "aliases": [
+      "j & h farming cc r33 belfast carolina road belfast gauteng south africa"
+    ],
+    "updated_at": 1773061641
+  },
+  "emily hob house street johannesburg gauteng south africa": {
+    "lat": -26.1061416,
+    "lng": 27.8108691,
+    "formatted_address": "Emily Hob House Street, Johannesburg, Gauteng, South Africa",
+    "aliases": [
+      "emily hob house street johannesburg gauteng south africa"
+    ],
+    "updated_at": 1773061641
+  },
+  "13 dyeri place florida glen florida glen gauteng south africa": {
+    "lat": -26.1070233,
+    "lng": 27.8119779,
+    "formatted_address": "13 Dyeri Place , Florida Glen, Florida Glen, Gauteng, South Africa",
+    "aliases": [
+      "13 dyeri place florida glen florida glen gauteng south africa"
+    ],
+    "updated_at": 1773061641
+  }
+}

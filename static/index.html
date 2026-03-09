@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Martins Density Map CRM</title>
+  <link rel="preconnect" href="https://unpkg.com">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <div class="shell">
+    <aside class="panel">
+      <section class="hero card">
+        <div class="eyebrow">Martins Direct</div>
+        <h1>Density Map CRM</h1>
+        <p class="muted">Single Excel workflow, automatic Google geocoding, province filters, density heatmap, clusters, import validation, and in-browser address editing.</p>
+      </section>
+
+      <section class="stat-grid">
+        <div class="stat-card card"><span>Total rows</span><strong id="totalRows">-</strong></div>
+        <div class="stat-card card"><span>Mapped</span><strong id="mappedRows">-</strong></div>
+        <div class="stat-card card"><span>Warnings</span><strong id="warningCount">-</strong></div>
+        <div class="stat-card card"><span>Visible</span><strong id="visibleRows">-</strong></div>
+      </section>
+
+      <section class="card stack">
+        <div class="section-title">Filters</div>
+        <label for="townFilter">Town search</label>
+        <input id="townFilter" type="search" placeholder="Type a town name">
+        <div class="two-up">
+          <div>
+            <label for="townSelect">Town</label>
+            <select id="townSelect"><option value="">All towns</option></select>
+          </div>
+          <div>
+            <label for="provinceSelect">Province</label>
+            <select id="provinceSelect"><option value="">All provinces</option></select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card stack">
+        <div class="section-title">Map mode</div>
+        <div class="segmented">
+          <button class="seg active" data-mode="heat" type="button">Heatmap</button>
+          <button class="seg" data-mode="clusters" type="button">Clusters</button>
+          <button class="seg" data-mode="markers" type="button">Markers</button>
+        </div>
+        <label for="radiusRange">Heat radius</label>
+        <input id="radiusRange" type="range" min="10" max="50" step="1" value="24">
+      </section>
+
+      <section class="card stack">
+        <div class="section-title">Import workbook</div>
+        <form id="uploadForm" class="upload-box">
+          <input id="fileInput" type="file" accept=".xlsx" />
+          <button type="submit" class="primary">Upload workbook</button>
+        </form>
+        <p class="tiny muted">Uploads replace <code>data/martins_density_map_data.xlsx</code> on the server. Validation runs before the map refreshes.</p>
+        <div id="validationBox" class="validation hidden"></div>
+      </section>
+
+      <section class="card stack">
+        <div class="section-title">Address editor</div>
+        <form id="editorForm" class="editor-grid">
+          <input type="hidden" id="rowNumber">
+          <div>
+            <label for="mfFile">MF File</label>
+            <input id="mfFile" type="text" placeholder="Auto if blank">
+          </div>
+          <div>
+            <label for="dod">DOD</label>
+            <input id="dod" type="text" placeholder="31/12/2025">
+          </div>
+          <div>
+            <label for="deceasedName">Deceased name</label>
+            <input id="deceasedName" type="text">
+          </div>
+          <div>
+            <label for="deceasedSurname">Deceased surname</label>
+            <input id="deceasedSurname" type="text">
+          </div>
+          <div class="full">
+            <label for="address">Street address</label>
+            <input id="address" type="text" required>
+          </div>
+          <div>
+            <label for="city">Town / city</label>
+            <input id="city" type="text" required>
+          </div>
+          <div>
+            <label for="province">Province</label>
+            <select id="province">
+              <option value="">Choose province</option>
+              <option>Eastern Cape</option>
+              <option>Free State</option>
+              <option>Gauteng</option>
+              <option>KwaZulu-Natal</option>
+              <option>Limpopo</option>
+              <option>Mpumalanga</option>
+              <option>North West</option>
+              <option>Northern Cape</option>
+              <option>Western Cape</option>
+            </select>
+          </div>
+          <div>
+            <label for="country">Country</label>
+            <input id="country" type="text" value="South Africa">
+          </div>
+          <div>
+            <label for="contactNumber">Contact number</label>
+            <input id="contactNumber" type="text">
+          </div>
+          <div>
+            <label for="relationship">Relationship</label>
+            <input id="relationship" type="text">
+          </div>
+          <div>
+            <label for="nextOfKinName">Next of kin name</label>
+            <input id="nextOfKinName" type="text">
+          </div>
+          <div>
+            <label for="nextOfKinSurname">Next of kin surname</label>
+            <input id="nextOfKinSurname" type="text">
+          </div>
+          <div>
+            <label for="weight">Weight</label>
+            <input id="weight" type="number" step="0.1" value="1">
+          </div>
+          <div>
+            <label for="latitude">Latitude</label>
+            <input id="latitude" type="number" step="any" placeholder="Optional">
+          </div>
+          <div>
+            <label for="longitude">Longitude</label>
+            <input id="longitude" type="number" step="any" placeholder="Optional">
+          </div>
+          <div class="full actions-row">
+            <button type="submit" class="primary" id="saveBtn">Save address</button>
+            <button type="button" class="ghost" id="resetBtn">Clear form</button>
+          </div>
+        </form>
+      </section>
+
+      <section>
+        <div id="status" class="status">Loading map data…</div>
+      </section>
+
+      <section class="card stack">
+        <div class="section-title">Workbook actions</div>
+        <div class="actions wrap">
+          <a class="ghost" href="/download/data">Download current Excel</a>
+          <a class="ghost" href="https://developers.google.com/maps/documentation/geocoding/overview" target="_blank" rel="noreferrer">Google geocoding setup</a>
+        </div>
+      </section>
+    </aside>
+
+    <main class="content">
+      <section class="map-wrap card soft-pad">
+        <div id="map"></div>
+        <div id="emptyState" class="empty hidden">No mapped addresses match the current filter.</div>
+      </section>
+
+      <section class="card table-card">
+        <div class="table-head">
+          <div>
+            <div class="section-title">Address list</div>
+            <div class="tiny muted">Edit or delete rows directly from the website.</div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>MF File</th>
+                <th>Name</th>
+                <th>Town</th>
+                <th>Province</th>
+                <th>Address</th>
+                <th>Contact</th>
+                <th>Coords</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="addressTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin=""></script>
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+  <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+  <script src="/static/app.js"></script>
+</body>
+</html>

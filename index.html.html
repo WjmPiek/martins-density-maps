@@ -1,0 +1,938 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <link rel="icon" href="data:,">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Martins Density Map</title>
+
+  <style>
+    :root{--bg:#0b1020;--card:#111a33;--muted:#a9b4d0;--text:#eef2ff;--accent:#6ee7ff;--danger:#ff6b6b;--ok:#5cffb1;}
+    body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica,Arial,sans-serif;background:linear-gradient(180deg,#050816 0%,#0b1020 40%,#0b1020 100%);color:var(--text);}
+    header{padding:18px 18px 10px;border-bottom:1px solid rgba(255,255,255,.08);position:sticky;top:0;background:rgba(5,8,22,.85);backdrop-filter:blur(10px);z-index:5}
+    h1{margin:0;font-size:18px;letter-spacing:.2px}
+    .sub{margin-top:6px;color:var(--muted);font-size:13px}
+    .wrap{display:grid;grid-template-columns:420px 1fr;gap:14px;padding:14px;min-height:calc(100vh - 72px)}
+    @media (max-width: 980px){.wrap{grid-template-columns:1fr;}}
+    .card{background:rgba(17,26,51,.72);border:1px solid rgba(255,255,255,.08);border-radius:16px;box-shadow:0 18px 45px rgba(0,0,0,.35);overflow:hidden}
+    .card h2{margin:0;padding:14px 14px 0;font-size:14px;color:#dbe4ff}
+    .card .body{padding:14px}
+    label{display:block;color:var(--muted);font-size:12px;margin:10px 0 6px}
+    input,button{width:100%;box-sizing:border-box;border-radius:12px;border:1px solid rgba(255,255,255,.12);background:rgba(0,0,0,.15);color:var(--text);padding:10px 12px;font-size:14px}
+    button{cursor:pointer;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06)}
+    button:hover{background:rgba(255,255,255,.09)}
+    button.primary{border:1px solid rgba(110,231,255,.35);background:rgba(110,231,255,.12)}
+    button.primary:hover{background:rgba(110,231,255,.18)}
+    button.danger{border-color:rgba(255,107,107,.45);background:rgba(255,107,107,.12)}
+    button.danger:hover{background:rgba(255,107,107,.18)}
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+    .tiny{font-size:12px;color:var(--muted);line-height:1.35}
+    .pill{display:inline-flex;align-items:center;gap:8px;padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.06);font-size:12px;color:var(--muted)}
+    .pills{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+    .ok{color:var(--ok)}
+    .mapWrap{position:relative}
+    #map{height:calc(100vh - 100px);min-height:520px;width:100%;touch-action: pan-x pan-y;}
+    .topBar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;padding:12px 12px;border-bottom:1px solid rgba(255,255,255,.08)}
+    .topBar > *{flex:0 0 auto}
+    .topBar input[type="checkbox"]{width:auto;transform:scale(1.05);margin-right:8px}
+    .tableWrap{max-height:260px;overflow:auto;border:1px solid rgba(255,255,255,.08);border-radius:14px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:10px 10px;border-bottom:1px solid rgba(255,255,255,.06);font-size:12px}
+    th{position:sticky;top:0;background:rgba(17,26,51,.95);text-align:left;color:#dbe4ff}
+    td{color:#e9eeff}
+    #gate{position:fixed;inset:0;background:rgba(5,8,22,.92);display:flex;align-items:center;justify-content:center;z-index:999}
+    #gate .panel{width:min(560px,92vw);background:rgba(17,26,51,.92);border:1px solid rgba(255,255,255,.10);border-radius:18px;padding:16px;box-shadow:0 24px 60px rgba(0,0,0,.55)}
+    #gate h3{margin:0 0 6px;font-size:16px}
+    #gate p{margin:0 0 14px;color:var(--muted);font-size:13px;line-height:1.4}
+    .hidden{display:none !important}
+  </style>
+</head>
+
+<body>
+  <div id="gate">
+    <div class="panel">
+      <h3>Staff Access</h3>
+      <p>Enter the page password to continue.</p>
+      <div class="tiny" style="margin:10px 0 12px">
+        Session auto-lock: <b id="lockLabel">30 minutes</b> (extends on activity).
+      </div>
+      <label>Password</label>
+      <input id="pw" type="password" placeholder="Password" autocomplete="current-password" />
+      <div class="row" style="margin-top:10px">
+        <button id="unlockBtn" class="primary" type="button">Unlock</button>
+        <button id="logoutBtn" type="button">Lock / Logout</button>
+      </div>
+      <div id="gateMsg" class="tiny" style="margin-top:10px"></div>
+    </div>
+  </div>
+
+  <header>
+    <h1>Martins Google Maps Density Map</h1>
+    <div class="sub">Upload Excel once → saved locally → auto-load on next login • Density circle size adjustable</div>
+  </header>
+
+  <div class="wrap">
+    <section class="card">
+      <h2>Controls</h2>
+      <div class="body">
+        <div class="pills">
+          <span class="pill"><span class="ok">●</span> Records: <b id="countPts">0</b></span>
+          <span class="pill">Mode: <b id="modeLabel">Density</b></span>
+          <span class="pill">Saved: <b id="savedState">No</b></span>
+          <span class="pill">File: <b id="loadedFile">None</b></span>
+        </div>
+
+        <label>Display Mode</label>
+        <div class="row3">
+          <button id="mDensity" class="primary" type="button">Density only</button>
+          <button id="mBoth" type="button">Pins + density</button>
+          <button id="mPins" type="button">Pins only</button>
+        </div>
+
+        <label>Density circle size (meters)</label>
+        <div class="row">
+          <input id="densityRadius" type="number" min="5" max="500" step="5" value="20" />
+          <button id="applyRadiusBtn" class="primary" type="button">Apply</button>
+        </div>
+        <div class="tiny" style="margin-top:6px">
+          Tip: 20m is small. If you want “bigger clusters”, try 50–150m.
+        </div>
+
+        <label>Excel upload (.xlsx)</label>
+        <input id="xlsxFile" type="file" accept=".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel" />
+        <div class="tiny" style="margin-top:8px">
+          First upload saves into this browser (localStorage). Next login auto-loads.
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button id="clearAllBtn" class="danger" type="button">Clear all (also clears saved)</button>
+          <button id="downloadBtn" class="primary" type="button">Download Updated Excel</button>
+        </div>
+
+        <h2 style="padding-left:0;margin-top:18px">Add new record</h2>
+
+        <label>MF File</label>
+        <input id="mfFile" placeholder="MF 001" />
+
+        <div class="row">
+          <div>
+            <label>Deceased Name</label>
+            <input id="decName" placeholder="Name" />
+          </div>
+          <div>
+            <label>Deceased Surname</label>
+            <input id="decSurname" placeholder="Surname" />
+          </div>
+        </div>
+
+        <label>DOD</label>
+        <input id="dod" placeholder="01.02.2026" />
+
+        <div class="row">
+          <div>
+            <label>Address</label>
+            <input id="addr" placeholder="208 Weltevreden Road" />
+          </div>
+          <div>
+            <label>City</label>
+            <input id="city" placeholder="Randburg" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Province</label>
+            <input id="prov" placeholder="Gauteng" />
+          </div>
+          <div>
+            <label>Country</label>
+            <input id="country" value="South Africa" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Weight</label>
+            <input id="weight" type="number" min="1" step="1" value="1" />
+          </div>
+          <div>
+            <label>Contact Number</label>
+            <input id="contact" placeholder="082..." />
+          </div>
+        </div>
+
+        <div class="row">
+          <div>
+            <label>Next of Kin Name</label>
+            <input id="nokName" placeholder="Name" />
+          </div>
+          <div>
+            <label>Next of Kin Surname</label>
+            <input id="nokSurname" placeholder="Surname" />
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:10px">
+          <button id="addBtn" class="primary" type="button">Add + geocode</button>
+          <button id="clearFormBtn" type="button">Clear form</button>
+        </div>
+
+        <div id="status" class="tiny"></div>
+      </div>
+
+      <h2>Current records</h2>
+      <div class="body">
+        <div class="tableWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>MF File</th>
+                <th>Full Address</th>
+                <th>Weight</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="rows"></tbody>
+          </table>
+        </div>
+        <div class="tiny" style="margin-top:8px">Lat/Lng hidden, used internally for map.</div>
+      </div>
+    </section>
+
+    <section class="card mapWrap">
+      <div class="topBar">
+        <span class="pill">Density radius: <b id="radiusLabel">20m</b></span>
+        <span class="pill">Geocode delay: <b id="delayLabel">350ms</b></span>
+        <label style="margin:0;display:flex;align-items:center;gap:8px">
+          <input id="fitBounds" type="checkbox" checked />
+          Auto-fit bounds (only after data changes)
+        </label>
+      </div>
+      <div id="map"></div>
+    </section>
+  </div>
+
+  <!-- Load XLSX once: local first, fallback CDN -->
+  <script>
+    (function loadXlsx(){
+      const local = document.createElement("script");
+      local.src = "./xlsx.full.min.js";
+      local.onload = () => console.log("Loaded XLSX (local).");
+      local.onerror = () => {
+        const cdn = document.createElement("script");
+        cdn.src = "https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js";
+        cdn.onload = () => console.log("Loaded XLSX (CDN).");
+        cdn.onerror = () => console.warn("Failed to load XLSX.");
+        document.head.appendChild(cdn);
+      };
+      document.head.appendChild(local);
+    })();
+  </script>
+
+  <script>
+  window.CONFIG = {
+    GOOGLE_MAPS_KEY: "AIzaSyAw2bqXLrNraHmffJYFm5-xt8Q7GgeUBFs",
+    PAGE_PASSWORD: "1234",
+    AUTO_LOCK_MINUTES: 30,
+    GEOCODE_DELAY_MS: 350,
+
+    // Circle size
+    DENSITY_RADIUS_METERS: 20,
+
+    // Grid size for clustering (kept stable)
+    DENSITY_CELL_METERS: 20
+  };
+
+  // Local persistence keys
+  const LS_POINTS_KEY = "martins_density_points_v1";
+  const LS_FILE_KEY   = "martins_density_filename_v1";
+  const LS_RADIUS_KEY = "martins_density_radius_v1";
+
+  let loadedExcelName = "";
+
+  // Map ready promise
+  let __resolveMapsReady;
+  const mapsReady = new Promise((resolve)=>{ __resolveMapsReady = resolve; });
+  function ensureMapsReady(){ return mapsReady; }
+
+  function loadGoogleMaps(){
+    const st = document.getElementById("status");
+    if(!window.CONFIG?.GOOGLE_MAPS_KEY || window.CONFIG.GOOGLE_MAPS_KEY.includes("REPLACE_WITH")){
+      if (st) st.textContent = "Set CONFIG.GOOGLE_MAPS_KEY (your real Google Maps key).";
+      return;
+    }
+    if(window.google?.maps) return;
+
+    const s = document.createElement("script");
+    s.async = true;
+    s.defer = true;
+    s.src =
+      "https://maps.googleapis.com/maps/api/js?key=" +
+      encodeURIComponent(window.CONFIG.GOOGLE_MAPS_KEY) +
+      "&callback=initMap&loading=async";
+
+    s.onerror = () => {
+      if (st) st.textContent = "Failed to load Google Maps. Check key restrictions + billing.";
+    };
+    document.head.appendChild(s);
+  }
+
+  if (!window.__MARTINS_HEATMAP_APP__) {
+    window.__MARTINS_HEATMAP_APP__ = true;
+
+    const $ = (id)=>document.getElementById(id);
+
+    let appStarted = false;
+    let map = null;
+    let infoWindow = null;
+    let markers = [];
+    let densityCircles = [];
+    let points = [];
+    let displayMode = "density";
+    let needsAutoFit = false;
+
+    const GATE_OK_KEY  = "martins_gate_ok";
+    const GATE_EXP_KEY = "martins_gate_exp";
+    const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+    const HEADERS = [
+      "MF File","Deceased Name","Deceased Surname","DOD",
+      "Address","City","Province","Country","Full Address",
+      "Latitude","Longitude","Weight",
+      "Next of Kin Name","Next of Kin Surname","Contact Number"
+    ];
+
+    const toNum = (v) => {
+      if (typeof v === "number") return v;
+      const s = String(v ?? "").trim().replace(/\s+/g, "").replace(",", ".");
+      const n = Number(s);
+      return Number.isFinite(n) ? n : NaN;
+    };
+
+    function normalizePw(s){ return (s || "").trim(); }
+    function setStatus(msg){ $("status").textContent = msg || ""; }
+    function escapeHtml(s){
+      return (s||"").replace(/[&<>"']/g, c=>({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+    }
+    function makeFullAddress(address, city, province, country){
+      return [address, city, province, country].map(s=>(s||"").trim()).filter(Boolean).join(", ");
+    }
+
+    function updateRadiusUI(){
+      $("radiusLabel").textContent = `${Number(CONFIG.DENSITY_RADIUS_METERS || 20)}m`;
+      $("densityRadius").value = String(Number(CONFIG.DENSITY_RADIUS_METERS || 20));
+    }
+
+    function persistAll(){
+      try{
+        localStorage.setItem(LS_POINTS_KEY, JSON.stringify(points));
+        localStorage.setItem(LS_FILE_KEY, loadedExcelName || "");
+        localStorage.setItem(LS_RADIUS_KEY, String(Number(CONFIG.DENSITY_RADIUS_METERS || 20)));
+        $("savedState").textContent = "Yes";
+      }catch(e){
+        console.warn("Persist failed:", e);
+        $("savedState").textContent = "No";
+      }
+    }
+
+    function loadPersisted(){
+      try{
+        const raw = localStorage.getItem(LS_POINTS_KEY);
+        const fname = localStorage.getItem(LS_FILE_KEY) || "";
+        const radius = Number(localStorage.getItem(LS_RADIUS_KEY) || "");
+        if (Number.isFinite(radius) && radius > 0) {
+          CONFIG.DENSITY_RADIUS_METERS = radius;
+        }
+
+        if(raw){
+          const arr = JSON.parse(raw);
+          if(Array.isArray(arr)){
+            points = arr;
+            loadedExcelName = fname;
+            $("savedState").textContent = points.length ? "Yes" : "No";
+          }
+        }
+      }catch(e){
+        console.warn("Load persisted failed:", e);
+      }
+    }
+
+    async function geocodeAddress(fullAddress){
+      if (!fullAddress) return null;
+      await ensureMapsReady();
+      if (!window.google?.maps) return null;
+
+      const geocoder = new google.maps.Geocoder();
+      return new Promise((resolve) => {
+        geocoder.geocode({ address: fullAddress }, (results, status) => {
+          if (status === "OK" && results && results[0]) {
+            const loc = results[0].geometry.location;
+            resolve({ lat: loc.lat(), lng: loc.lng() });
+          } else {
+            resolve(null);
+          }
+        });
+      });
+    }
+
+    function bumpGateExpiry(){
+      const mins = Number(CONFIG.AUTO_LOCK_MINUTES || 30);
+      sessionStorage.setItem(GATE_EXP_KEY, String(Date.now() + mins*60*1000));
+    }
+    function isGateValid(){
+      if(sessionStorage.getItem(GATE_OK_KEY) !== "1") return false;
+      const exp = Number(sessionStorage.getItem(GATE_EXP_KEY) || "0");
+      return exp > Date.now();
+    }
+    function lockNow(msg){
+      sessionStorage.removeItem(GATE_OK_KEY);
+      sessionStorage.removeItem(GATE_EXP_KEY);
+      $("gateMsg").textContent = msg || "Locked.";
+      $("gate").classList.remove("hidden");
+      try{
+        for(const m of markers) m.setMap(null);
+        markers = [];
+        for(const c of densityCircles) c.setMap(null);
+        densityCircles = [];
+        if(infoWindow) infoWindow.close();
+      }catch(e){}
+    }
+    function armAutoLock(){
+      $("lockLabel").textContent = `${Number(CONFIG.AUTO_LOCK_MINUTES || 30)} minutes`;
+      setInterval(()=>{
+        if(sessionStorage.getItem(GATE_OK_KEY)==="1" && !isGateValid()){
+          lockNow("Session timed out. Please log in again.");
+        }
+      }, 15000);
+      const bump = ()=>{ if(isGateValid()) bumpGateExpiry(); };
+      ["mousemove","mousedown","keydown","touchstart","scroll"].forEach(evt=>{
+        window.addEventListener(evt, bump, {passive:true});
+      });
+    }
+    async function checkGate(){
+      if(isGateValid()) $("gate").classList.add("hidden");
+      else $("gate").classList.remove("hidden");
+    }
+    function passwordOk(entered){
+      return normalizePw(entered) === normalizePw(CONFIG.PAGE_PASSWORD);
+    }
+
+    function updateCounts(){
+      $("countPts").textContent = String(points.length);
+      $("delayLabel").textContent = CONFIG.GEOCODE_DELAY_MS + "ms";
+      $("loadedFile").textContent = loadedExcelName ? loadedExcelName : "None";
+    }
+
+    function rebuildTable(){
+      const tb = $("rows");
+      tb.innerHTML = "";
+      points.forEach((p, i)=>{
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${i+1}</td>
+          <td title="${escapeHtml(p.mfFile||"")}">${escapeHtml(p.mfFile||"")}</td>
+          <td title="${escapeHtml(p.fullAddress||"")}">${escapeHtml((p.fullAddress||"").slice(0,64))}${(p.fullAddress||"").length>64?"…":""}</td>
+          <td>${p.weight ?? 1}</td>
+          <td><button class="danger" style="width:auto;padding:6px 10px;border-radius:10px" data-del="${i}">Del</button></td>
+        `;
+        tb.appendChild(tr);
+      });
+      tb.querySelectorAll("button[data-del]").forEach(btn=>{
+        btn.addEventListener("click", ()=>{
+          points.splice(Number(btn.getAttribute("data-del")),1);
+          needsAutoFit = true;
+          syncAll(true);
+        });
+      });
+    }
+
+    function latLngToMercatorMeters(lat, lng){
+      const R = 6378137;
+      const x = R * (lng * Math.PI/180);
+      const y = R * Math.log(Math.tan(Math.PI/4 + (lat * Math.PI/180)/2));
+      return {x, y};
+    }
+
+    function computeDensityCells(){
+      const cellM = Number(CONFIG.DENSITY_CELL_METERS || 20);
+      const buckets = new Map();
+
+      for(const p of points){
+        const lat = Number(p.lat), lng = Number(p.lng);
+        if(!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+        const w = Number(p.weight ?? 1);
+        const weight = (Number.isFinite(w) && w > 0) ? w : 1;
+
+        const m = latLngToMercatorMeters(lat, lng);
+        const gx = Math.floor(m.x / cellM);
+        const gy = Math.floor(m.y / cellM);
+        const key = gx + "," + gy;
+
+        const cur = buckets.get(key) || {sumLat:0, sumLng:0, count:0, sumW:0};
+        cur.sumLat += lat;
+        cur.sumLng += lng;
+        cur.count += 1;
+        cur.sumW += weight;
+        buckets.set(key, cur);
+      }
+
+      const out = [];
+      for(const b of buckets.values()){
+        out.push({ lat: b.sumLat/b.count, lng: b.sumLng/b.count, count: b.count, weight: b.sumW });
+      }
+      out.sort((a,b)=>b.count-a.count);
+      return out;
+    }
+
+    function densityStyle(count, weight){
+      const scoreRaw = Math.log1p(count + 0.25*weight);
+      const score = Math.max(0, Math.min(1, scoreRaw / 3.0));
+      const r = Math.round(255 - 140 * score);
+      const color = `rgb(${r},0,0)`;
+      return { color, fillOpacity: 0.20 + 0.70 * score, strokeOpacity: 0.30 + 0.50 * score };
+    }
+
+    function setMode(mode){
+      displayMode = mode;
+      $("modeLabel").textContent =
+        mode === "density" ? "Density" : (mode === "pins" ? "Pins" : "Pins + Density");
+
+      const showPins = (mode === "pins" || mode === "both");
+      for(const m of markers) m.setMap(showPins ? map : null);
+
+      const showDensity = (mode === "density" || mode === "both");
+      for(const c of densityCircles) c.setMap(showDensity ? map : null);
+
+      $("mDensity").className = (mode==="density" ? "primary" : "");
+      $("mPins").className    = (mode==="pins" ? "primary" : "");
+      $("mBoth").className    = (mode==="both" ? "primary" : "");
+    }
+
+    function rebuildMapLayers(){
+      if(!map) return;
+
+      for(const m of markers) m.setMap(null);
+      markers = [];
+      for(const c of densityCircles) c.setMap(null);
+      densityCircles = [];
+
+      const bounds = new google.maps.LatLngBounds();
+      let haveAny = false;
+
+      const radius = Number(CONFIG.DENSITY_RADIUS_METERS || 20);
+
+      for(const cell of computeDensityCells()){
+        const center = new google.maps.LatLng(cell.lat, cell.lng);
+        haveAny = true;
+        bounds.extend(center);
+
+        const st = densityStyle(cell.count, cell.weight);
+        const circle = new google.maps.Circle({
+          center,
+          radius,
+          strokeColor: st.color,
+          strokeOpacity: st.strokeOpacity,
+          strokeWeight: 1,
+          fillColor: st.color,
+          fillOpacity: st.fillOpacity,
+          map: null
+        });
+
+        circle.addListener("click", ()=>{
+          infoWindow.setContent(
+            `<div style="font-size:13px;line-height:1.35">
+              <b>${radius}m density</b><br>
+              Records: ${cell.count}<br>
+              Total weight: ${Math.round(cell.weight*100)/100}
+            </div>`
+          );
+          infoWindow.setPosition(center);
+          infoWindow.open(map);
+        });
+
+        densityCircles.push(circle);
+      }
+
+      for(const p of points){
+        const lat = Number(p.lat), lng = Number(p.lng);
+        if(!Number.isFinite(lat) || !Number.isFinite(lng)) continue;
+
+        const ll = new google.maps.LatLng(lat, lng);
+        const marker = new google.maps.Marker({ position: ll, title: p.fullAddress || "Address" });
+
+        marker.addListener("click", ()=>{
+          const safe = (v) => escapeHtml(String(v ?? ""));
+          const deceased = `${(p.deceasedName||"").trim()} ${(p.deceasedSurname||"").trim()}`.trim();
+          const nok = `${(p.nokName||"").trim()} ${(p.nokSurname||"").trim()}`.trim();
+
+          infoWindow.setContent(`
+            <div style="font-size:13px;line-height:1.35">
+              <div style="font-weight:700;margin-bottom:6px">${safe(p.fullAddress)}</div>
+              <div><b>MF File:</b> ${safe(p.mfFile)}</div>
+              <div><b>Deceased:</b> ${safe(deceased)}</div>
+              <div><b>DOD:</b> ${safe(p.dod)}</div>
+              <div style="margin-top:8px"><b>Next of Kin:</b> ${safe(nok)}<br><b>Contact:</b> ${safe(p.contactNumber)}</div>
+              <div style="margin-top:8px"><b>Weight:</b> ${safe(p.weight)}</div>
+            </div>
+          `);
+          infoWindow.open(map, marker);
+        });
+
+        markers.push(marker);
+      }
+
+      setMode(displayMode);
+
+      if(haveAny && $("fitBounds").checked && needsAutoFit){
+        map.fitBounds(bounds, 60);
+        needsAutoFit = false;
+      }
+    }
+
+    window.initMap = function initMap(){
+      map = new google.maps.Map(document.getElementById("map"), {
+        center: {lat: -26.146, lng: 28.029},
+        zoom: 14,
+        gestureHandling: "greedy",
+        scrollwheel: true,
+        zoomControl: true,
+        disableDoubleClickZoom: false,
+        mapTypeControl: false,
+        streetViewControl: false,
+        fullscreenControl: true
+      });
+
+      infoWindow = new google.maps.InfoWindow();
+      __resolveMapsReady(true);
+      syncAll(false);
+    };
+
+    // ✅ FIX: read Latitude/Longitude from Excel if present
+    function rowToPoint(r){
+      const weightRaw = toNum(r["Weight"]);
+      const weight = Number.isFinite(weightRaw) && weightRaw > 0 ? weightRaw : 1;
+
+      const address = String(r["Address"] ?? "").trim();
+      const city = String(r["City"] ?? "").trim();
+      const province = String(r["Province"] ?? "").trim();
+      const country = String(r["Country"] ?? "").trim() || "South Africa";
+
+      const fullAddr =
+        String(r["Full Address"] ?? "").trim() ||
+        makeFullAddress(address, city, province, country);
+
+      const latRaw = toNum(r["Latitude"]);
+      const lngRaw = toNum(r["Longitude"]);
+
+      return {
+        mfFile: String(r["MF File"] ?? "").trim(),
+        deceasedName: String(r["Deceased Name"] ?? "").trim(),
+        deceasedSurname: String(r["Deceased Surname"] ?? "").trim(),
+        dod: String(r["DOD"] ?? "").trim(),
+        address, city, province, country,
+        fullAddress: fullAddr,
+        lat: (Number.isFinite(latRaw) ? latRaw : NaN),
+        lng: (Number.isFinite(lngRaw) ? lngRaw : NaN),
+        weight,
+        nokName: String(r["Next of Kin Name"] ?? "").trim(),
+        nokSurname: String(r["Next of Kin Surname"] ?? "").trim(),
+        contactNumber: String(r["Contact Number"] ?? "").trim()
+      };
+    }
+
+    async function handleXlsxUpload(e){
+      const file = e.target.files?.[0];
+      if(!file) return;
+
+      if(!window.XLSX){
+        setStatus("XLSX library not loaded. Put xlsx.full.min.js next to this HTML or allow CDN.");
+        e.target.value = "";
+        return;
+      }
+
+      loadedExcelName = file.name || "";
+      setStatus("Preparing Google Maps…");
+      await ensureMapsReady();
+
+      try{
+        setStatus("Reading Excel…");
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: "" });
+
+        let imported = 0, failed = 0;
+
+        points = [];
+
+        for (const r of rows){
+          const p = rowToPoint(r);
+          if(!p.fullAddress){ failed++; continue; }
+
+          // ✅ FIX: only geocode if lat/lng missing
+          if (!Number.isFinite(Number(p.lat)) || !Number.isFinite(Number(p.lng))) {
+            setStatus(`Geocoding: ${p.fullAddress}`);
+            const res = await geocodeAddress(p.fullAddress);
+            if(!res){ failed++; continue; }
+            p.lat = res.lat;
+            p.lng = res.lng;
+            await sleep(Number(CONFIG.GEOCODE_DELAY_MS || 350));
+          }
+
+          points.push(p);
+          imported++;
+        }
+
+        needsAutoFit = true;
+        syncAll(true);
+        setStatus(`Loaded ${imported} records. ${failed ? `Failed ${failed}.` : ""}`);
+
+      } catch (err){
+        console.error(err);
+        setStatus("Excel import failed. Open F12 Console for details.");
+      } finally {
+        e.target.value = "";
+      }
+    }
+
+    // Build workbook as ArrayBuffer (so we can save via picker OR normal download)
+    function buildWorkbookArrayBuffer(){
+      const rows = points.map(p => ({
+        "MF File": p.mfFile || "",
+        "Deceased Name": p.deceasedName || "",
+        "Deceased Surname": p.deceasedSurname || "",
+        "DOD": p.dod || "",
+        "Address": p.address || "",
+        "City": p.city || "",
+        "Province": p.province || "",
+        "Country": p.country || "",
+        "Full Address": p.fullAddress || "",
+        "Latitude": (Number.isFinite(Number(p.lat)) ? Number(p.lat) : ""),
+        "Longitude": (Number.isFinite(Number(p.lng)) ? Number(p.lng) : ""),
+        "Weight": p.weight ?? 1,
+        "Next of Kin Name": p.nokName || "",
+        "Next of Kin Surname": p.nokSurname || "",
+        "Contact Number": p.contactNumber || ""
+      }));
+
+      const ordered = rows.map(r => {
+        const o = {};
+        for (const h of HEADERS) o[h] = r[h];
+        return o;
+      });
+
+      const ws = XLSX.utils.json_to_sheet(ordered, { header: HEADERS });
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Data");
+
+      // array buffer output
+      const ab = XLSX.write(wb, { bookType:"xlsx", type:"array" });
+      return ab;
+    }
+
+    // ✅ BEST POSSIBLE “save where original file is” (user chooses folder)
+    async function exportUpdatedXlsx(){
+      if(!window.XLSX){
+        setStatus("XLSX library not loaded. Cannot export.");
+        return;
+      }
+
+      const base = loadedExcelName ? loadedExcelName.replace(/\.xlsx$/i,"") : "martins_density_map";
+      const filename = `${base}_updated.xlsx`;
+
+      try{
+        const ab = buildWorkbookArrayBuffer();
+        const blob = new Blob([ab], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+
+        // File System Access API (Chrome/Edge) lets you pick exact folder (including same folder)
+        if (window.showSaveFilePicker) {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: filename,
+            types: [{
+              description: "Excel Workbook",
+              accept: { "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": [".xlsx"] }
+            }]
+          });
+          const writable = await handle.createWritable();
+          await writable.write(blob);
+          await writable.close();
+          setStatus("Saved updated Excel (chosen location).");
+          return;
+        }
+
+        // Fallback: normal browser download (cannot force folder)
+        XLSX.writeFile(XLSX.utils.book_new(), ""); // no-op guard (older XLSX edge cases)
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+        setStatus("Downloaded updated Excel (browser download folder rules apply).");
+
+      } catch (err){
+        console.error(err);
+        setStatus("Export cancelled or failed.");
+      }
+    }
+
+    function clearForm(){
+      $("mfFile").value = "";
+      $("decName").value = "";
+      $("decSurname").value = "";
+      $("dod").value = "";
+      $("addr").value = "";
+      $("city").value = "";
+      $("prov").value = "";
+      $("country").value = "South Africa";
+      $("weight").value = "1";
+      $("contact").value = "";
+      $("nokName").value = "";
+      $("nokSurname").value = "";
+    }
+
+    async function addSingle(){
+      const mfFile = ($("mfFile").value || "").trim();
+      const deceasedName = ($("decName").value || "").trim();
+      const deceasedSurname = ($("decSurname").value || "").trim();
+      const dod = ($("dod").value || "").trim();
+
+      const address = ($("addr").value || "").trim();
+      const city = ($("city").value || "").trim();
+      const province = ($("prov").value || "").trim();
+      const country = ($("country").value || "").trim() || "South Africa";
+
+      const weightRaw = toNum($("weight").value);
+      const weight = Number.isFinite(weightRaw) && weightRaw > 0 ? weightRaw : 1;
+
+      const contactNumber = ($("contact").value || "").trim();
+      const nokName = ($("nokName").value || "").trim();
+      const nokSurname = ($("nokSurname").value || "").trim();
+
+      const fullAddress = makeFullAddress(address, city, province, country);
+      if(!fullAddress){
+        alert("Please enter at least Address (and preferably City/Province).");
+        return;
+      }
+
+      setStatus("Preparing Google Maps…");
+      await ensureMapsReady();
+
+      setStatus(`Geocoding: ${fullAddress}`);
+      const res = await geocodeAddress(fullAddress);
+      if(!res){
+        setStatus("Geocoding failed for this address.");
+        return;
+      }
+
+      points.push({
+        mfFile, deceasedName, deceasedSurname, dod,
+        address, city, province, country,
+        fullAddress,
+        lat: res.lat, lng: res.lng,
+        weight,
+        nokName, nokSurname, contactNumber
+      });
+
+      needsAutoFit = true;
+      syncAll(true);
+      setStatus("Added + saved locally (will still be here next login).");
+      clearForm();
+    }
+
+    function applyRadius(){
+      const r = Number($("densityRadius").value || 20);
+      if(!Number.isFinite(r) || r <= 0){ alert("Enter a valid radius in meters."); return; }
+      CONFIG.DENSITY_RADIUS_METERS = r;
+      updateRadiusUI();
+      syncAll(true);
+      setStatus(`Density radius set to ${r}m (saved).`);
+    }
+
+    function syncAll(persist){
+      updateCounts();
+      updateRadiusUI();
+      rebuildTable();
+      if(map) rebuildMapLayers();
+      if(persist) persistAll();
+    }
+
+    function boot(){
+      loadPersisted();
+      updateRadiusUI();
+      syncAll(false);
+
+      if(points.length) needsAutoFit = true;
+
+      if(points.length){
+        setStatus(`Loaded ${points.length} saved records (no re-upload needed).`);
+      } else {
+        setStatus("Ready. Upload Excel to save it locally.");
+      }
+    }
+
+    function startAppOnce(){
+      if(appStarted) return;
+      appStarted = true;
+      armAutoLock();
+      boot();
+      loadGoogleMaps();
+    }
+
+    // Buttons / events
+    $("mDensity").addEventListener("click", ()=>{ setMode("density"); syncAll(false); });
+    $("mBoth").addEventListener("click", ()=>{ setMode("both"); syncAll(false); });
+    $("mPins").addEventListener("click", ()=>{ setMode("pins"); syncAll(false); });
+
+    $("xlsxFile").addEventListener("change", handleXlsxUpload);
+    $("downloadBtn").addEventListener("click", exportUpdatedXlsx);
+    $("addBtn").addEventListener("click", addSingle);
+    $("clearFormBtn").addEventListener("click", clearForm);
+    $("applyRadiusBtn").addEventListener("click", applyRadius);
+
+    $("clearAllBtn").addEventListener("click", ()=>{
+      if(!confirm("Clear ALL records AND remove saved data from this browser?")) return;
+      points = [];
+      loadedExcelName = "";
+      try{
+        localStorage.removeItem(LS_POINTS_KEY);
+        localStorage.removeItem(LS_FILE_KEY);
+        localStorage.removeItem(LS_RADIUS_KEY);
+      }catch(e){}
+      needsAutoFit = false;
+      syncAll(false);
+      $("savedState").textContent = "No";
+      setStatus("Cleared (and removed saved data).");
+    });
+
+    // Gate
+    $("unlockBtn").addEventListener("click", async ()=>{
+      const pw = normalizePw($("pw").value);
+      if(!pw){ $("gateMsg").textContent = "Enter a password."; return; }
+
+      if(passwordOk(pw)){
+        sessionStorage.setItem(GATE_OK_KEY, "1");
+        bumpGateExpiry();
+        $("pw").value = "";
+        $("gateMsg").textContent = "";
+        await checkGate();
+        startAppOnce();
+      } else {
+        $("gateMsg").textContent = "Wrong password.";
+      }
+    });
+
+    $("logoutBtn").addEventListener("click", ()=>lockNow("Locked / logged out."));
+
+    checkGate().then(()=>{
+      if(isGateValid()) startAppOnce();
+      else $("gate").classList.remove("hidden");
+    });
+  }
+  </script>
+</body>
+</html>

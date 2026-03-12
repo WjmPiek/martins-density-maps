@@ -3,12 +3,17 @@
 
 {% block content %}
 
-<div class="top-actions" style="margin-bottom: 14px;">
+<div class="left-actions">
+  <a class="primary-btn" href="{{ url_for('upload_page') }}">
+    Upload Excel File
+  </a>
+
   <a class="ghost-btn" href="{{ url_for('download_template') }}">
     Download Excel Template
   </a>
-  <a class="primary-btn" href="{{ url_for('upload_page') }}">
-    Upload Excel File
+
+  <a class="ghost-btn" href="{{ url_for('download_my_data') }}">
+    Download My Data
   </a>
 </div>
 

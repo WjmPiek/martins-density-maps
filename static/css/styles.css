@@ -49,6 +49,18 @@ h2 {
   padding: 16px 20px;
 }
 
+.left-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 18px;
+  max-width: 260px;
+}
+
+.left-actions a {
+  width: 100%;
+}
+
 .topbar,
 .panel,
 .stat-card,

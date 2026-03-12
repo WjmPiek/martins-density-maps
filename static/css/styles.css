@@ -43,6 +43,12 @@ h2 {
   margin: 0;
 }
 
+.auth-link-btn {
+  text-align: center;
+  text-decoration: none;
+  width: 100%;
+}
+
 .install-btn {
   margin-top: 8px;
   padding: 8px 12px;

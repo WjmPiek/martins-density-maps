@@ -44,14 +44,150 @@ function clearBox(el) {
   el.classList.remove('error');
 }
 
-function initMap() {
-  state.map = L.map('map').setView([-29.0, 24.0], 5);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors',
-  }).addTo(state.map);
-  state.markerLayer = L.markerClusterGroup({ showCoverageOnHover: false, maxClusterRadius: 42 });
+function openGoogleMapsForRecord(record) {
+  if (record.latitude && record.longitude) {
+    window.open(`https://www.google.com/maps?q=${record.latitude},${record.longitude}`, '_blank');
+  }
 }
+
+fetch('/api/records', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(payload)
+})
+.then(res => res.json())
+.then(record => {
+  showStatus('formStatus', 'Record saved successfully.');
+  loadMapData();
+  openGoogleMapsForRecord(record);
+});
+
+function initAddressAutocomplete() {
+  const input = document.getElementById('fullAddress');
+  if (!input || !window.google || !google.maps || !google.maps.places) return;
+
+  const autocomplete = new google.maps.places.Autocomplete(input, {
+    fields: ['formatted_address', 'geometry', 'address_components', 'name']
+  });
+
+  autocomplete.addListener('place_changed', () => {
+    const place = autocomplete.getPlace();
+    if (!place) return;
+
+    if (place.formatted_address) {
+      input.value = place.formatted_address;
+    }
+
+    if (place.geometry && place.geometry.location) {
+      document.getElementById('latitude').value = place.geometry.location.lat();
+      document.getElementById('longitude').value = place.geometry.location.lng();
+    }
+
+    const components = place.address_components || [];
+
+    let city = '';
+    let province = '';
+    let country = '';
+    let streetNumber = '';
+    let route = '';
+
+    components.forEach(c => {
+      if (c.types.includes('locality')) city = c.long_name;
+      if (c.types.includes('administrative_area_level_1')) province = c.long_name;
+      if (c.types.includes('country')) country = c.long_name;
+      if (c.types.includes('street_number')) streetNumber = c.long_name;
+      if (c.types.includes('route')) route = c.long_name;
+    });
+
+    const addressLine = [streetNumber, route].filter(Boolean).join(' ');
+
+    document.getElementById('address').value = addressLine;
+    document.getElementById('city').value = city;
+    document.getElementById('province').value = province;
+    document.getElementById('country').value = country;
+  });
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  initAddressAutocomplete();
+});
+
+let map;
+let heatLayer;
+let markerLayer;
+
+function initMap() {
+  map = L.map('map').setView([-28.5, 24.5], 5);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(map);
+
+  markerLayer = L.layerGroup().addTo(map);
+
+  loadMapData();
+
+  document.getElementById('mapMode')?.addEventListener('change', loadMapData);
+  document.getElementById('heatRadius')?.addEventListener('input', loadMapData);
+  document.getElementById('pinRadius')?.addEventListener('input', loadMapData);
+}
+
+function loadMapData() {
+  fetch('/api/locations')
+    .then(res => res.json())
+    .then(data => renderMapData(data));
+}
+
+function renderMapData(data) {
+  const mode = document.getElementById('mapMode')?.value || 'heatmap';
+  const heatRadius = parseInt(document.getElementById('heatRadius')?.value || '25', 10);
+  const pinRadius = parseInt(document.getElementById('pinRadius')?.value || '6', 10);
+
+  if (heatLayer) {
+    map.removeLayer(heatLayer);
+  }
+
+  markerLayer.clearLayers();
+
+  const heatPoints = data.map(point => [point.lat, point.lng, point.weight || 1]);
+
+  if (mode === 'heatmap' || mode === 'both') {
+    heatLayer = L.heatLayer(heatPoints, {
+      radius: heatRadius,
+      blur: 20,
+      maxZoom: 10
+    }).addTo(map);
+  }
+
+  if (mode === 'pins' || mode === 'both') {
+    data.forEach(point => {
+      const popupHtml = `
+        <div class="popup-grid">
+          <strong>${point.deceased_name} ${point.deceased_surname}</strong>
+          <div><b>MF File:</b> ${point.mf_file}</div>
+          <div><b>DOD:</b> ${point.dod}</div>
+          <div><b>Address:</b> ${point.full_address || point.address}</div>
+          <div><b>City:</b> ${point.city}</div>
+          <div><b>Province:</b> ${point.province}</div>
+          <div><b>Contact:</b> ${point.contact_number}</div>
+          <div><a href="https://www.google.com/maps?q=${point.lat},${point.lng}" target="_blank">Open in Google Maps</a></div>
+        </div>
+      `;
+
+      L.circleMarker([point.lat, point.lng], {
+        radius: pinRadius,
+        weight: 1,
+        opacity: 0.95,
+        fillOpacity: 0.85
+      })
+      .bindPopup(popupHtml)
+      .addTo(markerLayer);
+    });
+  }
+}
+
+document.addEventListener('DOMContentLoaded', initMap);
 
 function popupHtml(record) {
   return `

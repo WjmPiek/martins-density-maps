@@ -34,6 +34,14 @@ from flask_login import (
     login_user,
     logout_user,
 )
+
+import os
+
+@app.context_processor
+def inject_globals():
+    return {
+        "google_maps_api_key": os.environ.get("GOOGLE_MAPS_API_KEY", "")
+    }
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import func
 from werkzeug.security import check_password_hash, generate_password_hash

@@ -61,11 +61,30 @@ a {
   border-radius: 16px;
 }
 
+.auth-wrap {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.auth-card {
+  width: min(460px, 100%);
+  padding: 36px;
+  border-radius: 28px;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+  text-align: center;
+}
+
 .login-logo {
-  width: 220px;
-  height: auto;
+  width: auto;
+  max-width: 240px;
+  height: 90px;
+  object-fit: contain;
   display: block;
-  margin: 0 auto 10px auto;
+  margin: 0 auto 14px auto;
 }
 
 .page-header {

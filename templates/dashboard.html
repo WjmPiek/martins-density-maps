@@ -62,6 +62,35 @@ Download Excel Template
     </article>
   </section>
 
+<article class="panel map-panel">
+  <div class="panel-head">
+    <div>
+      <h2>Client addresses map</h2>
+      <p class="muted">Choose how you want to view your data.</p>
+    </div>
+  </div>
+
+  <div class="filters">
+    <label>View mode
+      <select id="mapMode">
+        <option value="heatmap">Heatmap</option>
+        <option value="pins">Pins</option>
+        <option value="both">Both</option>
+      </select>
+    </label>
+
+    <label>Heat radius
+      <input id="heatRadius" type="range" min="10" max="50" value="25">
+    </label>
+
+    <label>Pin size
+      <input id="pinRadius" type="range" min="3" max="12" value="6">
+    </label>
+  </div>
+
+  <div id="map" style="height:560px;"></div>
+</article>
+
   <section class="map-layout">
     <article class="panel map-panel">
       <div class="panel-head">
@@ -84,7 +113,7 @@ Download Excel Template
       <form id="recordForm" class="editor-grid">
         <input type="hidden" id="recordId">
         <label>MF File<input id="mfFile" required></label>
-        <label>DOD<input id="dod"></label>
+        <label>DOD<input id="dod" type="date"></label>
         <label>Deceased name<input id="deceasedName"></label>
         <label>Deceased surname<input id="deceasedSurname"></label>
         <label>Street address<input id="address"></label>
@@ -101,7 +130,7 @@ Download Excel Template
         <label>Full address<input id="fullAddress"></label>
         <label>Latitude<input id="latitude" type="number" step="any"></label>
         <label>Longitude<input id="longitude" type="number" step="any"></label>
-        <label>Weight<input id="weight" type="number" step="any" value="1"></label>
+        <input id="weight" type="hidden" value="1">
         <label>Next of kin name<input id="nextOfKinName"></label>
         <label>Next of kin surname<input id="nextOfKinSurname"></label>
         <label>Relationship<input id="relationship"></label>

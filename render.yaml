@@ -21,3 +21,5 @@ services:
 databases:
   - name: martins-density-db
     plan: basic-256mb
+
+GOOGLE_MAPS_API_KEY=AIzaSyD-niMQ5MWxPbSG-kehIIHzlgv89Y0TbaQ

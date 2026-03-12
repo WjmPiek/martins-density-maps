@@ -382,6 +382,10 @@ def dataset_for_user(user):
         },
     }
 
+@app.route("/upload-page")
+@login_required
+def upload_page():
+    return render_template("upload.html")
 
 @app.route("/download-template")
 @login_required

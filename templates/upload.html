@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}Upload Excel · Martins Density Map{% endblock %}
+
+{% block content %}
+<section class="dashboard-wrap">
+  <div class="page-header">
+    <div>
+      <div class="eyebrow">Martin's Franchising</div>
+      <h1>Upload Excel File</h1>
+    </div>
+  </div>
+
+  <article class="panel" style="max-width: 720px;">
+    <div class="panel-head">
+      <div>
+        <h2>Upload workbook</h2>
+        <p class="muted">Uploading replaces only your own dataset.</p>
+      </div>
+      <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download my Excel</a>
+    </div>
+
+    <form class="stack-form" method="post" action="{{ url_for('upload_excel') }}" enctype="multipart/form-data">
+      <input type="file" name="file" accept=".xlsx,.xls,.xlsm,.csv" required>
+
+      <div class="form-actions">
+        <button class="primary-btn" type="submit">Upload Excel file</button>
+        <a class="ghost-btn" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+      </div>
+    </form>
+  </article>
+</section>
+{% endblock %}

@@ -29,6 +29,12 @@ a { color: var(--primary-strong); text-decoration: none; }
   align-items: center;
   margin-bottom: 20px;
 }
+.login-logo {
+    width: 90px;
+    height: auto;
+    display: block;
+    margin-bottom: 12px;
+}
 .brand-row { display: flex; align-items: center; gap: 14px; }
 .nav-logo { width: 56px; height: 56px; border-radius: 16px; }
 .eyebrow { color: var(--primary-strong); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 700; }

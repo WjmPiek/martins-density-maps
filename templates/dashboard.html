@@ -2,6 +2,11 @@
 {% block title %}Dashboard · Martins Density Map{% endblock %}
 
 {% block content %}
+
+<a class="ghost-btn" href="{{ url_for('download_template') }}">
+Download Excel Template
+</a>
+
 <section class="dashboard-wrap">
   <div class="page-header">
     <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="page-logo">

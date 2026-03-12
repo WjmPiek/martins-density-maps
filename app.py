@@ -7,6 +7,15 @@ import pandas as pd
 from geopy.geocoders import Nominatim
 from flask import flash, jsonify
 
+from flask import send_file
+import os
+
+@app.route("/download-template")
+@login_required
+def download_template():
+    path = os.path.join("static", "templates", "martins_density_map_template.xlsx")
+    return send_file(path, as_attachment=True)
+
 from flask import (
     Flask,
     flash,

@@ -1,21 +1,9 @@
 import os
 from datetime import datetime
-from io import BytesIO
 from functools import wraps
-import io
+from io import BytesIO
+
 import pandas as pd
-from geopy.geocoders import Nominatim
-from flask import flash, jsonify
-
-from flask import send_file
-import os
-
-@app.route("/download-template")
-@login_required
-def download_template():
-    path = os.path.join("static", "templates", "martins_density_map_template.xlsx")
-    return send_file(path, as_attachment=True)
-
 from flask import (
     Flask,
     flash,
@@ -34,25 +22,24 @@ from flask_login import (
     login_user,
     logout_user,
 )
-
-import os
-
-@app.context_processor
-def inject_globals():
-    return {
-        "google_maps_api_key": os.environ.get("GOOGLE_MAPS_API_KEY", "")
-    }
 from flask_sqlalchemy import SQLAlchemy
+from geopy.geocoders import Nominatim
+from openpyxl import Workbook, load_workbook
 from sqlalchemy import func
 from werkzeug.security import check_password_hash, generate_password_hash
 from werkzeug.utils import secure_filename
-from openpyxl import Workbook, load_workbook
+
+
+app = Flask(__name__)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
 INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
 LOGO_PATH = os.path.join(BASE_DIR, "static", "img", "martins-logo.png")
 TEMPLATE_EXPORT = os.path.join(BASE_DIR, "martins_density_map_data.xlsx")
+TEMPLATE_DOWNLOAD_PATH = os.path.join(
+    BASE_DIR, "static", "templates", "martins_density_map_template.xlsx"
+)
 
 EXPECTED_COLUMNS = [
     "MF File",
@@ -88,7 +75,6 @@ PROVINCES = [
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(INSTANCE_DIR, exist_ok=True)
 
-app = Flask(__name__)
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me-in-render")
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
     "DATABASE_URL", f"sqlite:///{os.path.join(INSTANCE_DIR, 'app.db')}"
@@ -210,14 +196,17 @@ def bootstrap_admin() -> None:
     admin_email = os.environ.get("ADMIN_EMAIL")
     admin_password = os.environ.get("ADMIN_PASSWORD")
     admin_name = os.environ.get("ADMIN_NAME", "Martins Admin")
+
     if not admin_email or not admin_password:
         return
+
     existing = User.query.filter(func.lower(User.email) == admin_email.lower()).first()
     if existing:
         if existing.role != "admin":
             existing.role = "admin"
             db.session.commit()
         return
+
     user = User(name=admin_name, email=admin_email.lower(), role="admin")
     user.set_password(admin_password)
     db.session.add(user)
@@ -244,23 +233,29 @@ def parse_upload(file_storage):
     wb = load_workbook(file_storage, data_only=True)
     ws = wb[wb.sheetnames[0]]
     header_row = [normalize_text(cell) for cell in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
+
     if header_row[: len(EXPECTED_COLUMNS)] != EXPECTED_COLUMNS:
         raise ValueError("Workbook columns do not match the required Martins template.")
 
     records = []
     warnings = []
     seen_mf = set()
+
     for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
         data = dict(zip(EXPECTED_COLUMNS, row[: len(EXPECTED_COLUMNS)]))
         mf_file = normalize_text(data.get("MF File"))
+
         if not any(normalize_text(v) for v in data.values()):
             continue
+
         if not mf_file:
             warnings.append(f"Row {idx}: missing MF File and skipped.")
             continue
+
         if mf_file in seen_mf:
             warnings.append(f"Row {idx}: duplicate MF File '{mf_file}' in upload.")
         seen_mf.add(mf_file)
+
         full_address = normalize_text(data.get("Full Address")) or ", ".join(
             [
                 part
@@ -273,6 +268,7 @@ def parse_upload(file_storage):
                 if part
             ]
         )
+
         records.append(
             {
                 "mf_file": mf_file,
@@ -293,6 +289,7 @@ def parse_upload(file_storage):
                 "contact_number": normalize_text(data.get("Contact Number")),
             }
         )
+
     return records, warnings
 
 
@@ -319,8 +316,8 @@ def upsert_record(user_id, payload):
     record.latitude = normalize_float(payload.get("latitude"))
     record.longitude = normalize_float(payload.get("longitude"))
     record.weight = normalize_float(payload.get("weight")) or 1.0
-    record.next_of_kin_name = normalize_text(payload.get("nextOfKinName"))
-    record.next_of_kin_surname = normalize_text(payload.get("nextOfKinSurname"))
+    record.next_of_kin_name = normalize_text(payload.get("NextOfKinName") or payload.get("nextOfKinName"))
+    record.next_of_kin_surname = normalize_text(payload.get("NextOfKinSurname") or payload.get("nextOfKinSurname"))
     record.relationship = normalize_text(payload.get("relationship"))
     record.contact_number = normalize_text(payload.get("contactNumber"))
     return record
@@ -331,6 +328,7 @@ def build_workbook(records):
     ws = wb.active
     ws.title = "Data"
     ws.append(EXPECTED_COLUMNS)
+
     for record in records:
         ws.append(
             [
@@ -352,9 +350,11 @@ def build_workbook(records):
                 record.contact_number,
             ]
         )
+
     for col in ws.columns:
         max_len = max(len(str(cell.value or "")) for cell in col)
         ws.column_dimensions[col[0].column_letter].width = min(max(max_len + 2, 12), 28)
+
     stream = BytesIO()
     wb.save(stream)
     stream.seek(0)
@@ -365,10 +365,12 @@ def dataset_for_user(user):
     query = Record.query
     if not user.is_admin:
         query = query.filter_by(user_id=user.id)
+
     records = query.order_by(Record.city.asc(), Record.mf_file.asc()).all()
     mapped = sum(1 for r in records if r.latitude is not None and r.longitude is not None)
     provinces = sorted({r.province for r in records if r.province})
     owners = sorted({r.user.name for r in records})
+
     return {
         "records": [r.to_dict() for r in records],
         "summary": {
@@ -380,6 +382,11 @@ def dataset_for_user(user):
         },
     }
 
+
+@app.route("/download-template")
+@login_required
+def download_template():
+    return send_file(TEMPLATE_DOWNLOAD_PATH, as_attachment=True)
 
 
 @app.route("/")
@@ -393,11 +400,13 @@ def index():
 def register():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard"))
+
     if request.method == "POST":
         name = normalize_text(request.form.get("name"))
         email = normalize_text(request.form.get("email")).lower()
         password = request.form.get("password", "")
         confirm = request.form.get("confirm_password", "")
+
         if not name or not email or not password:
             flash("Name, email, and password are required.", "danger")
         elif password != confirm:
@@ -412,6 +421,7 @@ def register():
             login_user(user)
             flash("Welcome to Martins Density Map.", "success")
             return redirect(url_for("dashboard"))
+
     return render_template("register.html")
 
 
@@ -419,16 +429,20 @@ def register():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for("dashboard"))
+
     if request.method == "POST":
         email = normalize_text(request.form.get("email")).lower()
         password = request.form.get("password", "")
         user = User.query.filter(func.lower(User.email) == email).first()
+
         if user and user.check_password(password):
             login_user(user, remember=True)
             flash("Signed in successfully.", "success")
             next_url = request.args.get("next")
             return redirect(next_url or url_for("dashboard"))
+
         flash("Invalid email or password.", "danger")
+
     return render_template("login.html")
 
 
@@ -454,6 +468,7 @@ def admin():
     record_count = Record.query.count()
     upload_count = Upload.query.count()
     latest_uploads = Upload.query.order_by(Upload.created_at.desc()).limit(10).all()
+
     return render_template(
         "admin.html",
         user_count=user_count,
@@ -473,6 +488,7 @@ def api_records():
 @login_required
 def api_save_record():
     payload = request.get_json(force=True)
+
     try:
         record = upsert_record(current_user.id, payload)
         db.session.commit()
@@ -482,6 +498,7 @@ def api_save_record():
     except Exception:
         db.session.rollback()
         return jsonify({"error": "Could not save record."}), 500
+
     return jsonify({"message": "Record saved.", "record": record.to_dict()})
 
 
@@ -489,8 +506,10 @@ def api_save_record():
 @login_required
 def api_delete_record(record_id):
     record = Record.query.get_or_404(record_id)
+
     if not current_user.is_admin and record.user_id != current_user.id:
         return jsonify({"error": "Not allowed."}), 403
+
     db.session.delete(record)
     db.session.commit()
     return jsonify({"message": "Record deleted."})
@@ -502,15 +521,21 @@ def api_upload():
     file = request.files.get("file")
     if not file or not file.filename:
         return jsonify({"error": "Select an Excel file to upload."}), 400
+
     filename = secure_filename(file.filename)
+
     try:
         imported_rows, warnings = parse_upload(file)
+
         Record.query.filter_by(user_id=current_user.id).delete()
+
         for row in imported_rows:
             db.session.add(Record(user_id=current_user.id, **row))
+
         stored_name = f"{current_user.id}_{int(datetime.utcnow().timestamp())}_{filename}"
         file.stream.seek(0)
         file.save(os.path.join(UPLOAD_DIR, stored_name))
+
         db.session.add(
             Upload(
                 user_id=current_user.id,
@@ -520,7 +545,9 @@ def api_upload():
                 status="completed",
             )
         )
+
         db.session.commit()
+
         return jsonify(
             {
                 "message": f"Imported {len(imported_rows)} records.",
@@ -534,12 +561,13 @@ def api_upload():
         db.session.rollback()
         return jsonify({"error": "Upload failed."}), 500
 
+
 @app.route("/upload", methods=["POST"])
 @login_required
 def upload_excel():
     file = request.files.get("file")
     if not file:
-        flash("Please choose a file.")
+        flash("Please choose a file.", "warning")
         return redirect(url_for("dashboard"))
 
     filename = file.filename.lower()
@@ -550,15 +578,30 @@ def upload_excel():
         df = pd.read_excel(file)
 
     required_cols = [
-        "MF File", "Deceased Name", "Deceased Surname", "DOD", "Address",
-        "City", "Province", "Country", "Full Address", "Latitude", "Longitude",
-        "Weight", "Next of Kin Name", "Next of Kin Surname", "Relationship", "Contact Number"
+        "MF File",
+        "Deceased Name",
+        "Deceased Surname",
+        "DOD",
+        "Address",
+        "City",
+        "Province",
+        "Country",
+        "Full Address",
+        "Latitude",
+        "Longitude",
+        "Weight",
+        "Next of Kin Name",
+        "Next of Kin Surname",
+        "Relationship",
+        "Contact Number",
     ]
 
     for col in required_cols:
         if col not in df.columns:
-            flash(f"Missing required column: {col}")
+            flash(f"Missing required column: {col}", "danger")
             return redirect(url_for("dashboard"))
+
+    Record.query.filter_by(user_id=current_user.id).delete()
 
     geolocator = Nominatim(user_agent="martins_density_map")
 
@@ -599,14 +642,20 @@ def upload_excel():
         db.session.add(record)
 
     db.session.commit()
-    flash("File uploaded successfully.")
+    flash("File uploaded successfully.", "success")
     return redirect(url_for("dashboard"))
+
 
 @app.route("/download/my-data.xlsx")
 @login_required
 def download_my_data():
-    records = Record.query.filter_by(user_id=current_user.id).order_by(Record.city.asc(), Record.mf_file.asc()).all()
+    records = (
+        Record.query.filter_by(user_id=current_user.id)
+        .order_by(Record.city.asc(), Record.mf_file.asc())
+        .all()
+    )
     stream = build_workbook(records)
+
     return send_file(
         stream,
         as_attachment=True,
@@ -619,8 +668,13 @@ def download_my_data():
 @login_required
 @admin_required
 def download_central():
-    records = Record.query.order_by(User.name.asc(), Record.city.asc(), Record.mf_file.asc()).join(User).all()
+    records = (
+        Record.query.join(User)
+        .order_by(User.name.asc(), Record.city.asc(), Record.mf_file.asc())
+        .all()
+    )
     stream = build_workbook(records)
+
     return send_file(
         stream,
         as_attachment=True,
@@ -631,15 +685,16 @@ def download_central():
 
 @app.context_processor
 def inject_globals():
-    return {"logo_path": url_for("static", filename="img/martins-logo.png")}
+    return {
+        "google_maps_api_key": os.environ.get("GOOGLE_MAPS_API_KEY", ""),
+        "logo_path": url_for("static", filename="img/martins-logo.png"),
+    }
 
 
 with app.app_context():
     db.create_all()
     bootstrap_admin()
 
-
-import os
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))

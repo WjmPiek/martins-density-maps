@@ -1,53 +1,206 @@
-import json
 import os
-import threading
-import time
-from copy import deepcopy
-from pathlib import Path
-from urllib.parse import quote_plus
+from datetime import datetime
+from io import BytesIO
+from functools import wraps
 
-import requests
-from flask import Flask, jsonify, request, send_from_directory
-from openpyxl import load_workbook
+from flask import (
+    Flask,
+    flash,
+    jsonify,
+    redirect,
+    render_template,
+    request,
+    send_file,
+    url_for,
+)
+from flask_login import (
+    LoginManager,
+    UserMixin,
+    current_user,
+    login_required,
+    login_user,
+    logout_user,
+)
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import func
+from werkzeug.security import check_password_hash, generate_password_hash
+from werkzeug.utils import secure_filename
+from openpyxl import Workbook, load_workbook
 
-BASE_DIR = Path(__file__).resolve().parent
-DATA_DIR = Path(os.getenv("DATA_DIR", BASE_DIR / "data")).resolve()
-WORKBOOK_PATH = DATA_DIR / "martins_density_map_data.xlsx"
-CACHE_PATH = DATA_DIR / "geocode_cache.json"
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
+INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
+LOGO_PATH = os.path.join(BASE_DIR, "static", "img", "martins-logo.png")
+TEMPLATE_EXPORT = os.path.join(BASE_DIR, "martins_density_map_data.xlsx")
 
-app = Flask(__name__, static_folder="static")
-_lock = threading.Lock()
-
-REQUIRED_HEADERS = [
-    "MF File", "Deceased Name", "Deceased Surname", "DOD", "Address",
-    "City", "Province", "Country", "Full Address", "Latitude", "Longitude",
-    "Weight", "Next of Kin Name", "Next of Kin Surname", "Relationship", "Contact Number"
+EXPECTED_COLUMNS = [
+    "MF File",
+    "Deceased Name",
+    "Deceased Surname",
+    "DOD",
+    "Address",
+    "City",
+    "Province",
+    "Country",
+    "Full Address",
+    "Latitude",
+    "Longitude",
+    "Weight",
+    "Next of Kin Name",
+    "Next of Kin Surname",
+    "Relationship",
+    "Contact Number",
 ]
-KNOWN_PROVINCES = [
-    "Eastern Cape", "Free State", "Gauteng", "KwaZulu-Natal", "Limpopo",
-    "Mpumalanga", "North West", "Northern Cape", "Western Cape",
+
+PROVINCES = [
+    "Eastern Cape",
+    "Free State",
+    "Gauteng",
+    "KwaZulu-Natal",
+    "Limpopo",
+    "Mpumalanga",
+    "North West",
+    "Northern Cape",
+    "Western Cape",
 ]
-PROVINCE_MAP = {p.lower(): p for p in KNOWN_PROVINCES}
-DEFAULT_COUNTRY = "South Africa"
+
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+os.makedirs(INSTANCE_DIR, exist_ok=True)
+
+app = Flask(__name__)
+app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me-in-render")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
+    "DATABASE_URL", f"sqlite:///{os.path.join(INSTANCE_DIR, 'app.db')}"
+)
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
+
+if app.config["SQLALCHEMY_DATABASE_URI"].startswith("postgres://"):
+    app.config["SQLALCHEMY_DATABASE_URI"] = app.config["SQLALCHEMY_DATABASE_URI"].replace(
+        "postgres://", "postgresql://", 1
+    )
+
+db = SQLAlchemy(app)
+login_manager = LoginManager(app)
+login_manager.login_view = "login"
+login_manager.login_message_category = "warning"
 
 
-def ensure_data_dir():
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    email = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    password_hash = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.String(20), nullable=False, default="user")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+
+    uploads = db.relationship("Upload", backref="user", lazy=True, cascade="all, delete-orphan")
+    records = db.relationship("Record", backref="user", lazy=True, cascade="all, delete-orphan")
+
+    def set_password(self, password: str) -> None:
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        return check_password_hash(self.password_hash, password)
+
+    @property
+    def is_admin(self) -> bool:
+        return self.role == "admin"
 
 
-def load_cache():
-    if CACHE_PATH.exists():
-        try:
-            payload = json.loads(CACHE_PATH.read_text(encoding="utf-8"))
-            return payload if isinstance(payload, dict) else {}
-        except Exception:
-            return {}
-    return {}
+class Upload(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    filename = db.Column(db.String(255), nullable=False)
+    original_filename = db.Column(db.String(255), nullable=False)
+    imported_rows = db.Column(db.Integer, nullable=False, default=0)
+    status = db.Column(db.String(30), nullable=False, default="completed")
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
 
-def save_cache(cache):
-    ensure_data_dir()
-    CACHE_PATH.write_text(json.dumps(cache, ensure_ascii=False, indent=2), encoding="utf-8")
+class Record(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False, index=True)
+    mf_file = db.Column(db.String(120), nullable=False, index=True)
+    deceased_name = db.Column(db.String(120))
+    deceased_surname = db.Column(db.String(120))
+    dod = db.Column(db.String(50))
+    address = db.Column(db.String(255))
+    city = db.Column(db.String(120), index=True)
+    province = db.Column(db.String(120), index=True)
+    country = db.Column(db.String(120))
+    full_address = db.Column(db.String(512))
+    latitude = db.Column(db.Float)
+    longitude = db.Column(db.Float)
+    weight = db.Column(db.Float, default=1.0)
+    next_of_kin_name = db.Column(db.String(120))
+    next_of_kin_surname = db.Column(db.String(120))
+    relationship = db.Column(db.String(120))
+    contact_number = db.Column(db.String(120))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "mf_file", name="uq_user_mf_file"),
+    )
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "mfFile": self.mf_file,
+            "deceasedName": self.deceased_name or "",
+            "deceasedSurname": self.deceased_surname or "",
+            "dod": self.dod or "",
+            "address": self.address or "",
+            "city": self.city or "",
+            "province": self.province or "",
+            "country": self.country or "",
+            "fullAddress": self.full_address or "",
+            "latitude": self.latitude,
+            "longitude": self.longitude,
+            "weight": self.weight if self.weight is not None else 1,
+            "nextOfKinName": self.next_of_kin_name or "",
+            "nextOfKinSurname": self.next_of_kin_surname or "",
+            "relationship": self.relationship or "",
+            "contactNumber": self.contact_number or "",
+            "owner": self.user.name,
+            "ownerEmail": self.user.email,
+            "updatedAt": self.updated_at.isoformat(),
+        }
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))
+
+
+def admin_required(view_func):
+    @wraps(view_func)
+    def wrapped(*args, **kwargs):
+        if not current_user.is_authenticated or not current_user.is_admin:
+            flash("Admin access required.", "danger")
+            return redirect(url_for("dashboard"))
+        return view_func(*args, **kwargs)
+
+    return wrapped
+
+
+def bootstrap_admin() -> None:
+    admin_email = os.environ.get("ADMIN_EMAIL")
+    admin_password = os.environ.get("ADMIN_PASSWORD")
+    admin_name = os.environ.get("ADMIN_NAME", "Martins Admin")
+    if not admin_email or not admin_password:
+        return
+    existing = User.query.filter(func.lower(User.email) == admin_email.lower()).first()
+    if existing:
+        if existing.role != "admin":
+            existing.role = "admin"
+            db.session.commit()
+        return
+    user = User(name=admin_name, email=admin_email.lower(), role="admin")
+    user.set_password(admin_password)
+    db.session.add(user)
+    db.session.commit()
 
 
 def normalize_text(value):
@@ -56,403 +209,346 @@ def normalize_text(value):
     return str(value).strip()
 
 
-def normalize_phone(value):
-    text = normalize_text(value)
-    return text.replace(".0", "") if text.endswith(".0") else text
-
-
-def clean_province(value):
+def normalize_float(value):
     text = normalize_text(value)
     if not text:
-        return ""
-    return PROVINCE_MAP.get(text.lower(), text)
-
-
-def build_full_address(row):
-    parts = [
-        normalize_text(row.get("Address")),
-        normalize_text(row.get("City")),
-        clean_province(row.get("Province")),
-        normalize_text(row.get("Country")) or DEFAULT_COUNTRY,
-    ]
-    return ", ".join([p for p in parts if p])
-
-
-def normalize_cache_key(address):
-    return " ".join(normalize_text(address).lower().replace(",", " ").split())
-
-
-def to_float(value):
+        return None
     try:
-        if value in (None, ""):
-            return None
-        return float(value)
-    except Exception:
+        return float(text)
+    except ValueError:
         return None
 
 
-def google_geocode(address, api_key):
-    url = "https://maps.googleapis.com/maps/api/geocode/json"
-    response = requests.get(url, params={"address": address, "key": api_key}, timeout=25)
-    response.raise_for_status()
-    payload = response.json()
-    if payload.get("status") != "OK" or not payload.get("results"):
-        return None
-    result = payload["results"][0]
-    location = result["geometry"]["location"]
-    return {
-        "lat": float(location["lat"]),
-        "lng": float(location["lng"]),
-        "formatted_address": result.get("formatted_address", address),
-        "place_id": result.get("place_id", ""),
-        "location_type": result.get("geometry", {}).get("location_type", ""),
-        "types": result.get("types", []),
-        "aliases": [normalize_cache_key(address), normalize_cache_key(result.get("formatted_address", ""))],
-        "updated_at": int(time.time()),
-    }
-
-
-def get_cache_hit(cache, full_address):
-    key = normalize_cache_key(full_address)
-    if not key:
-        return None
-    direct = cache.get(key)
-    if direct:
-        return direct
-    for item_key, item in cache.items():
-        aliases = item.get("aliases") or []
-        if key == item_key or key in aliases:
-            return item
-    return None
-
-
-def seed_cache_from_row(cache, row):
-    full_address = normalize_text(row.get("Full Address")) or build_full_address(row)
-    lat = to_float(row.get("Latitude"))
-    lng = to_float(row.get("Longitude"))
-    if not full_address or lat is None or lng is None:
-        return False
-    key = normalize_cache_key(full_address)
-    if not key:
-        return False
-    entry = cache.get(key, {})
-    aliases = set(entry.get("aliases") or [])
-    aliases.add(key)
-    cache[key] = {
-        **entry,
-        "lat": lat,
-        "lng": lng,
-        "formatted_address": full_address,
-        "aliases": sorted(a for a in aliases if a),
-        "updated_at": int(time.time()),
-    }
-    return True
-
-
-def read_workbook_rows():
-    ensure_data_dir()
-    wb = load_workbook(WORKBOOK_PATH)
+def parse_upload(file_storage):
+    wb = load_workbook(file_storage, data_only=True)
     ws = wb[wb.sheetnames[0]]
-    headers = [normalize_text(cell.value) for cell in ws[1]]
-    missing = [h for h in REQUIRED_HEADERS if h not in headers]
-    if missing:
-        raise ValueError(f"Workbook is missing columns: {', '.join(missing)}")
+    header_row = [normalize_text(cell) for cell in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
+    if header_row[: len(EXPECTED_COLUMNS)] != EXPECTED_COLUMNS:
+        raise ValueError("Workbook columns do not match the required Martins template.")
 
-    header_index = {name: idx + 1 for idx, name in enumerate(headers)}
-    rows = []
-    for row_num in range(2, ws.max_row + 1):
-        row = {header: ws.cell(row=row_num, column=col_num).value for header, col_num in header_index.items()}
-        if all(row.get(h) in (None, "") for h in REQUIRED_HEADERS):
-            continue
-        row["_row_number"] = row_num
-        rows.append(row)
-    return wb, ws, header_index, rows
-
-
-def validate_row_payload(payload, for_update=False):
-    data = {key: normalize_text(payload.get(key)) for key in REQUIRED_HEADERS if key in payload}
-    data.setdefault("Country", DEFAULT_COUNTRY)
-    data["Province"] = clean_province(data.get("Province"))
-    errors = []
-
-    if not any([data.get("Address"), data.get("Full Address")]):
-        errors.append("Address is required.")
-    if not any([data.get("City"), data.get("Province")]):
-        errors.append("City or Province is required.")
-    if data.get("Province") and data["Province"] not in KNOWN_PROVINCES:
-        errors.append(f"Province must match one of: {', '.join(KNOWN_PROVINCES)}.")
-    if data.get("Latitude") and to_float(data.get("Latitude")) is None:
-        errors.append("Latitude must be numeric.")
-    if data.get("Longitude") and to_float(data.get("Longitude")) is None:
-        errors.append("Longitude must be numeric.")
-    if data.get("Weight") and to_float(data.get("Weight")) is None:
-        errors.append("Weight must be numeric.")
-    if not data.get("Full Address"):
-        data["Full Address"] = build_full_address(data)
-    data["Contact Number"] = normalize_phone(data.get("Contact Number"))
-    return data, errors
-
-
-def workbook_validation_summary(rows):
+    records = []
     warnings = []
-    seen = {}
-    valid_rows = 0
-    for row in rows:
-        full_address = normalize_text(row.get("Full Address")) or build_full_address(row)
-        if full_address:
-            valid_rows += 1
-        key = normalize_cache_key(full_address)
-        if key:
-            seen[key] = seen.get(key, 0) + 1
-        if normalize_text(row.get("Province")) and clean_province(row.get("Province")) not in KNOWN_PROVINCES:
-            warnings.append(f"Row {row['_row_number']}: unknown province '{normalize_text(row.get('Province'))}'.")
-        if to_float(row.get("Latitude")) is None or to_float(row.get("Longitude")) is None:
-            if not full_address:
-                warnings.append(f"Row {row['_row_number']}: missing address and coordinates.")
-
-    duplicates = [k for k, count in seen.items() if count > 1]
-    if duplicates:
-        warnings.append(f"Found {len(duplicates)} duplicate address entries.")
-
-    return {
-        "validRows": valid_rows,
-        "warningCount": len(warnings),
-        "warnings": warnings[:12],
-    }
-
-
-def row_to_feature(row):
-    full_address = normalize_text(row.get("Full Address")) or build_full_address(row)
-    lat = to_float(row.get("Latitude"))
-    lng = to_float(row.get("Longitude"))
-    city = normalize_text(row.get("City"))
-    province = clean_province(row.get("Province"))
-    country = normalize_text(row.get("Country")) or DEFAULT_COUNTRY
-    name = f"{normalize_text(row.get('Deceased Name'))} {normalize_text(row.get('Deceased Surname'))}".strip()
-    next_of_kin = " ".join(filter(None, [normalize_text(row.get("Next of Kin Name")), normalize_text(row.get("Next of Kin Surname"))])).strip()
-    gm_query = quote_plus(full_address or city or province)
-    return {
-        "id": normalize_text(row.get("MF File")) or str(row["_row_number"]),
-        "rowNumber": row["_row_number"],
-        "mfFile": normalize_text(row.get("MF File")),
-        "name": name,
-        "deceasedName": normalize_text(row.get("Deceased Name")),
-        "deceasedSurname": normalize_text(row.get("Deceased Surname")),
-        "dod": normalize_text(row.get("DOD")),
-        "address": normalize_text(row.get("Address")),
-        "city": city,
-        "province": province,
-        "country": country,
-        "fullAddress": full_address,
-        "lat": lat,
-        "lng": lng,
-        "weight": to_float(row.get("Weight")) or 1.0,
-        "nextOfKinName": normalize_text(row.get("Next of Kin Name")),
-        "nextOfKinSurname": normalize_text(row.get("Next of Kin Surname")),
-        "nextOfKin": next_of_kin,
-        "relationship": normalize_text(row.get("Relationship")),
-        "contactNumber": normalize_phone(row.get("Contact Number")),
-        "googleMapsUrl": f"https://www.google.com/maps/search/?api=1&query={gm_query}",
-        "hoverSummary": " | ".join([p for p in [name, city, province] if p]),
-    }
-
-
-def maybe_geocode_and_persist(rows, wb, ws, header_index):
-    api_key = os.getenv("GOOGLE_MAPS_API_KEY", "").strip()
-    cache = load_cache()
-    changed = False
-    geocoded_count = 0
-    cached_count = 0
-    unresolved = 0
-
-    for row in rows:
-        row["Province"] = clean_province(row.get("Province"))
-        if normalize_text(row.get("Contact Number")):
-            row["Contact Number"] = normalize_phone(row.get("Contact Number"))
-            ws.cell(row=row["_row_number"], column=header_index["Contact Number"]).value = row["Contact Number"]
-            changed = True
-
-        full_address = normalize_text(row.get("Full Address")) or build_full_address(row)
-        if full_address and normalize_text(row.get("Full Address")) != full_address:
-            row["Full Address"] = full_address
-            ws.cell(row=row["_row_number"], column=header_index["Full Address"]).value = full_address
-            changed = True
-
-        lat = to_float(row.get("Latitude"))
-        lng = to_float(row.get("Longitude"))
-        if lat is not None and lng is not None:
-            if seed_cache_from_row(cache, row):
-                changed = True
+    seen_mf = set()
+    for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
+        data = dict(zip(EXPECTED_COLUMNS, row[: len(EXPECTED_COLUMNS)]))
+        mf_file = normalize_text(data.get("MF File"))
+        if not any(normalize_text(v) for v in data.values()):
             continue
-
-        cached = get_cache_hit(cache, full_address)
-        if cached and cached.get("lat") is not None and cached.get("lng") is not None:
-            row["Latitude"] = cached["lat"]
-            row["Longitude"] = cached["lng"]
-            row["Full Address"] = cached.get("formatted_address") or full_address
-            ws.cell(row=row["_row_number"], column=header_index["Latitude"]).value = cached["lat"]
-            ws.cell(row=row["_row_number"], column=header_index["Longitude"]).value = cached["lng"]
-            ws.cell(row=row["_row_number"], column=header_index["Full Address"]).value = row["Full Address"]
-            changed = True
-            cached_count += 1
+        if not mf_file:
+            warnings.append(f"Row {idx}: missing MF File and skipped.")
             continue
+        if mf_file in seen_mf:
+            warnings.append(f"Row {idx}: duplicate MF File '{mf_file}' in upload.")
+        seen_mf.add(mf_file)
+        full_address = normalize_text(data.get("Full Address")) or ", ".join(
+            [
+                part
+                for part in [
+                    normalize_text(data.get("Address")),
+                    normalize_text(data.get("City")),
+                    normalize_text(data.get("Province")),
+                    normalize_text(data.get("Country")),
+                ]
+                if part
+            ]
+        )
+        records.append(
+            {
+                "mf_file": mf_file,
+                "deceased_name": normalize_text(data.get("Deceased Name")),
+                "deceased_surname": normalize_text(data.get("Deceased Surname")),
+                "dod": normalize_text(data.get("DOD")),
+                "address": normalize_text(data.get("Address")),
+                "city": normalize_text(data.get("City")),
+                "province": normalize_text(data.get("Province")),
+                "country": normalize_text(data.get("Country")),
+                "full_address": full_address,
+                "latitude": normalize_float(data.get("Latitude")),
+                "longitude": normalize_float(data.get("Longitude")),
+                "weight": normalize_float(data.get("Weight")) or 1.0,
+                "next_of_kin_name": normalize_text(data.get("Next of Kin Name")),
+                "next_of_kin_surname": normalize_text(data.get("Next of Kin Surname")),
+                "relationship": normalize_text(data.get("Relationship")),
+                "contact_number": normalize_text(data.get("Contact Number")),
+            }
+        )
+    return records, warnings
 
-        if api_key and full_address:
-            try:
-                geocoded = google_geocode(full_address, api_key)
-            except Exception:
-                geocoded = None
-            if geocoded:
-                key = normalize_cache_key(geocoded.get("formatted_address") or full_address)
-                aliases = set(geocoded.get("aliases") or [])
-                aliases.add(normalize_cache_key(full_address))
-                geocoded["aliases"] = sorted(a for a in aliases if a)
-                cache[key] = geocoded
-                row["Latitude"] = geocoded["lat"]
-                row["Longitude"] = geocoded["lng"]
-                row["Full Address"] = geocoded.get("formatted_address") or full_address
-                ws.cell(row=row["_row_number"], column=header_index["Latitude"]).value = geocoded["lat"]
-                ws.cell(row=row["_row_number"], column=header_index["Longitude"]).value = geocoded["lng"]
-                ws.cell(row=row["_row_number"], column=header_index["Full Address"]).value = row["Full Address"]
-                changed = True
-                geocoded_count += 1
-                continue
 
-        unresolved += 1
+def upsert_record(user_id, payload):
+    mf_file = normalize_text(payload.get("mfFile"))
+    if not mf_file:
+        raise ValueError("MF File is required.")
 
-    if changed:
-        wb.save(WORKBOOK_PATH)
-        save_cache(cache)
+    record = Record.query.filter_by(user_id=user_id, mf_file=mf_file).first()
+    if record is None:
+        record = Record(user_id=user_id, mf_file=mf_file)
+        db.session.add(record)
 
+    record.deceased_name = normalize_text(payload.get("deceasedName"))
+    record.deceased_surname = normalize_text(payload.get("deceasedSurname"))
+    record.dod = normalize_text(payload.get("dod"))
+    record.address = normalize_text(payload.get("address"))
+    record.city = normalize_text(payload.get("city"))
+    record.province = normalize_text(payload.get("province"))
+    record.country = normalize_text(payload.get("country"))
+    record.full_address = normalize_text(payload.get("fullAddress")) or ", ".join(
+        [part for part in [record.address, record.city, record.province, record.country] if part]
+    )
+    record.latitude = normalize_float(payload.get("latitude"))
+    record.longitude = normalize_float(payload.get("longitude"))
+    record.weight = normalize_float(payload.get("weight")) or 1.0
+    record.next_of_kin_name = normalize_text(payload.get("nextOfKinName"))
+    record.next_of_kin_surname = normalize_text(payload.get("nextOfKinSurname"))
+    record.relationship = normalize_text(payload.get("relationship"))
+    record.contact_number = normalize_text(payload.get("contactNumber"))
+    return record
+
+
+def build_workbook(records):
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Data"
+    ws.append(EXPECTED_COLUMNS)
+    for record in records:
+        ws.append(
+            [
+                record.mf_file,
+                record.deceased_name,
+                record.deceased_surname,
+                record.dod,
+                record.address,
+                record.city,
+                record.province,
+                record.country,
+                record.full_address,
+                record.latitude,
+                record.longitude,
+                record.weight,
+                record.next_of_kin_name,
+                record.next_of_kin_surname,
+                record.relationship,
+                record.contact_number,
+            ]
+        )
+    for col in ws.columns:
+        max_len = max(len(str(cell.value or "")) for cell in col)
+        ws.column_dimensions[col[0].column_letter].width = min(max(max_len + 2, 12), 28)
+    stream = BytesIO()
+    wb.save(stream)
+    stream.seek(0)
+    return stream
+
+
+def dataset_for_user(user):
+    query = Record.query
+    if not user.is_admin:
+        query = query.filter_by(user_id=user.id)
+    records = query.order_by(Record.city.asc(), Record.mf_file.asc()).all()
+    mapped = sum(1 for r in records if r.latitude is not None and r.longitude is not None)
+    provinces = sorted({r.province for r in records if r.province})
+    owners = sorted({r.user.name for r in records})
     return {
-        "geocodedThisRun": geocoded_count,
-        "filledFromCache": cached_count,
-        "googleGeocodingEnabled": bool(api_key),
-        "unresolved": unresolved,
+        "records": [r.to_dict() for r in records],
+        "summary": {
+            "total": len(records),
+            "mapped": mapped,
+            "unmapped": len(records) - mapped,
+            "provinces": provinces,
+            "owners": owners,
+        },
     }
-
-
-def write_row(ws, header_index, row_number, payload):
-    for header in REQUIRED_HEADERS:
-        value = payload.get(header, "")
-        if header in {"Latitude", "Longitude", "Weight"}:
-            value = to_float(value)
-        ws.cell(row=row_number, column=header_index[header]).value = value if value not in (None, "") else None
-
-
-def feature_payload(rows, geo_stats=None):
-    features = [row_to_feature(r) for r in rows]
-    towns = sorted({f["city"] for f in features if f["city"]})
-    provinces = sorted({f["province"] for f in features if f["province"]})
-    ready = [f for f in features if f["lat"] is not None and f["lng"] is not None]
-    payload = {
-        "count": len(features),
-        "mappedCount": len(ready),
-        "towns": towns,
-        "provinces": provinces,
-        "features": features,
-    }
-    if geo_stats:
-        payload.update(geo_stats)
-    return payload
 
 
 @app.route("/")
 def index():
-    return send_from_directory(app.static_folder, "index.html")
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard"))
+    return redirect(url_for("login"))
 
 
-@app.route("/health")
-def health():
-    return jsonify({"ok": True})
-
-
-@app.route("/api/data")
-def api_data():
-    with _lock:
-        wb, ws, header_index, rows = read_workbook_rows()
-        geo_stats = maybe_geocode_and_persist(rows, wb, ws, header_index)
-        payload = feature_payload(rows, geo_stats)
-        payload.update(workbook_validation_summary(rows))
-        return jsonify(payload)
-
-
-@app.route("/api/rows", methods=["POST"])
-def save_row():
-    data = request.get_json(silent=True) or {}
-    row_number = int(data.get("rowNumber") or 0)
-    cleaned, errors = validate_row_payload(data, for_update=bool(row_number))
-    if errors:
-        return jsonify({"ok": False, "errors": errors}), 400
-
-    with _lock:
-        wb, ws, header_index, rows = read_workbook_rows()
-        if row_number:
-            target = next((r for r in rows if r["_row_number"] == row_number), None)
-            if not target:
-                return jsonify({"ok": False, "error": "Row not found."}), 404
-            current = deepcopy(target)
-            current.update(cleaned)
-            cleaned = current
+@app.route("/register", methods=["GET", "POST"])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard"))
+    if request.method == "POST":
+        name = normalize_text(request.form.get("name"))
+        email = normalize_text(request.form.get("email")).lower()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+        if not name or not email or not password:
+            flash("Name, email, and password are required.", "danger")
+        elif password != confirm:
+            flash("Passwords do not match.", "danger")
+        elif User.query.filter(func.lower(User.email) == email).first():
+            flash("An account with that email already exists.", "warning")
         else:
-            row_number = ws.max_row + 1
-            cleaned.setdefault("MF File", str(int(time.time())))
-
-        cleaned.setdefault("Country", DEFAULT_COUNTRY)
-        cleaned["Full Address"] = normalize_text(cleaned.get("Full Address")) or build_full_address(cleaned)
-        write_row(ws, header_index, row_number, cleaned)
-        ws.cell(row=row_number, column=header_index["Contact Number"]).number_format = "@"
-        wb.save(WORKBOOK_PATH)
-
-        wb, ws, header_index, rows = read_workbook_rows()
-        geo_stats = maybe_geocode_and_persist(rows, wb, ws, header_index)
-        payload = feature_payload(rows, geo_stats)
-
-    return jsonify({"ok": True, "message": "Address saved.", **payload})
+            user = User(name=name, email=email, role="user")
+            user.set_password(password)
+            db.session.add(user)
+            db.session.commit()
+            login_user(user)
+            flash("Welcome to Martins Density Map.", "success")
+            return redirect(url_for("dashboard"))
+    return render_template("register.html")
 
 
-@app.route("/api/rows/<int:row_number>", methods=["DELETE"])
-def delete_row(row_number):
-    with _lock:
-        wb, ws, header_index, rows = read_workbook_rows()
-        target = next((r for r in rows if r["_row_number"] == row_number), None)
-        if not target:
-            return jsonify({"ok": False, "error": "Row not found."}), 404
-        ws.delete_rows(row_number, 1)
-        wb.save(WORKBOOK_PATH)
-        wb, ws, header_index, rows = read_workbook_rows()
-        geo_stats = maybe_geocode_and_persist(rows, wb, ws, header_index)
-        payload = feature_payload(rows, geo_stats)
-    return jsonify({"ok": True, "message": "Address deleted.", **payload})
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for("dashboard"))
+    if request.method == "POST":
+        email = normalize_text(request.form.get("email")).lower()
+        password = request.form.get("password", "")
+        user = User.query.filter(func.lower(User.email) == email).first()
+        if user and user.check_password(password):
+            login_user(user, remember=True)
+            flash("Signed in successfully.", "success")
+            next_url = request.args.get("next")
+            return redirect(next_url or url_for("dashboard"))
+        flash("Invalid email or password.", "danger")
+    return render_template("login.html")
+
+
+@app.route("/logout")
+@login_required
+def logout():
+    logout_user()
+    flash("You have been signed out.", "info")
+    return redirect(url_for("login"))
+
+
+@app.route("/dashboard")
+@login_required
+def dashboard():
+    return render_template("dashboard.html", provinces=PROVINCES)
+
+
+@app.route("/admin")
+@login_required
+@admin_required
+def admin():
+    user_count = User.query.count()
+    record_count = Record.query.count()
+    upload_count = Upload.query.count()
+    latest_uploads = Upload.query.order_by(Upload.created_at.desc()).limit(10).all()
+    return render_template(
+        "admin.html",
+        user_count=user_count,
+        record_count=record_count,
+        upload_count=upload_count,
+        latest_uploads=latest_uploads,
+    )
+
+
+@app.route("/api/records")
+@login_required
+def api_records():
+    return jsonify(dataset_for_user(current_user))
+
+
+@app.route("/api/records", methods=["POST"])
+@login_required
+def api_save_record():
+    payload = request.get_json(force=True)
+    try:
+        record = upsert_record(current_user.id, payload)
+        db.session.commit()
+    except ValueError as exc:
+        db.session.rollback()
+        return jsonify({"error": str(exc)}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({"error": "Could not save record."}), 500
+    return jsonify({"message": "Record saved.", "record": record.to_dict()})
+
+
+@app.route("/api/records/<int:record_id>", methods=["DELETE"])
+@login_required
+def api_delete_record(record_id):
+    record = Record.query.get_or_404(record_id)
+    if not current_user.is_admin and record.user_id != current_user.id:
+        return jsonify({"error": "Not allowed."}), 403
+    db.session.delete(record)
+    db.session.commit()
+    return jsonify({"message": "Record deleted."})
 
 
 @app.route("/api/upload", methods=["POST"])
-def upload():
+@login_required
+def api_upload():
     file = request.files.get("file")
-    if not file or not file.filename.lower().endswith(".xlsx"):
-        return jsonify({"ok": False, "error": "Please upload a .xlsx file."}), 400
+    if not file or not file.filename:
+        return jsonify({"error": "Select an Excel file to upload."}), 400
+    filename = secure_filename(file.filename)
+    try:
+        imported_rows, warnings = parse_upload(file)
+        Record.query.filter_by(user_id=current_user.id).delete()
+        for row in imported_rows:
+            db.session.add(Record(user_id=current_user.id, **row))
+        stored_name = f"{current_user.id}_{int(datetime.utcnow().timestamp())}_{filename}"
+        file.stream.seek(0)
+        file.save(os.path.join(UPLOAD_DIR, stored_name))
+        db.session.add(
+            Upload(
+                user_id=current_user.id,
+                filename=stored_name,
+                original_filename=filename,
+                imported_rows=len(imported_rows),
+                status="completed",
+            )
+        )
+        db.session.commit()
+        return jsonify(
+            {
+                "message": f"Imported {len(imported_rows)} records.",
+                "warnings": warnings,
+            }
+        )
+    except ValueError as exc:
+        db.session.rollback()
+        return jsonify({"error": str(exc)}), 400
+    except Exception:
+        db.session.rollback()
+        return jsonify({"error": "Upload failed."}), 500
 
-    with _lock:
-        ensure_data_dir()
-        file.save(WORKBOOK_PATH)
-        wb, ws, header_index, rows = read_workbook_rows()
-        summary = workbook_validation_summary(rows)
-        if summary["validRows"] == 0:
-            return jsonify({"ok": False, "error": "Workbook has no valid address rows."}), 400
-        geo_stats = maybe_geocode_and_persist(rows, wb, ws, header_index)
 
-    return jsonify({
-        "ok": True,
-        "message": "Workbook replaced successfully.",
-        **summary,
-        **geo_stats,
-    })
+@app.route("/download/my-data.xlsx")
+@login_required
+def download_my_data():
+    records = Record.query.filter_by(user_id=current_user.id).order_by(Record.city.asc(), Record.mf_file.asc()).all()
+    stream = build_workbook(records)
+    return send_file(
+        stream,
+        as_attachment=True,
+        download_name="my_martins_density_map_data.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
 
 
-@app.route("/download/data")
-def download_data():
-    return send_from_directory(DATA_DIR, WORKBOOK_PATH.name, as_attachment=True)
+@app.route("/admin/download/central.xlsx")
+@login_required
+@admin_required
+def download_central():
+    records = Record.query.order_by(User.name.asc(), Record.city.asc(), Record.mf_file.asc()).join(User).all()
+    stream = build_workbook(records)
+    return send_file(
+        stream,
+        as_attachment=True,
+        download_name="martins_density_map_data.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+@app.context_processor
+def inject_globals():
+    return {"logo_path": url_for("static", filename="img/martins-logo.png")}
+
+
+with app.app_context():
+    db.create_all()
+    bootstrap_admin()
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.getenv("PORT", "5000")), debug=True)
+    app.run(debug=True)

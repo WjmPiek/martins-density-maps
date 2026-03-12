@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block title %}Login · Martins Density Map{% endblock %}
+{% block content %}
+<section class="auth-wrap">
+  <div class="auth-card">
+    <img src="{{ logo_path }}" alt="Martins Direct logo" class="auth-logo">
+    <div class="eyebrow">Light grey + lilac refresh</div>
+    <h2>Welcome back</h2>
+    <p class="muted">Sign in to manage your own density map data and exports.</p>
+    <form method="post" class="auth-form">
+      <label>Email
+        <input type="email" name="email" placeholder="you@example.com" required>
+      </label>
+      <label>Password
+        <input type="password" name="password" placeholder="••••••••" required>
+      </label>
+      <button class="primary-btn" type="submit">Login</button>
+    </form>
+    <p class="muted center-text">Need an account? <a href="{{ url_for('register') }}">Create one</a></p>
+  </div>
+</section>
+{% endblock %}

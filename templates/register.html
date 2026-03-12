@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Register · Martins Density Map{% endblock %}
+{% block content %}
+<section class="auth-wrap">
+  <div class="auth-card">
+    <img src="{{ logo_path }}" alt="Martins Direct logo" class="auth-logo">
+    <div class="eyebrow">Create account</div>
+    <h2>Start your workspace</h2>
+    <form method="post" class="auth-form">
+      <label>Full name
+        <input type="text" name="name" required>
+      </label>
+      <label>Email
+        <input type="email" name="email" required>
+      </label>
+      <label>Password
+        <input type="password" name="password" required>
+      </label>
+      <label>Confirm password
+        <input type="password" name="confirm_password" required>
+      </label>
+      <button class="primary-btn" type="submit">Create account</button>
+    </form>
+    <p class="muted center-text">Already registered? <a href="{{ url_for('login') }}">Login</a></p>
+  </div>
+</section>
+{% endblock %}

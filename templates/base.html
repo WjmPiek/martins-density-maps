@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Martins Density Map{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+  <div class="shell">
+    {% if current_user.is_authenticated %}
+    <header class="topbar">
+      <div>
+        <div class="brand-row">
+          <img src="{{ logo_path }}" alt="Martins Density Map" class="nav-logo">
+          <div>
+            <div class="eyebrow">Martins Direct</div>
+            <h1>Density Map CRM</h1>
+          </div>
+        </div>
+        <p class="muted">Secure multi-user upload, record editing, and central reporting.</p>
+      </div>
+      <nav class="top-actions">
+        <a class="ghost-btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+        {% if current_user.is_admin %}
+        <a class="ghost-btn" href="{{ url_for('admin') }}">Admin</a>
+        {% endif %}
+        <a class="ghost-btn" href="{{ url_for('logout') }}">Logout</a>
+      </nav>
+    </header>
+    {% endif %}
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}{% endblock %}
+  </div>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

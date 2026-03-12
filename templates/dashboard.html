@@ -1,169 +1,141 @@
 {% extends 'base.html' %}
 {% block title %}Dashboard · Martins Density Map{% endblock %}
+
 {% block content %}
-<section class="stats-grid">
-  <article class="stat-card"><span>Total rows</span><strong id="totalRows">-</strong></article>
-  <article class="stat-card"><span>Mapped</span><strong id="mappedRows">-</strong></article>
-  <article class="stat-card"><span>Unmapped</span><strong id="unmappedRows">-</strong></article>
-  <article class="stat-card"><span>Scope</span><strong>{{ 'All users' if current_user.is_admin else 'My data only' }}</strong></article>
-</section>
-
-<h2>Density Map</h2>
-
-<div id="map" style="height:500px;"></div>
-
-<form method="post" action="{{ url_for('upload_excel') }}" enctype="multipart/form-data" class="upload-form">
-  <label>Upload Excel file</label>
-  <input type="file" name="file" accept=".xlsx,.xls,.csv" required>
-  <button class="primary-btn" type="submit">Upload</button>
-</form>
-
-<div id="map" style="height:500px;"></div>
-
-<script>
-var map = L.map('map').setView([-28.5, 24.5], 5);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-}).addTo(map);
-
-fetch("/api/locations")
-.then(res => res.json())
-.then(data => {
-    const heatPoints = data.map(point => [point.lat, point.lng, point.weight || 1]);
-
-    L.heatLayer(heatPoints, {
-        radius: 25,
-        blur: 20,
-        maxZoom: 10
-    }).addTo(map);
-});
-</script>
-
-<form method="post" action="{{ url_for('upload_excel') }}" enctype="multipart/form-data" class="upload-form">
-  <label>Upload Excel file</label>
-  <input type="file" name="file" accept=".xlsx,.xls,.csv" required>
-  <button class="primary-btn" type="submit">Upload</button>
-</form>
-
-<div id="map" style="height:500px;"></div>
-
-<section class="dashboard-grid">
-  <article class="panel">
-    <div class="panel-head">
-      <div>
-        <h2>Upload workbook</h2>
-        <p class="muted">Uploading replaces only your own dataset.</p>
-      </div>
-      <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download my Excel</a>
-    </div>
-    <form id="uploadForm" class="stack-form">
-      <input id="fileInput" type="file" name="file" accept=".xlsx,.xlsm" required>
-      <button class="primary-btn" type="submit">Upload workbook</button>
-    </form>
-    <div id="uploadStatus" class="info-box hidden"></div>
-  </article>
-
-  <article class="panel">
-    <div class="panel-head">
-      <div>
-        <h2>Filters</h2>
-        <p class="muted">View your density map and record list faster.</p>
-      </div>
-    </div>
-    <div class="filters">
-      <label>Town / city
-        <input id="townFilter" type="search" placeholder="Search town">
-      </label>
-      <label>Province
-        <select id="provinceFilter">
-          <option value="">All provinces</option>
-          {% for province in provinces %}
-          <option value="{{ province }}">{{ province }}</option>
-          {% endfor %}
-        </select>
-      </label>
-    </div>
-  </article>
-</section>
-
-<section class="map-layout">
-  <article class="panel map-panel">
-    <div class="panel-head">
-      <div>
-        <h2>Density map</h2>
-        <p class="muted">Pins show only the data you are allowed to see.</p>
-      </div>
-    </div>
-    <div id="map"></div>
-  </article>
-
-  <article class="panel editor-panel">
-    <div class="panel-head">
-      <div>
-        <h2>Record editor</h2>
-        <p class="muted">Add, update, or delete records on your own data only.</p>
-      </div>
-      <button id="clearFormBtn" class="ghost-btn" type="button">Clear form</button>
-    </div>
-    <form id="recordForm" class="editor-grid">
-      <input type="hidden" id="recordId">
-      <label>MF File<input id="mfFile" required></label>
-      <label>DOD<input id="dod"></label>
-      <label>Deceased name<input id="deceasedName"></label>
-      <label>Deceased surname<input id="deceasedSurname"></label>
-      <label>Street address<input id="address"></label>
-      <label>Town / city<input id="city"></label>
-      <label>Province
-        <select id="province">
-          <option value="">Choose province</option>
-          {% for province in provinces %}
-          <option value="{{ province }}">{{ province }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>Country<input id="country" value="South Africa"></label>
-      <label>Full address<input id="fullAddress"></label>
-      <label>Latitude<input id="latitude" type="number" step="any"></label>
-      <label>Longitude<input id="longitude" type="number" step="any"></label>
-      <label>Weight<input id="weight" type="number" step="any" value="1"></label>
-      <label>Next of kin name<input id="nextOfKinName"></label>
-      <label>Next of kin surname<input id="nextOfKinSurname"></label>
-      <label>Relationship<input id="relationship"></label>
-      <label>Contact number<input id="contactNumber"></label>
-      <div class="form-actions full-span">
-        <button class="primary-btn" type="submit">Save record</button>
-      </div>
-    </form>
-    <div id="formStatus" class="info-box hidden"></div>
-  </article>
-</section>
-
-<section class="panel">
-  <div class="panel-head">
+<section class="dashboard-wrap">
+  <div class="page-header">
+    <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="page-logo">
     <div>
-      <h2>My records</h2>
-      <p class="muted">Edit or delete records directly from your dashboard.</p>
+      <div class="eyebrow">Martin's Franchising</div>
+      <h1>Client Addresses</h1>
     </div>
   </div>
-  <div class="table-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>MF File</th>
-          <th>Name</th>
-          <th>Town</th>
-          <th>Province</th>
-          <th>Address</th>
-          <th>Contact</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody id="recordsTable"></tbody>
-    </table>
-  </div>
+
+  <section class="stats-grid">
+    <article class="stat-card"><span>Total rows</span><strong id="totalRows">-</strong></article>
+    <article class="stat-card"><span>Mapped</span><strong id="mappedRows">-</strong></article>
+    <article class="stat-card"><span>Unmapped</span><strong id="unmappedRows">-</strong></article>
+    <article class="stat-card"><span>Scope</span><strong>{{ 'All users' if current_user.is_admin else 'My data only' }}</strong></article>
+  </section>
+
+  <section class="dashboard-grid">
+    <article class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Upload Excel file</h2>
+          <p class="muted">Uploading replaces only your own dataset.</p>
+        </div>
+        <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download my Excel</a>
+      </div>
+      <form id="uploadForm" class="stack-form" method="post" action="{{ url_for('upload_excel') }}" enctype="multipart/form-data">
+        <input id="fileInput" type="file" name="file" accept=".xlsx,.xls,.xlsm,.csv" required>
+        <button class="primary-btn" type="submit">Upload Excel file</button>
+      </form>
+      <div id="uploadStatus" class="info-box hidden"></div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Filters</h2>
+          <p class="muted">View your map and record list faster.</p>
+        </div>
+      </div>
+      <div class="filters">
+        <label>Town / city
+          <input id="townFilter" type="search" placeholder="Search town">
+        </label>
+        <label>Province
+          <select id="provinceFilter">
+            <option value="">All provinces</option>
+            {% for province in provinces %}
+            <option value="{{ province }}">{{ province }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      </div>
+    </article>
+  </section>
+
+  <section class="map-layout">
+    <article class="panel map-panel">
+      <div class="panel-head">
+        <div>
+          <h2>Client addresses map</h2>
+          <p class="muted">Pins and heatmap show only the data you are allowed to see.</p>
+        </div>
+      </div>
+      <div id="map" style="height:500px;"></div>
+    </article>
+
+    <article class="panel editor-panel">
+      <div class="panel-head">
+        <div>
+          <h2>Record editor</h2>
+          <p class="muted">Add, update, or delete records on your own data only.</p>
+        </div>
+        <button id="clearFormBtn" class="ghost-btn" type="button">Clear form</button>
+      </div>
+      <form id="recordForm" class="editor-grid">
+        <input type="hidden" id="recordId">
+        <label>MF File<input id="mfFile" required></label>
+        <label>DOD<input id="dod"></label>
+        <label>Deceased name<input id="deceasedName"></label>
+        <label>Deceased surname<input id="deceasedSurname"></label>
+        <label>Street address<input id="address"></label>
+        <label>Town / city<input id="city"></label>
+        <label>Province
+          <select id="province">
+            <option value="">Choose province</option>
+            {% for province in provinces %}
+            <option value="{{ province }}">{{ province }}</option>
+            {% endfor %}
+          </select>
+        </label>
+        <label>Country<input id="country" value="South Africa"></label>
+        <label>Full address<input id="fullAddress"></label>
+        <label>Latitude<input id="latitude" type="number" step="any"></label>
+        <label>Longitude<input id="longitude" type="number" step="any"></label>
+        <label>Weight<input id="weight" type="number" step="any" value="1"></label>
+        <label>Next of kin name<input id="nextOfKinName"></label>
+        <label>Next of kin surname<input id="nextOfKinSurname"></label>
+        <label>Relationship<input id="relationship"></label>
+        <label>Contact number<input id="contactNumber"></label>
+        <div class="form-actions full-span">
+          <button class="primary-btn" type="submit">Save record</button>
+        </div>
+      </form>
+      <div id="formStatus" class="info-box hidden"></div>
+    </article>
+  </section>
+
+  <section class="panel">
+    <div class="panel-head">
+      <div>
+        <h2>My records</h2>
+        <p class="muted">Edit or delete records directly from your dashboard.</p>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>MF File</th>
+            <th>Name</th>
+            <th>Town</th>
+            <th>Province</th>
+            <th>Address</th>
+            <th>Contact</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="recordsTable"></tbody>
+      </table>
+    </div>
+  </section>
 </section>
 {% endblock %}
+
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>

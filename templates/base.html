@@ -44,10 +44,12 @@
 
 <body>
 
+{% if current_user.is_authenticated %}
 <div id="splash-screen">
   <img src="{{ url_for('static', filename='apple-touch-icon.png') }}">
-  <h1>Martins Density Map</h1>
+  <h1>Martin's Client Map</h1>
 </div>
+{% endif %}
 
 <button id="installApp" style="display:none;">
   Install App
@@ -139,6 +141,8 @@ window.addEventListener('beforeinstallprompt', (e) => {
 window.addEventListener("load", function () {
 
   const splash = document.getElementById("splash-screen");
+
+  if (!splash) return;
 
   setTimeout(() => {
 

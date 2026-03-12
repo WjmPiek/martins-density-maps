@@ -4,7 +4,7 @@
 {% block content %}
 
 <a class="ghost-btn" href="{{ url_for('download_template') }}">
-Download Excel Template
+  Download Excel Template
 </a>
 
 <section class="dashboard-wrap">
@@ -62,43 +62,40 @@ Download Excel Template
     </article>
   </section>
 
-<article class="panel map-panel">
-  <div class="panel-head">
-    <div>
-      <h2>Client addresses map</h2>
-      <p class="muted">Choose how you want to view your data.</p>
-    </div>
-  </div>
-
-  <div class="filters">
-  <label>View mode
-    <select id="mapMode">
-      <option value="heatmap">Heatmap</option>
-      <option value="pins">Pins</option>
-      <option value="both">Both</option>
-    </select>
-  </label>
-
-  <label>Heat radius
-    <input id="heatRadius" type="range" min="10" max="50" value="25">
-  </label>
-
-  <label>Pin size
-    <input id="pinRadius" type="range" min="3" max="12" value="6">
-  </label>
-</div>
-
-  <div id="map" style="height:560px;"></div>
-</article>
-
   <section class="map-layout">
     <article class="panel map-panel">
       <div class="panel-head">
         <div>
           <h2>Client addresses map</h2>
-          <p class="muted">Pins and heatmap show only the data you are allowed to see.</p>
+          <p class="muted">Choose how you want to view your data.</p>
         </div>
       </div>
+
+      <div class="map-toggle">
+        <button type="button" onclick="showMarkers()">Markers</button>
+        <button type="button" onclick="showClusters()">Clusters</button>
+        <button type="button" onclick="showHeat()">Heatmap</button>
+      </div>
+
+      <div class="filters">
+        <label>View mode
+          <select id="mapMode">
+            <option value="heatmap">Heatmap</option>
+            <option value="pins">Pins</option>
+            <option value="both">Both</option>
+          </select>
+        </label>
+
+        <label>Heat radius
+          <input id="heatRadius" type="range" min="10" max="50" value="25">
+        </label>
+
+        <label>Pin size
+          <input id="pinRadius" type="range" min="3" max="12" value="6">
+        </label>
+      </div>
+
+      <div id="map"></div>
     </article>
 
     <article class="panel editor-panel">
@@ -109,14 +106,18 @@ Download Excel Template
         </div>
         <button id="clearFormBtn" class="ghost-btn" type="button">Clear form</button>
       </div>
+
       <form id="recordForm" class="editor-grid">
         <input type="hidden" id="recordId">
+
         <label>MF File<input id="mfFile" required></label>
         <input id="dod" type="date">
+
         <label>Deceased name<input id="deceasedName"></label>
         <label>Deceased surname<input id="deceasedSurname"></label>
         <label>Street address<input id="address"></label>
         <label>Town / city<input id="city"></label>
+
         <label>Province
           <select id="province">
             <option value="">Choose province</option>
@@ -125,19 +126,24 @@ Download Excel Template
             {% endfor %}
           </select>
         </label>
+
         <label>Country<input id="country" value="South Africa"></label>
         <label>Full address<input id="fullAddress"></label>
         <label>Latitude<input id="latitude" type="number" step="any"></label>
         <label>Longitude<input id="longitude" type="number" step="any"></label>
+
         <input id="weight" type="hidden" value="1">
+
         <label>Next of kin name<input id="nextOfKinName"></label>
         <label>Next of kin surname<input id="nextOfKinSurname"></label>
         <label>Relationship<input id="relationship"></label>
         <label>Contact number<input id="contactNumber"></label>
+
         <div class="form-actions full-span">
           <button class="primary-btn" type="submit">Save record</button>
         </div>
       </form>
+
       <div id="formStatus" class="info-box hidden"></div>
     </article>
   </section>
@@ -149,6 +155,7 @@ Download Excel Template
         <p class="muted">Edit or delete records directly from your dashboard.</p>
       </div>
     </div>
+
     <div class="table-wrap">
       <table>
         <thead>
@@ -168,13 +175,6 @@ Download Excel Template
   </section>
 </section>
 
-<div class="map-toggle">
-  <button type="button" onclick="showMarkers()">Markers</button>
-  <button type="button" onclick="showClusters()">Clusters</button>
-  <button type="button" onclick="showHeat()">Heatmap</button>
-</div>
-
-
 {% endblock %}
 
 {% block scripts %}
@@ -186,51 +186,3 @@ Download Excel Template
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
-
-<script>
-var map = L.map('map').setView([-28.5, 24.5], 5);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-}).addTo(map);
-
-fetch("/api/locations")
-.then(res => res.json())
-.then(data => {
-    const heatPoints = data.map(point => [point.lat, point.lng, point.weight || 1]);
-
-    L.heatLayer(heatPoints, {
-        radius: 25,
-        blur: 20,
-        maxZoom: 10
-    }).addTo(map);
-
-    const markerLayer = L.layerGroup().addTo(map);
-
-    data.forEach(point => {
-        const popupHtml = `
-            <div class="popup-grid">
-                <strong>${point.deceased_name} ${point.deceased_surname}</strong>
-                <div><b>MF File:</b> ${point.mf_file}</div>
-                <div><b>DOD:</b> ${point.dod}</div>
-                <div><b>Address:</b> ${point.full_address || point.address}</div>
-                <div><b>City:</b> ${point.city}</div>
-                <div><b>Province:</b> ${point.province}</div>
-                <div><b>Country:</b> ${point.country}</div>
-                <div><b>Next of kin:</b> ${point.next_of_kin_name} ${point.next_of_kin_surname}</div>
-                <div><b>Relationship:</b> ${point.relationship}</div>
-                <div><b>Contact:</b> ${point.contact_number}</div>
-            </div>
-        `;
-
-        L.circleMarker([point.lat, point.lng], {
-            radius: 6,
-            weight: 1,
-            opacity: 0.9,
-            fillOpacity: 0.85
-        })
-        .bindPopup(popupHtml)
-        .addTo(markerLayer);
-    });
-});
-</script>

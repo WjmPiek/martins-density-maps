@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>{% block title %}Martin's Client Map{% endblock %}</title>
+  <title>{% block title %}Martins Density Map{% endblock %}</title>
 
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
@@ -19,145 +19,107 @@
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-<link rel="stylesheet"
-      href="{{ url_for('static', filename='css/styles.css') }}">
+  <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
 
-{% if current_user.is_authenticated %}
+  {% if current_user.is_authenticated %}
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 
-<link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
+  {% endif %}
 
-<link rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-
-<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-
-<script
-src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places">
-</script>
-
-{% endif %}
-
-<link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
-
+  {% block head %}{% endblock %}
 </head>
 
 <body>
-
-{% if current_user.is_authenticated %}
-<div id="splash-screen">
-  <img src="{{ url_for('static', filename='apple-touch-icon.png') }}">
-  <h1>Martin's Client Map</h1>
-</div>
-{% endif %}
-
-<button id="installApp" style="display:none;">
-  Install App
-</button>
-
-<div class="app-layout">
-
   {% if current_user.is_authenticated %}
-
-  <aside class="sidebar">
-
-    <div class="sidebar-brand">
-      <img src="{{ url_for('static', filename='img/martins-logo.png') }}"
-           class="sidebar-logo">
-
-      <div>
-        <div class="eyebrow">Martin's Client Map</div>
-        <strong>Client addresses</strong>
-      </div>
-    </div>
-
-    <nav class="sidebar-nav">
-      <a href="{{ url_for('dashboard') }}">Dashboard</a>
-
-      {% if current_user.is_admin %}
-      <a href="{{ url_for('admin') }}">Admin</a>
-      {% endif %}
-
-      <a href="{{ url_for('logout') }}">Logout</a>
-    </nav>
-
-  </aside>
-
+  <div id="splash-screen">
+    <img src="{{ url_for('static', filename='apple-touch-icon.png') }}" alt="Martins Density Map">
+    <h1>Martins Density Map</h1>
+  </div>
   {% endif %}
 
-  <main class="main-content">
+  <button id="installApp" style="display:none;">Install App</button>
 
-    <div class="shell">
-
-      {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
-      <section class="flash-stack">
-        {% for category, message in messages %}
-        <div class="flash flash-{{ category }}">
-          {{ message }}
+  <div class="app-layout">
+    {% if current_user.is_authenticated %}
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="{{ url_for('static', filename='img/martins-logo.png') }}" class="sidebar-logo" alt="Martins logo">
+        <div>
+          <div class="eyebrow">Martin's Franchising</div>
+          <strong>Client addresses</strong>
         </div>
-        {% endfor %}
-      </section>
-      {% endif %}
-      {% endwith %}
+      </div>
 
-      {% block content %}{% endblock %}
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('admin') }}">Admin</a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}">Logout</a>
+      </nav>
+    </aside>
+    {% endif %}
 
-    </div>
+    <main class="main-content">
+      <div class="shell">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <section class="flash-stack">
+          {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </section>
+        {% endif %}
+        {% endwith %}
 
-  </main>
+        {% block content %}{% endblock %}
+      </div>
+    </main>
+  </div>
 
-</div>
+  {% block scripts %}{% endblock %}
 
-{% block scripts %}{% endblock %}
+  <script>
+    let deferredPrompt;
 
-<script>
-let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
 
-window.addEventListener('beforeinstallprompt', (e) => {
+      const installBtn = document.getElementById("installApp");
+      if (!installBtn) return;
 
-  e.preventDefault();
-  deferredPrompt = e;
+      installBtn.style.display = "block";
 
-  const installBtn = document.getElementById("installApp");
-  installBtn.style.display = "block";
-
-  installBtn.addEventListener("click", () => {
-
-    installBtn.style.display = "none";
-
-    deferredPrompt.prompt();
-
-    deferredPrompt.userChoice.then(() => {
-      deferredPrompt = null;
+      installBtn.addEventListener("click", () => {
+        installBtn.style.display = "none";
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(() => {
+          deferredPrompt = null;
+        });
+      });
     });
+  </script>
 
-  });
+  <script>
+    window.addEventListener("load", function () {
+      const splash = document.getElementById("splash-screen");
+      if (!splash) return;
 
-});
-</script>
-
-<script>
-window.addEventListener("load", function () {
-
-  const splash = document.getElementById("splash-screen");
-
-  if (!splash) return;
-
-  setTimeout(() => {
-
-    splash.style.opacity = "0";
-    splash.style.transition = "opacity 0.5s ease";
-
-    setTimeout(() => splash.remove(), 500);
-
-  }, 1200);
-
-});
-</script>
-
+      setTimeout(() => {
+        splash.style.opacity = "0";
+        splash.style.transition = "opacity 0.5s ease";
+        setTimeout(() => splash.remove(), 500);
+      }, 1200);
+    });
+  </script>
 </body>
 </html>

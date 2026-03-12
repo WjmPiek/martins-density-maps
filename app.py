@@ -2,6 +2,10 @@ import os
 from datetime import datetime
 from io import BytesIO
 from functools import wraps
+import io
+import pandas as pd
+from geopy.geocoders import Nominatim
+from flask import flash, jsonify
 
 from flask import (
     Flask,
@@ -363,14 +367,15 @@ def dataset_for_user(user):
 @login_required
 def locations():
     records = Record.query.filter_by(user_id=current_user.id).all()
-
-    return [
+    return jsonify([
         {
-            "lat": r.latitude,
-            "lng": r.longitude
+            "lat": float(r.latitude),
+            "lng": float(r.longitude),
+            "weight": float(r.weight or 1)
         }
         for r in records
-    ]
+        if r.latitude is not None and r.longitude is not None
+    ])
 
 @app.route("/")
 def index():
@@ -524,6 +529,73 @@ def api_upload():
         db.session.rollback()
         return jsonify({"error": "Upload failed."}), 500
 
+@app.route("/upload", methods=["POST"])
+@login_required
+def upload_excel():
+    file = request.files.get("file")
+    if not file:
+        flash("Please choose a file.")
+        return redirect(url_for("dashboard"))
+
+    filename = file.filename.lower()
+
+    if filename.endswith(".csv"):
+        df = pd.read_csv(file)
+    else:
+        df = pd.read_excel(file)
+
+    required_cols = [
+        "MF File", "Deceased Name", "Deceased Surname", "DOD", "Address",
+        "City", "Province", "Country", "Full Address", "Latitude", "Longitude",
+        "Weight", "Next of Kin Name", "Next of Kin Surname", "Relationship", "Contact Number"
+    ]
+
+    for col in required_cols:
+        if col not in df.columns:
+            flash(f"Missing required column: {col}")
+            return redirect(url_for("dashboard"))
+
+    geolocator = Nominatim(user_agent="martins_density_map")
+
+    for _, row in df.iterrows():
+        lat = row.get("Latitude")
+        lng = row.get("Longitude")
+        full_address = row.get("Full Address")
+
+        if (pd.isna(lat) or pd.isna(lng)) and pd.notna(full_address):
+            try:
+                location = geolocator.geocode(str(full_address), timeout=10)
+                if location:
+                    lat = location.latitude
+                    lng = location.longitude
+            except Exception:
+                lat = None
+                lng = None
+
+        record = Record(
+            user_id=current_user.id,
+            mf_file=row.get("MF File"),
+            deceased_name=row.get("Deceased Name"),
+            deceased_surname=row.get("Deceased Surname"),
+            dod=row.get("DOD"),
+            address=row.get("Address"),
+            city=row.get("City"),
+            province=row.get("Province"),
+            country=row.get("Country"),
+            full_address=full_address,
+            latitude=lat,
+            longitude=lng,
+            weight=row.get("Weight") or 1,
+            next_of_kin_name=row.get("Next of Kin Name"),
+            next_of_kin_surname=row.get("Next of Kin Surname"),
+            relationship=row.get("Relationship"),
+            contact_number=row.get("Contact Number"),
+        )
+        db.session.add(record)
+
+    db.session.commit()
+    flash("File uploaded successfully.")
+    return redirect(url_for("dashboard"))
 
 @app.route("/download/my-data.xlsx")
 @login_required

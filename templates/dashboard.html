@@ -12,6 +12,14 @@
 
 <div id="map" style="height:500px;"></div>
 
+<form method="post" action="{{ url_for('upload_excel') }}" enctype="multipart/form-data" class="upload-form">
+  <label>Upload Excel file</label>
+  <input type="file" name="file" accept=".xlsx,.xls,.csv" required>
+  <button class="primary-btn" type="submit">Upload</button>
+</form>
+
+<div id="map" style="height:500px;"></div>
+
 <script>
 var map = L.map('map').setView([-28.5, 24.5], 5);
 
@@ -22,26 +30,13 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 fetch("/api/locations")
 .then(res => res.json())
 .then(data => {
+    const heatPoints = data.map(point => [point.lat, point.lng, point.weight || 1]);
 
-    const heatPoints = [];
-
-    data.forEach(point => {
-        heatPoints.push([point.lat, point.lng, 1]);
-    });
-
-    const heat = L.heatLayer(heatPoints, {
+    L.heatLayer(heatPoints, {
         radius: 25,
         blur: 20,
-        maxZoom: 10,
-        gradient: {
-            0.2: '#b9a6ff',
-            0.4: '#8c6ee8',
-            0.6: '#6b4fcf',
-            0.8: '#5235a5',
-            1.0: '#2e1a6b'
-        }
+        maxZoom: 10
     }).addTo(map);
-
 });
 
 </script>

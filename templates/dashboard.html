@@ -3,20 +3,6 @@
 
 {% block content %}
 
-<div class="left-actions">
-  <a class="primary-btn" href="{{ url_for('upload_page') }}">
-    Upload Excel File
-  </a>
-
-  <a class="ghost-btn" href="{{ url_for('download_template') }}">
-    Download Excel Template
-  </a>
-
-  <a class="ghost-btn" href="{{ url_for('download_my_data') }}">
-    Download My Data
-  </a>
-</div>
-
 <section class="dashboard-wrap">
   <div class="page-header">
     <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="page-logo">
@@ -24,6 +10,18 @@
       <div class="eyebrow">Martin's Franchising</div>
       <h1>Client Addresses</h1>
     </div>
+  </div>
+
+  <div class="dashboard-buttons">
+    <a class="primary-btn" href="{{ url_for('upload_page') }}">
+      Upload Excel File
+    </a>
+    <a class="ghost-btn" href="{{ url_for('download_template') }}">
+      Download Excel Template
+    </a>
+    <a class="ghost-btn" href="{{ url_for('download_my_data') }}">
+      Download My Data
+    </a>
   </div>
 
   <section class="stats-grid">
@@ -52,7 +50,6 @@
           <h2>Filters</h2>
           <p class="muted">View your map and record list faster.</p>
         </div>
-        <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download my Excel</a>
       </div>
 
       <div class="filters">

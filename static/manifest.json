@@ -1,6 +1,6 @@
 {
-  "name": "Martins Density Map",
-  "short_name": "Density Map",
+  "name": "Martin's Client Map",
+  "short_name": "Client Map",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

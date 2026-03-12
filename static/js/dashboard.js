@@ -50,17 +50,7 @@ function openGoogleMapsForRecord(record) {
   }
 }
 
-fetch('/api/records', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(payload)
-})
-.then(res => res.json())
-.then(record => {
-  showStatus('formStatus', 'Record saved successfully.');
-  loadMapData();
-  openGoogleMapsForRecord(record);
-});
+
 
 function initAddressAutocomplete() {
   const input = document.getElementById('fullAddress');
@@ -187,16 +177,22 @@ function renderMapData(data) {
   }
 }
 
-document.addEventListener('DOMContentLoaded', initMap);
 
 function popupHtml(record) {
   return `
     <div class="popup-grid">
-      <strong>${record.mfFile}</strong>
-      <div>${record.deceasedName || ''} ${record.deceasedSurname || ''}</div>
-      <div>${record.fullAddress || record.address || '-'}</div>
-      <div>${record.contactNumber || '-'}</div>
-      ${record.owner ? `<div class="muted">Owner: ${record.owner}</div>` : ''}
+      <strong>${record.deceasedName || ''} ${record.deceasedSurname || ''}</strong>
+      <div><b>MF File:</b> ${record.mfFile}</div>
+      <div><b>DOD:</b> ${record.dod || '-'}</div>
+      <div><b>Address:</b> ${record.fullAddress || record.address || '-'}</div>
+      <div><b>City:</b> ${record.city || '-'}</div>
+      <div><b>Province:</b> ${record.province || '-'}</div>
+      <div><b>Contact:</b> ${record.contactNumber || '-'}</div>
+      <div>
+        <a href="https://www.google.com/maps?q=${record.latitude},${record.longitude}" target="_blank">
+        Open in Google Maps
+        </a>
+      </div>
     </div>
   `;
 }
@@ -355,10 +351,14 @@ async function saveRecord(event) {
     setBox(els.formStatus, data.error || 'Could not save record.', true);
     return;
   }
-  setBox(els.formStatus, data.message || 'Record saved.');
-  await loadData();
-  clearForm();
+setBox(els.formStatus, data.message || 'Record saved.');
+await loadData();
+
+if (data.record) {
+  openGoogleMapsForRecord(data.record);
 }
+
+clearForm();
 
 async function deleteRecord(id) {
   const res = await fetch(`/api/records/${id}`, { method: 'DELETE' });
@@ -390,6 +390,6 @@ els.recordsTable.addEventListener('click', (event) => {
   }
 });
 
-initMap();
+
 clearForm();
 loadData();

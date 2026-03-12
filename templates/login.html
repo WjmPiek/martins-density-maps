@@ -1,125 +1,35 @@
-<!doctype html>
-<html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+{% extends 'base.html' %}
+{% block title %}Login · Martins Density Map{% endblock %}
 
-  <title>{% block title %}Martins Density Map{% endblock %}</title>
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <img
+      src="{{ url_for('static', filename='img/martins-logo.png') }}"
+      class="login-logo"
+      alt="Martins Logo"
+    >
 
-  <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
-  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-  <meta name="theme-color" content="#6b2fa3">
+    <div class="eyebrow">Martin's Franchising</div>
+    <h2 style="margin: 6px 0 18px 0;">Sign in</h2>
 
-  <link rel="apple-touch-icon" sizes="180x180"
-        href="{{ url_for('static', filename='apple-touch-icon.png') }}">
-  <link rel="icon" type="image/png" sizes="192x192"
-        href="{{ url_for('static', filename='android-chrome-192.png') }}">
-  <link rel="icon" type="image/png" sizes="512x512"
-        href="{{ url_for('static', filename='android-chrome-512.png') }}">
+    <form method="post" class="auth-form">
+      <label>
+        Email
+        <input type="email" name="email" required>
+      </label>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <label>
+        Password
+        <input type="password" name="password" required>
+      </label>
 
-  <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+      <button class="primary-btn" type="submit">Login</button>
 
-  {% if current_user.is_authenticated %}
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-
-  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
-  {% endif %}
-
-  {% block head %}{% endblock %}
-</head>
-
-<body>
-  {% if current_user.is_authenticated %}
-  <div id="splash-screen">
-    <img src="{{ url_for('static', filename='apple-touch-icon.png') }}" alt="Martins Density Map">
-    <h1>Martins Density Map</h1>
+      <button id="installApp" class="install-btn" type="button" style="display:none;">
+        Install App
+      </button>
+    </form>
   </div>
-  {% endif %}
-
-  <button id="installApp" style="display:none;">Install App</button>
-
-  <div class="app-layout">
-    {% if current_user.is_authenticated %}
-    <aside class="sidebar">
-      <div class="sidebar-brand">
-        <img src="{{ url_for('static', filename='img/martins-logo.png') }}" class="sidebar-logo" alt="Martins logo">
-        <div>
-          <div class="eyebrow">Martin's Franchising</div>
-          <strong>Client addresses</strong>
-        </div>
-      </div>
-
-      <nav class="sidebar-nav">
-        <a href="{{ url_for('dashboard') }}">Dashboard</a>
-        {% if current_user.is_admin %}
-        <a href="{{ url_for('admin') }}">Admin</a>
-        {% endif %}
-        <a href="{{ url_for('logout') }}">Logout</a>
-      </nav>
-    </aside>
-    {% endif %}
-
-    <main class="main-content">
-      <div class="shell">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-        <section class="flash-stack">
-          {% for category, message in messages %}
-          <div class="flash flash-{{ category }}">{{ message }}</div>
-          {% endfor %}
-        </section>
-        {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
-      </div>
-    </main>
-  </div>
-
-  {% block scripts %}{% endblock %}
-
-  <script>
-    let deferredPrompt;
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-
-      const installBtn = document.getElementById("installApp");
-      if (!installBtn) return;
-
-      installBtn.style.display = "block";
-
-      installBtn.addEventListener("click", () => {
-        installBtn.style.display = "none";
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(() => {
-          deferredPrompt = null;
-        });
-      });
-    });
-  </script>
-
-  <script>
-    window.addEventListener("load", function () {
-      const splash = document.getElementById("splash-screen");
-      if (!splash) return;
-
-      setTimeout(() => {
-        splash.style.opacity = "0";
-        splash.style.transition = "opacity 0.5s ease";
-        setTimeout(() => splash.remove(), 500);
-      }, 1200);
-    });
-  </script>
-</body>
-</html>
+</div>
+{% endblock %}

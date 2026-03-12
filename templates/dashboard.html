@@ -71,22 +71,22 @@ Download Excel Template
   </div>
 
   <div class="filters">
-    <label>View mode
-      <select id="mapMode">
-        <option value="heatmap">Heatmap</option>
-        <option value="pins">Pins</option>
-        <option value="both">Both</option>
-      </select>
-    </label>
+  <label>View mode
+    <select id="mapMode">
+      <option value="heatmap">Heatmap</option>
+      <option value="pins">Pins</option>
+      <option value="both">Both</option>
+    </select>
+  </label>
 
-    <label>Heat radius
-      <input id="heatRadius" type="range" min="10" max="50" value="25">
-    </label>
+  <label>Heat radius
+    <input id="heatRadius" type="range" min="10" max="50" value="25">
+  </label>
 
-    <label>Pin size
-      <input id="pinRadius" type="range" min="3" max="12" value="6">
-    </label>
-  </div>
+  <label>Pin size
+    <input id="pinRadius" type="range" min="3" max="12" value="6">
+  </label>
+</div>
 
   <div id="map" style="height:560px;"></div>
 </article>
@@ -99,7 +99,6 @@ Download Excel Template
           <p class="muted">Pins and heatmap show only the data you are allowed to see.</p>
         </div>
       </div>
-      <div id="map" style="height:500px;"></div>
     </article>
 
     <article class="panel editor-panel">
@@ -168,6 +167,14 @@ Download Excel Template
     </div>
   </section>
 </section>
+
+<div class="map-toggle">
+  <button type="button" onclick="showMarkers()">Markers</button>
+  <button type="button" onclick="showClusters()">Clusters</button>
+  <button type="button" onclick="showHeat()">Heatmap</button>
+</div>
+
+
 {% endblock %}
 
 {% block scripts %}

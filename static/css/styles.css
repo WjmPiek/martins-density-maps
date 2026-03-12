@@ -673,3 +673,19 @@ th {
     width: 100%;
   }
 }
+
+.auth-footer {
+  margin-top: 16px;
+  text-align: center;
+  font-size: 14px;
+}
+
+.auth-footer a {
+  color: #6b2fa3;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.auth-footer a:hover {
+  text-decoration: underline;
+}

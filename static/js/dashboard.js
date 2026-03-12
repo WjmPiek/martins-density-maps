@@ -107,14 +107,21 @@ let map;
 let heatLayer;
 let markerLayer;
 
+let clusterLayer;
+
 function initMap() {
-  map = L.map('map').setView([-28.5, 24.5], 5);
+  map = L.map('map', {
+  preferCanvas: true
+  map.options.preferCanvas = true;
+}).setView([-28.5, 24.5], 5);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
   }).addTo(map);
 
-  markerLayer = L.layerGroup().addTo(map);
+  markerLayer = L.layerGroup();
+  clusterLayer = L.markerClusterGroup();
+  
 
   loadMapData();
 
@@ -139,6 +146,8 @@ function renderMapData(data) {
   }
 
   markerLayer.clearLayers();
+  clusterLayer.clearLayers();
+  clusterLayer.addTo(map);
 
   const heatPoints = data.map(point => [point.lat, point.lng, point.weight || 1]);
 
@@ -165,14 +174,15 @@ function renderMapData(data) {
         </div>
       `;
 
-      L.circleMarker([point.lat, point.lng], {
-        radius: pinRadius,
-        weight: 1,
-        opacity: 0.95,
-        fillOpacity: 0.85
-      })
-      .bindPopup(popupHtml)
-      .addTo(markerLayer);
+      const marker = L.circleMarker([point.lat, point.lng], {
+  radius: pinRadius,
+  weight: 1,
+  opacity: 0.95,
+  fillOpacity: 0.85
+}).bindPopup(popupHtml);
+
+markerLayer.addLayer(marker);
+clusterLayer.addLayer(L.marker([point.lat, point.lng]).bindPopup(popupHtml));
     });
   }
 }
@@ -233,9 +243,16 @@ function renderMap() {
   mapped.forEach((record) => {
     heatData.push([record.latitude, record.longitude, Number(record.weight || 1)]);
     bounds.push([record.latitude, record.longitude]);
-    const marker = L.marker([record.latitude, record.longitude]);
+    const marker = L.marker([record.latitude, record.longitude], {
+  icon: L.divIcon({
+    className: "map-pin",
+    iconSize: [10,10]
+  })
+});
+
     marker.bindPopup(popupHtml(record));
-    state.markerLayer.addLayer(marker);
+    state.markerLayer.addMarker(marker);
+    state.markerLayer = L.canvasIconLayer({}).addTo(state.map);
   });
   state.heatLayer = L.heatLayer(heatData, { radius: 24, blur: 18, maxZoom: 12 }).addTo(state.map);
   state.markerLayer.addTo(state.map);
@@ -359,6 +376,7 @@ if (data.record) {
 }
 
 clearForm();
+}
 
 async function deleteRecord(id) {
   const res = await fetch(`/api/records/${id}`, { method: 'DELETE' });
@@ -390,6 +408,36 @@ els.recordsTable.addEventListener('click', (event) => {
   }
 });
 
+
+function clearMapLayers() {
+  if (heatLayer) map.removeLayer(heatLayer);
+  map.removeLayer(markerLayer);
+  map.removeLayer(clusterLayer);
+}
+
+function showMarkers() {
+  clearMapLayers();
+  markerLayer.addTo(map);
+}
+
+function showClusters() {
+  clearMapLayers();
+  clusterLayer.addTo(map);
+}
+
+function showHeat() {
+  clearMapLayers();
+
+  const heatPoints = state.records
+    .filter(r => r.latitude && r.longitude)
+    .map(r => [r.latitude, r.longitude, r.weight || 1]);
+
+  heatLayer = L.heatLayer(heatPoints, {
+    radius: 25,
+    blur: 20,
+    maxZoom: 10
+  }).addTo(map);
+}
 
 clearForm();
 loadData();

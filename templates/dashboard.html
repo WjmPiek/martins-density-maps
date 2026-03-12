@@ -62,43 +62,7 @@
     </article>
   </section>
 
-  <section class="map-layout">
-    <article class="panel map-panel">
-      <div class="panel-head">
-        <div>
-          <h2>Client addresses map</h2>
-          <p class="muted">Choose how you want to view your data.</p>
-        </div>
-      </div>
-
-      <div class="map-toggle">
-        <button type="button" onclick="showMarkers()">Markers</button>
-        <button type="button" onclick="showClusters()">Clusters</button>
-        <button type="button" onclick="showHeat()">Heatmap</button>
-      </div>
-
-      <div class="filters">
-        <label>View mode
-          <select id="mapMode">
-            <option value="heatmap">Heatmap</option>
-            <option value="pins">Pins</option>
-            <option value="both">Both</option>
-          </select>
-        </label>
-
-        <label>Heat radius
-          <input id="heatRadius" type="range" min="10" max="50" value="25">
-        </label>
-
-        <label>Pin size
-          <input id="pinRadius" type="range" min="3" max="12" value="6">
-        </label>
-      </div>
-
-      <div id="map"></div>
-    </article>
-
-    <article class="panel editor-panel">
+      <article class="panel editor-panel">
       <div class="panel-head">
         <div>
           <h2>Record editor</h2>
@@ -111,7 +75,10 @@
         <input type="hidden" id="recordId">
 
         <label>MF File<input id="mfFile" required></label>
-        <input id="dod" type="date">
+        
+        <label>DOD
+          <input id="dod" type="date">
+        </label>
 
         <label>Deceased name<input id="deceasedName"></label>
         <label>Deceased surname<input id="deceasedSurname"></label>
@@ -181,8 +148,12 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet-canvas-markers@1.0.6/leaflet-canvas-markers.min.js"></script>
+
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
 <script>
   window.APP_CONTEXT = { isAdmin: {{ 'true' if current_user.is_admin else 'false' }} };
 </script>
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+
 {% endblock %}

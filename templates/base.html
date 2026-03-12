@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Martins Density Map{% endblock %}</title>
+  <title>{% block title %}Martin's Density Map{% endblock %}</title>
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#6b2fa3">
@@ -20,9 +20,7 @@
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
   {% block head %}{% endblock %}
 
-  <label>Full address<input id="fullAddress" autocomplete="off"></label>
-
-  <style>
+    <style>
   #splash-screen {
     position: fixed;
     inset: 0;
@@ -52,8 +50,8 @@
 <body>
 
   <div id="splash-screen">
-  <img src="{{ url_for('static', filename='apple-touch-icon.png') }}" alt="Martins Density Map Logo">
-  <h1>Martins Density Map</h1>
+  <img src="{{ url_for('static', filename='apple-touch-icon.png') }}" alt="Martin's Density Map Logo">
+  <h1>Client Addresses</h1>
 </div>
 
   <button id="installApp" style="display:none;">

@@ -243,3 +243,28 @@ th { color: var(--muted); font-size: 13px; }
   .shell { padding: 14px; }
   .editor-grid { grid-template-columns: 1fr; }
 }
+
+<style>
+  #splash-screen {
+    position: fixed;
+    inset: 0;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+  }
+
+  #splash-screen img {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 20px;
+  }
+
+  #splash-screen h1 {
+    font-size: 24px;
+    color: #6b2fa3;
+    margin: 0;
+  }
+</style>

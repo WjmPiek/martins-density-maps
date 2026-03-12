@@ -359,6 +359,18 @@ def dataset_for_user(user):
         },
     }
 
+@app.route("/api/locations")
+@login_required
+def locations():
+    records = Record.query.filter_by(user_id=current_user.id).all()
+
+    return [
+        {
+            "lat": r.latitude,
+            "lng": r.longitude
+        }
+        for r in records
+    ]
 
 @app.route("/")
 def index():

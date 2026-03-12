@@ -10,8 +10,7 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
   <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
   {% block head %}{% endblock %}
 </head>
@@ -19,24 +18,25 @@
   <div class="shell">
     {% if current_user.is_authenticated %}
     <header class="topbar">
+  <div>
+    <div class="brand-row">
+      <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="nav-logo">
       <div>
-        <div class="brand-row">
-          <img src="{{ logo_path }}" alt="Martins Density Map" class="nav-logo">
-          <div>
-            <div class="eyebrow">Martins Direct</div>
-            <h1>Density Map CRM</h1>
-          </div>
-        </div>
-        <p class="muted">Secure multi-user upload, record editing, and central reporting.</p>
+        <div class="eyebrow">Martin's Franchising</div>
+        <h1>Client addresses</h1>
       </div>
-      <nav class="top-actions">
-        <a class="ghost-btn" href="{{ url_for('dashboard') }}">Dashboard</a>
-        {% if current_user.is_admin %}
-        <a class="ghost-btn" href="{{ url_for('admin') }}">Admin</a>
-        {% endif %}
-        <a class="ghost-btn" href="{{ url_for('logout') }}">Logout</a>
-      </nav>
-    </header>
+    </div>
+    <p class="muted">Secure multi-user upload, record editing, and central reporting.</p>
+  </div>
+
+  <nav class="top-actions">
+    <a class="ghost-btn" href="{{ url_for('dashboard') }}">Dashboard</a>
+    {% if current_user.is_admin %}
+    <a class="ghost-btn" href="{{ url_for('admin') }}">Admin</a>
+    {% endif %}
+    <a class="ghost-btn" href="{{ url_for('logout') }}">Logout</a>
+  </nav>
+</header>
     {% endif %}
 
     {% with messages = get_flashed_messages(with_categories=true) %}

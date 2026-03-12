@@ -205,6 +205,23 @@ h2 {
   min-width: 0;
 }
 
+.dashboard-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 18px;
+}
+
+.dashboard-logo {
+  height: 70px;
+  width: auto;
+}
+
+.dashboard-title h1 {
+  font-size: 48px;
+  margin: 0;
+}
+
 .dashboard-buttons {
   display: flex;
   gap: 12px;

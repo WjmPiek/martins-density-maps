@@ -3,24 +3,18 @@
 
 {% block content %}
 <section class="dashboard-wrap">
-  <div class="page-header">
-    <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="page-logo">
-    <div>
+  <div class="dashboard-header">
+    <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="dashboard-logo">
+    <div class="dashboard-title">
       <div class="eyebrow">Martin's Franchising</div>
       <h1>Client Addresses</h1>
     </div>
   </div>
 
   <div class="dashboard-buttons">
-    <a class="primary-btn" href="{{ url_for('upload_page') }}">
-      Upload Excel File
-    </a>
-    <a class="ghost-btn" href="{{ url_for('download_template') }}">
-      Download Excel Template
-    </a>
-    <a class="ghost-btn" href="{{ url_for('download_my_data') }}">
-      Download My Data
-    </a>
+    <a class="primary-btn" href="{{ url_for('upload_page') }}">Upload Excel File</a>
+    <a class="ghost-btn" href="{{ url_for('download_template') }}">Download Excel Template</a>
+    <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download My Data</a>
   </div>
 
   <section class="stats-grid">
@@ -125,6 +119,7 @@
         <input id="latitude" type="hidden">
         <input id="longitude" type="hidden">
         <input id="weight" type="hidden" value="1">
+        <input id="fullAddress" type="hidden">
 
         <label>
           MF File
@@ -148,7 +143,7 @@
 
         <label>
           Street address
-          <input id="address">
+          <input id="address" autocomplete="off">
         </label>
 
         <label>
@@ -169,11 +164,6 @@
         <label>
           Country
           <input id="country" value="South Africa">
-        </label>
-
-        <label class="full-span">
-          Full address
-          <input id="fullAddress" autocomplete="off">
         </label>
 
         <label>

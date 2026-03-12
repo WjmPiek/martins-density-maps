@@ -65,47 +65,56 @@ function openGoogleMapsForRecord(record) {
 }
 
 function initAddressAutocomplete() {
-  const input = document.getElementById('fullAddress');
-  if (!input || !window.google || !google.maps || !google.maps.places) return;
+  const streetInput = document.getElementById('address');
+  if (!streetInput || !window.google || !google.maps || !google.maps.places) return;
 
-  const autocomplete = new google.maps.places.Autocomplete(input, {
+  const autocomplete = new google.maps.places.Autocomplete(streetInput, {
     fields: ['formatted_address', 'geometry', 'address_components', 'name'],
+    types: ['address']
   });
 
   autocomplete.addListener('place_changed', () => {
     const place = autocomplete.getPlace();
     if (!place) return;
 
-    if (place.formatted_address) {
-      input.value = place.formatted_address;
-    }
-
-    if (place.geometry && place.geometry.location) {
-      els.latitude.value = place.geometry.location.lat();
-      els.longitude.value = place.geometry.location.lng();
-    }
-
     const components = place.address_components || [];
+
     let city = '';
     let province = '';
     let country = '';
     let streetNumber = '';
     let route = '';
+    let suburb = '';
 
     components.forEach((c) => {
+      if (c.types.includes('street_number')) streetNumber = c.long_name;
+      if (c.types.includes('route')) route = c.long_name;
+      if (c.types.includes('sublocality') || c.types.includes('sublocality_level_1')) suburb = c.long_name;
       if (c.types.includes('locality')) city = c.long_name;
       if (c.types.includes('administrative_area_level_1')) province = c.long_name;
       if (c.types.includes('country')) country = c.long_name;
-      if (c.types.includes('street_number')) streetNumber = c.long_name;
-      if (c.types.includes('route')) route = c.long_name;
     });
 
-    const addressLine = [streetNumber, route].filter(Boolean).join(' ');
+    const streetAddress = [streetNumber, route].filter(Boolean).join(' ').trim();
 
-    els.address.value = addressLine;
-    els.city.value = city;
-    els.province.value = province;
-    els.country.value = country;
+    // Keep the street address visible in the Street address field
+    document.getElementById('address').value = streetAddress || streetInput.value || '';
+
+    // Copy the full formatted address
+    if (place.formatted_address) {
+      document.getElementById('fullAddress').value = place.formatted_address;
+    }
+
+    // Copy the rest into the correct fields
+    document.getElementById('city').value = city || suburb || '';
+    document.getElementById('province').value = province || '';
+    document.getElementById('country').value = country || '';
+
+    // Copy coordinates
+    if (place.geometry && place.geometry.location) {
+      document.getElementById('latitude').value = place.geometry.location.lat();
+      document.getElementById('longitude').value = place.geometry.location.lng();
+    }
   });
 }
 

@@ -152,6 +152,14 @@ h1, h2 {
   padding: 20px;
 }
 
+.popup-grid {
+  display: grid;
+  gap: 6px;
+  min-width: 220px;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
 .brand-row { display: flex; align-items: center; gap: 14px; }
 .nav-logo { width: 56px; height: 56px; border-radius: 16px; }
 .eyebrow { color: var(--primary-strong); text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 700; }

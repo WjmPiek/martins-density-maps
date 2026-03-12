@@ -363,19 +363,7 @@ def dataset_for_user(user):
         },
     }
 
-@app.route("/api/locations")
-@login_required
-def locations():
-    records = Record.query.filter_by(user_id=current_user.id).all()
-    return jsonify([
-        {
-            "lat": float(r.latitude),
-            "lng": float(r.longitude),
-            "weight": float(r.weight or 1)
-        }
-        for r in records
-        if r.latitude is not None and r.longitude is not None
-    ])
+
 
 @app.route("/")
 def index():

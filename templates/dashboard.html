@@ -145,3 +145,51 @@
 </script>
 <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
 {% endblock %}
+
+<script>
+var map = L.map('map').setView([-28.5, 24.5], 5);
+
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+}).addTo(map);
+
+fetch("/api/locations")
+.then(res => res.json())
+.then(data => {
+    const heatPoints = data.map(point => [point.lat, point.lng, point.weight || 1]);
+
+    L.heatLayer(heatPoints, {
+        radius: 25,
+        blur: 20,
+        maxZoom: 10
+    }).addTo(map);
+
+    const markerLayer = L.layerGroup().addTo(map);
+
+    data.forEach(point => {
+        const popupHtml = `
+            <div class="popup-grid">
+                <strong>${point.deceased_name} ${point.deceased_surname}</strong>
+                <div><b>MF File:</b> ${point.mf_file}</div>
+                <div><b>DOD:</b> ${point.dod}</div>
+                <div><b>Address:</b> ${point.full_address || point.address}</div>
+                <div><b>City:</b> ${point.city}</div>
+                <div><b>Province:</b> ${point.province}</div>
+                <div><b>Country:</b> ${point.country}</div>
+                <div><b>Next of kin:</b> ${point.next_of_kin_name} ${point.next_of_kin_surname}</div>
+                <div><b>Relationship:</b> ${point.relationship}</div>
+                <div><b>Contact:</b> ${point.contact_number}</div>
+            </div>
+        `;
+
+        L.circleMarker([point.lat, point.lng], {
+            radius: 6,
+            weight: 1,
+            opacity: 0.9,
+            fillOpacity: 0.85
+        })
+        .bindPopup(popupHtml)
+        .addTo(markerLayer);
+    });
+});
+</script>

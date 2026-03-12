@@ -15,42 +15,50 @@
   {% block head %}{% endblock %}
 </head>
 <body>
-  <div class="shell">
+  <div class="app-layout">
+
     {% if current_user.is_authenticated %}
-    <header class="topbar">
-  <div>
-    <div class="brand-row">
-      <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="nav-logo">
-      <div>
-        <div class="eyebrow">Martin's Franchising</div>
-        <h1>Client addresses</h1>
+    <aside class="sidebar">
+      <div class="sidebar-brand">
+        <img src="{{ url_for('static', filename='img/martins-logo.png') }}" class="sidebar-logo">
+        <div>
+          <div class="eyebrow">Martin's Franchising</div>
+          <strong>Client addresses</strong>
+        </div>
       </div>
-    </div>
-    <p class="muted">Secure multi-user upload, record editing, and central reporting.</p>
-  </div>
 
-  <nav class="top-actions">
-    <a class="ghost-btn" href="{{ url_for('dashboard') }}">Dashboard</a>
-    {% if current_user.is_admin %}
-    <a class="ghost-btn" href="{{ url_for('admin') }}">Admin</a>
-    {% endif %}
-    <a class="ghost-btn" href="{{ url_for('logout') }}">Logout</a>
-  </nav>
-</header>
+      <nav class="sidebar-nav">
+        <a href="{{ url_for('dashboard') }}">Dashboard</a>
+
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('admin') }}">Admin</a>
+        {% endif %}
+
+        <a href="{{ url_for('logout') }}">Logout</a>
+      </nav>
+    </aside>
     {% endif %}
 
-    {% with messages = get_flashed_messages(with_categories=true) %}
-      {% if messages %}
+    <main class="main-content">
+      <div class="shell">
+
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
         <section class="flash-stack">
           {% for category, message in messages %}
           <div class="flash flash-{{ category }}">{{ message }}</div>
           {% endfor %}
         </section>
-      {% endif %}
-    {% endwith %}
+        {% endif %}
+        {% endwith %}
 
-    {% block content %}{% endblock %}
+        {% block content %}{% endblock %}
+
+      </div>
+    </main>
+
   </div>
+
   {% block scripts %}{% endblock %}
 </body>
 </html>

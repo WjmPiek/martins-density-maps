@@ -1,8 +1,7 @@
 services:
   - type: web
     name: martins-density-map
-    env: python
-    plan: starter
+    runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
     envVars:
@@ -21,4 +20,4 @@ services:
 
 databases:
   - name: martins-density-db
-    plan: starter
+    plan: basic-256mb

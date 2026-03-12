@@ -26,14 +26,14 @@ a { color: var(--primary-strong); text-decoration: none; }
   display: flex;
   justify-content: space-between;
   gap: 20px;
-  align-items: center;
+  align-items: middle;
   margin-bottom: 20px;
 }
 .login-logo {
-    width: 90px;
+    width: 220px;
     height: auto;
     display: block;
-    margin-bottom: 12px;
+    margin: 0 auto 10px auto;
 }
 .brand-row { display: flex; align-items: center; gap: 14px; }
 .nav-logo { width: 56px; height: 56px; border-radius: 16px; }

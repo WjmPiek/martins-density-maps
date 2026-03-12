@@ -22,25 +22,26 @@
 
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
+<link rel="stylesheet"
+      href="{{ url_for('static', filename='css/styles.css') }}">
+
 {% if current_user.is_authenticated %}
 
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
 
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+<link rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
 
-  <link rel="stylesheet"
-        href="{{ url_for('static', filename='css/styles.css') }}">
+<script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
 
-  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
+<script
+src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places">
+</script>
 
-  <!-- GOOGLE MAPS AUTOCOMPLETE -->
-  <script
-    src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places">
-  </script>
+{% endif %}
 
-  {% endif %}
+<link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
 
 </head>
 
@@ -68,7 +69,7 @@
            class="sidebar-logo">
 
       <div>
-        <div class="eyebrow">Martin's Franchising</div>
+        <div class="eyebrow">Martin's Client Map</div>
         <strong>Client addresses</strong>
       </div>
     </div>

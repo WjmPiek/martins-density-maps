@@ -1,4 +1,8 @@
-const state = { records: [], filtered: [], map: null, heatLayer: null, markerLayer: null };
+const state = {
+  records: [],
+  filtered: [],
+  currentMapView: 'clusters',
+};
 
 const els = {
   totalRows: document.getElementById('totalRows'),
@@ -30,34 +34,42 @@ const els = {
   nextOfKinSurname: document.getElementById('nextOfKinSurname'),
   relationship: document.getElementById('relationship'),
   contactNumber: document.getElementById('contactNumber'),
+  mapMode: document.getElementById('mapMode'),
+  heatRadius: document.getElementById('heatRadius'),
+  pinRadius: document.getElementById('pinRadius'),
 };
 
+let map;
+let heatLayer = null;
+let markerLayer = null;
+let clusterLayer = null;
+
 function setBox(el, message, isError = false) {
+  if (!el) return;
   el.textContent = message;
   el.classList.remove('hidden');
   el.classList.toggle('error', isError);
 }
 
 function clearBox(el) {
+  if (!el) return;
   el.textContent = '';
   el.classList.add('hidden');
   el.classList.remove('error');
 }
 
 function openGoogleMapsForRecord(record) {
-  if (record.latitude && record.longitude) {
+  if (record && record.latitude && record.longitude) {
     window.open(`https://www.google.com/maps?q=${record.latitude},${record.longitude}`, '_blank');
   }
 }
-
-
 
 function initAddressAutocomplete() {
   const input = document.getElementById('fullAddress');
   if (!input || !window.google || !google.maps || !google.maps.places) return;
 
   const autocomplete = new google.maps.places.Autocomplete(input, {
-    fields: ['formatted_address', 'geometry', 'address_components', 'name']
+    fields: ['formatted_address', 'geometry', 'address_components', 'name'],
   });
 
   autocomplete.addListener('place_changed', () => {
@@ -69,19 +81,18 @@ function initAddressAutocomplete() {
     }
 
     if (place.geometry && place.geometry.location) {
-      document.getElementById('latitude').value = place.geometry.location.lat();
-      document.getElementById('longitude').value = place.geometry.location.lng();
+      els.latitude.value = place.geometry.location.lat();
+      els.longitude.value = place.geometry.location.lng();
     }
 
     const components = place.address_components || [];
-
     let city = '';
     let province = '';
     let country = '';
     let streetNumber = '';
     let route = '';
 
-    components.forEach(c => {
+    components.forEach((c) => {
       if (c.types.includes('locality')) city = c.long_name;
       if (c.types.includes('administrative_area_level_1')) province = c.long_name;
       if (c.types.includes('country')) country = c.long_name;
@@ -91,158 +102,120 @@ function initAddressAutocomplete() {
 
     const addressLine = [streetNumber, route].filter(Boolean).join(' ');
 
-    document.getElementById('address').value = addressLine;
-    document.getElementById('city').value = city;
-    document.getElementById('province').value = province;
-    document.getElementById('country').value = country;
+    els.address.value = addressLine;
+    els.city.value = city;
+    els.province.value = province;
+    els.country.value = country;
   });
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  initMap();
-  initAddressAutocomplete();
-});
-
-let map;
-let heatLayer;
-let markerLayer;
-
-let clusterLayer;
-
 function initMap() {
+  const mapEl = document.getElementById('map');
+  if (!mapEl) return;
+
   map = L.map('map', {
-  preferCanvas: true
-  map.options.preferCanvas = true;
-}).setView([-28.5, 24.5], 5);
+    preferCanvas: true,
+  }).setView([-28.5, 24.5], 5);
 
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
+    attribution: '© OpenStreetMap',
   }).addTo(map);
 
   markerLayer = L.layerGroup();
   clusterLayer = L.markerClusterGroup();
-  
+  state.markerLayer = L.canvasIconLayer({}).addTo(state.map);
 
-  loadMapData();
-
-  document.getElementById('mapMode')?.addEventListener('change', loadMapData);
-  document.getElementById('heatRadius')?.addEventListener('input', loadMapData);
-  document.getElementById('pinRadius')?.addEventListener('input', loadMapData);
-}
-
-function loadMapData() {
-  fetch('/api/locations')
-    .then(res => res.json())
-    .then(data => renderMapData(data));
-}
-
-function renderMapData(data) {
-  const mode = document.getElementById('mapMode')?.value || 'heatmap';
-  const heatRadius = parseInt(document.getElementById('heatRadius')?.value || '25', 10);
-  const pinRadius = parseInt(document.getElementById('pinRadius')?.value || '6', 10);
-
-  if (heatLayer) {
-    map.removeLayer(heatLayer);
-  }
-
-  markerLayer.clearLayers();
-  clusterLayer.clearLayers();
-  clusterLayer.addTo(map);
-
-  const heatPoints = data.map(point => [point.lat, point.lng, point.weight || 1]);
-
-  if (mode === 'heatmap' || mode === 'both') {
-    heatLayer = L.heatLayer(heatPoints, {
-      radius: heatRadius,
-      blur: 20,
-      maxZoom: 10
-    }).addTo(map);
-  }
-
-  if (mode === 'pins' || mode === 'both') {
-    data.forEach(point => {
-      const popupHtml = `
-        <div class="popup-grid">
-          <strong>${point.deceased_name} ${point.deceased_surname}</strong>
-          <div><b>MF File:</b> ${point.mf_file}</div>
-          <div><b>DOD:</b> ${point.dod}</div>
-          <div><b>Address:</b> ${point.full_address || point.address}</div>
-          <div><b>City:</b> ${point.city}</div>
-          <div><b>Province:</b> ${point.province}</div>
-          <div><b>Contact:</b> ${point.contact_number}</div>
-          <div><a href="https://www.google.com/maps?q=${point.lat},${point.lng}" target="_blank">Open in Google Maps</a></div>
-        </div>
-      `;
-
-      const marker = L.circleMarker([point.lat, point.lng], {
-  radius: pinRadius,
-  weight: 1,
-  opacity: 0.95,
-  fillOpacity: 0.85
-}).bindPopup(popupHtml);
-
-markerLayer.addLayer(marker);
-clusterLayer.addLayer(L.marker([point.lat, point.lng]).bindPopup(popupHtml));
+  if (els.mapMode) {
+    els.mapMode.addEventListener('change', () => {
+      const value = els.mapMode.value;
+      if (value === 'pins') state.currentMapView = 'markers';
+      else if (value === 'heatmap') state.currentMapView = 'heat';
+      else state.currentMapView = 'clusters';
+      renderMap();
     });
   }
+
+  if (els.heatRadius) {
+    els.heatRadius.addEventListener('input', renderMap);
+  }
+
+  if (els.pinRadius) {
+    els.pinRadius.addEventListener('input', renderMap);
+  }
 }
 
+function buildPopupFromApiPoint(point) {
+  return `
+    <div class="popup-grid">
+      <strong>${point.deceased_name || ''} ${point.deceased_surname || ''}</strong>
+      <div><b>MF File:</b> ${point.mf_file || '-'}</div>
+      <div><b>DOD:</b> ${point.dod || '-'}</div>
+      <div><b>Address:</b> ${point.full_address || point.address || '-'}</div>
+      <div><b>City:</b> ${point.city || '-'}</div>
+      <div><b>Province:</b> ${point.province || '-'}</div>
+      <div><b>Contact:</b> ${point.contact_number || '-'}</div>
+      <div><a href="https://www.google.com/maps?q=${point.lat},${point.lng}" target="_blank">Open in Google Maps</a></div>
+    </div>
+  `;
+}
 
 function popupHtml(record) {
   return `
     <div class="popup-grid">
       <strong>${record.deceasedName || ''} ${record.deceasedSurname || ''}</strong>
-      <div><b>MF File:</b> ${record.mfFile}</div>
+      <div><b>MF File:</b> ${record.mfFile || '-'}</div>
       <div><b>DOD:</b> ${record.dod || '-'}</div>
       <div><b>Address:</b> ${record.fullAddress || record.address || '-'}</div>
       <div><b>City:</b> ${record.city || '-'}</div>
       <div><b>Province:</b> ${record.province || '-'}</div>
       <div><b>Contact:</b> ${record.contactNumber || '-'}</div>
-      <div>
-        <a href="https://www.google.com/maps?q=${record.latitude},${record.longitude}" target="_blank">
-        Open in Google Maps
-        </a>
-      </div>
+      <div><a href="https://www.google.com/maps?q=${record.latitude},${record.longitude}" target="_blank">Open in Google Maps</a></div>
     </div>
   `;
 }
 
-function applyFilters() {
-  const q = (els.townFilter.value || '').trim().toLowerCase();
-  const province = els.provinceFilter.value;
-  state.filtered = state.records.filter((r) => {
-    const townMatch = !q || (r.city || '').toLowerCase().includes(q);
-    const provinceMatch = !province || r.province === province;
-    return townMatch && provinceMatch;
-  });
-  updateSummary();
-  renderTable();
-  renderMap();
-}
+function clearMapLayers() {
+  if (!map) return;
 
-function updateSummary() {
-  const mapped = state.filtered.filter((r) => Number.isFinite(r.latitude) && Number.isFinite(r.longitude)).length;
-  els.totalRows.textContent = state.filtered.length;
-  els.mappedRows.textContent = mapped;
-  els.unmappedRows.textContent = state.filtered.length - mapped;
+  if (heatLayer && map.hasLayer(heatLayer)) {
+    map.removeLayer(heatLayer);
+  }
+  if (markerLayer && map.hasLayer(markerLayer)) {
+    map.removeLayer(markerLayer);
+  }
+  if (clusterLayer && map.hasLayer(clusterLayer)) {
+    map.removeLayer(clusterLayer);
+  }
+
+  heatLayer = null;
+
+  if (markerLayer) markerLayer.clearLayers();
+  if (clusterLayer) clusterLayer.clearLayers();
 }
 
 function renderMap() {
-  if (state.heatLayer) {
-    state.map.removeLayer(state.heatLayer);
-    state.heatLayer = null;
-  }
-  state.markerLayer.clearLayers();
-  if (state.map.hasLayer(state.markerLayer)) state.map.removeLayer(state.markerLayer);
+  if (!map || !markerLayer || !clusterLayer) return;
 
-  const mapped = state.filtered.filter((r) => Number.isFinite(r.latitude) && Number.isFinite(r.longitude));
+  clearMapLayers();
+
+  const mapped = state.filtered.filter(
+    (r) => Number.isFinite(r.latitude) && Number.isFinite(r.longitude)
+  );
+
   if (!mapped.length) return;
+
+  const heatRadius = parseInt(els.heatRadius?.value || '25', 10);
+  const pinRadius = parseInt(els.pinRadius?.value || '6', 10);
 
   const heatData = [];
   const bounds = [];
+
   mapped.forEach((record) => {
     heatData.push([record.latitude, record.longitude, Number(record.weight || 1)]);
     bounds.push([record.latitude, record.longitude]);
+
+    const popup = popupHtml(record);
+
     const marker = L.marker([record.latitude, record.longitude], {
   icon: L.divIcon({
     className: "map-pin",
@@ -250,13 +223,45 @@ function renderMap() {
   })
 });
 
-    marker.bindPopup(popupHtml(record));
-    state.markerLayer.addMarker(marker);
-    state.markerLayer = L.canvasIconLayer({}).addTo(state.map);
+marker.bindPopup(popupHtml(record));
+state.markerLayer.addMarker(marker);
+
+    const circle = L.circleMarker([record.latitude, record.longitude], {
+      radius: pinRadius,
+      weight: 1,
+      opacity: 0.95,
+      fillOpacity: 0.85,
+    }).bindPopup(popup);
+
+    const clusterMarker = L.marker([record.latitude, record.longitude]).bindPopup(popup);
+
+    markerLayer.addLayer(circle);
+    clusterLayer.addLayer(clusterMarker);
   });
-  state.heatLayer = L.heatLayer(heatData, { radius: 24, blur: 18, maxZoom: 12 }).addTo(state.map);
-  state.markerLayer.addTo(state.map);
-  state.map.fitBounds(bounds, { padding: [24, 24] });
+
+  if (state.currentMapView === 'heat') {
+    heatLayer = L.heatLayer(heatData, {
+      radius: heatRadius,
+      blur: 20,
+      maxZoom: 10,
+    }).addTo(map);
+  } else if (state.currentMapView === 'markers') {
+    markerLayer.addTo(map);
+  } else {
+    clusterLayer.addTo(map);
+  }
+
+  map.fitBounds(bounds, { padding: [24, 24] });
+}
+
+function updateSummary() {
+  const mapped = state.filtered.filter(
+    (r) => Number.isFinite(r.latitude) && Number.isFinite(r.longitude)
+  ).length;
+
+  els.totalRows.textContent = state.filtered.length;
+  els.mappedRows.textContent = mapped;
+  els.unmappedRows.textContent = state.filtered.length - mapped;
 }
 
 function renderTable() {
@@ -264,20 +269,40 @@ function renderTable() {
     els.recordsTable.innerHTML = '<tr><td colspan="7">No records found.</td></tr>';
     return;
   }
-  els.recordsTable.innerHTML = state.filtered.map((record) => `
-    <tr>
-      <td>${record.mfFile}</td>
-      <td>${record.deceasedName || ''} ${record.deceasedSurname || ''}</td>
-      <td>${record.city || ''}</td>
-      <td>${record.province || ''}</td>
-      <td>${record.fullAddress || record.address || ''}</td>
-      <td>${record.contactNumber || ''}</td>
-      <td class="action-cell">
-        <button class="small-btn" data-action="edit" data-id="${record.id}">Edit</button>
-        <button class="small-btn danger-btn" data-action="delete" data-id="${record.id}">Delete</button>
-      </td>
-    </tr>
-  `).join('');
+
+  els.recordsTable.innerHTML = state.filtered
+    .map(
+      (record) => `
+      <tr>
+        <td>${record.mfFile || ''}</td>
+        <td>${record.deceasedName || ''} ${record.deceasedSurname || ''}</td>
+        <td>${record.city || ''}</td>
+        <td>${record.province || ''}</td>
+        <td>${record.fullAddress || record.address || ''}</td>
+        <td>${record.contactNumber || ''}</td>
+        <td class="action-cell">
+          <button class="small-btn" data-action="edit" data-id="${record.id}">Edit</button>
+          <button class="small-btn danger-btn" data-action="delete" data-id="${record.id}">Delete</button>
+        </td>
+      </tr>
+    `
+    )
+    .join('');
+}
+
+function applyFilters() {
+  const q = (els.townFilter?.value || '').trim().toLowerCase();
+  const province = els.provinceFilter?.value || '';
+
+  state.filtered = state.records.filter((r) => {
+    const townMatch = !q || (r.city || '').toLowerCase().includes(q);
+    const provinceMatch = !province || r.province === province;
+    return townMatch && provinceMatch;
+  });
+
+  updateSummary();
+  renderTable();
+  renderMap();
 }
 
 function fillForm(record) {
@@ -318,19 +343,32 @@ async function loadData() {
 async function uploadWorkbook(event) {
   event.preventDefault();
   clearBox(els.uploadStatus);
+
   const formData = new FormData();
   if (!els.fileInput.files[0]) {
     setBox(els.uploadStatus, 'Choose an Excel file first.', true);
     return;
   }
+
   formData.append('file', els.fileInput.files[0]);
-  const res = await fetch('/api/upload', { method: 'POST', body: formData });
+
+  const res = await fetch('/api/upload', {
+    method: 'POST',
+    body: formData,
+  });
+
   const data = await res.json();
+
   if (!res.ok) {
     setBox(els.uploadStatus, data.error || 'Upload failed.', true);
     return;
   }
-  const warningText = data.warnings && data.warnings.length ? ` Warnings: ${data.warnings.join(' | ')}` : '';
+
+  const warningText =
+    data.warnings && data.warnings.length
+      ? ` Warnings: ${data.warnings.join(' | ')}`
+      : '';
+
   setBox(els.uploadStatus, `${data.message}${warningText}`);
   els.uploadForm.reset();
   await loadData();
@@ -339,6 +377,7 @@ async function uploadWorkbook(event) {
 async function saveRecord(event) {
   event.preventDefault();
   clearBox(els.formStatus);
+
   const payload = {
     id: els.recordId.value,
     mfFile: els.mfFile.value,
@@ -358,86 +397,84 @@ async function saveRecord(event) {
     relationship: els.relationship.value,
     contactNumber: els.contactNumber.value,
   };
+
   const res = await fetch('/api/records', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
   });
+
   const data = await res.json();
+
   if (!res.ok) {
     setBox(els.formStatus, data.error || 'Could not save record.', true);
     return;
   }
-setBox(els.formStatus, data.message || 'Record saved.');
-await loadData();
 
-if (data.record) {
-  openGoogleMapsForRecord(data.record);
-}
+  setBox(els.formStatus, data.message || 'Record saved.');
+  await loadData();
 
-clearForm();
+  if (data.record) {
+    openGoogleMapsForRecord(data.record);
+  }
+
+  clearForm();
 }
 
 async function deleteRecord(id) {
   const res = await fetch(`/api/records/${id}`, { method: 'DELETE' });
   const data = await res.json();
+
   if (!res.ok) {
     alert(data.error || 'Could not delete record.');
     return;
   }
+
   await loadData();
 }
 
-els.uploadForm.addEventListener('submit', uploadWorkbook);
-els.recordForm.addEventListener('submit', saveRecord);
-els.clearFormBtn.addEventListener('click', clearForm);
-els.townFilter.addEventListener('input', applyFilters);
-els.provinceFilter.addEventListener('change', applyFilters);
-els.recordsTable.addEventListener('click', (event) => {
-  const btn = event.target.closest('button[data-action]');
-  if (!btn) return;
-  const id = Number(btn.dataset.id);
-  const record = state.records.find((item) => item.id === id);
-  if (!record) return;
-  if (btn.dataset.action === 'edit') {
-    fillForm(record);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-  if (btn.dataset.action === 'delete' && confirm(`Delete ${record.mfFile}?`)) {
-    deleteRecord(id);
-  }
-});
-
-
-function clearMapLayers() {
-  if (heatLayer) map.removeLayer(heatLayer);
-  map.removeLayer(markerLayer);
-  map.removeLayer(clusterLayer);
-}
-
 function showMarkers() {
-  clearMapLayers();
-  markerLayer.addTo(map);
+  state.currentMapView = 'markers';
+  renderMap();
 }
 
 function showClusters() {
-  clearMapLayers();
-  clusterLayer.addTo(map);
+  state.currentMapView = 'clusters';
+  renderMap();
 }
 
 function showHeat() {
-  clearMapLayers();
-
-  const heatPoints = state.records
-    .filter(r => r.latitude && r.longitude)
-    .map(r => [r.latitude, r.longitude, r.weight || 1]);
-
-  heatLayer = L.heatLayer(heatPoints, {
-    radius: 25,
-    blur: 20,
-    maxZoom: 10
-  }).addTo(map);
+  state.currentMapView = 'heat';
+  renderMap();
 }
 
-clearForm();
-loadData();
+document.addEventListener('DOMContentLoaded', () => {
+  initMap();
+  initAddressAutocomplete();
+  clearForm();
+  loadData();
+
+  els.uploadForm?.addEventListener('submit', uploadWorkbook);
+  els.recordForm?.addEventListener('submit', saveRecord);
+  els.clearFormBtn?.addEventListener('click', clearForm);
+  els.townFilter?.addEventListener('input', applyFilters);
+  els.provinceFilter?.addEventListener('change', applyFilters);
+
+  els.recordsTable?.addEventListener('click', (event) => {
+    const btn = event.target.closest('button[data-action]');
+    if (!btn) return;
+
+    const id = Number(btn.dataset.id);
+    const record = state.records.find((item) => item.id === id);
+    if (!record) return;
+
+    if (btn.dataset.action === 'edit') {
+      fillForm(record);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    if (btn.dataset.action === 'delete' && confirm(`Delete ${record.mfFile}?`)) {
+      deleteRecord(id);
+    }
+  });
+});

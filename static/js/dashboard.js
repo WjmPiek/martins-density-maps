@@ -55,13 +55,47 @@ function clearBox(el) {
   el.classList.remove('error');
 }
 
-function openGoogleMapsForRecord(record) {
-  if (!record) return;
+function focusSavedRecordOnMap(record) {
+  if (!map || !record) return;
+
   const lat = Number(record.latitude);
   const lng = Number(record.longitude);
-  if (Number.isFinite(lat) && Number.isFinite(lng)) {
-    window.open(`https://www.google.com/maps?q=${lat},${lng}`, '_blank');
+
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+
+  const popup = popupHtml(record);
+
+  clearMapLayers();
+
+  const pinRadius = parseInt(els.pinRadius?.value || '6', 10);
+
+  const circle = L.circleMarker([lat, lng], {
+    radius: pinRadius,
+    weight: 1,
+    opacity: 0.95,
+    fillOpacity: 0.85,
+  }).bindPopup(popup);
+
+  const clusterMarker = L.marker([lat, lng]).bindPopup(popup);
+
+  markerLayer.addLayer(circle);
+  clusterLayer.addLayer(clusterMarker);
+
+  if (state.currentMapView === 'heat') {
+    heatLayer = L.heatLayer([[lat, lng, Number(record.weight || 1)]], {
+      radius: parseInt(els.heatRadius?.value || '25', 10),
+      blur: 20,
+      maxZoom: 10,
+    }).addTo(map);
+  } else if (state.currentMapView === 'markers') {
+    markerLayer.addTo(map);
+    circle.openPopup();
+  } else {
+    clusterLayer.addTo(map);
+    clusterMarker.openPopup();
   }
+
+  map.setView([lat, lng], 16, { animate: true });
 }
 
 function initAddressAutocomplete() {
@@ -338,11 +372,13 @@ async function saveRecord(event) {
   }
 
   setBox(els.formStatus, data.message || 'Record saved.');
-  await loadData();
+await loadData();
 
-  if (data.record) openGoogleMapsForRecord(data.record);
-  clearForm();
+if (data.record) {
+  focusSavedRecordOnMap(data.record);
 }
+
+clearForm();
 
 async function deleteRecord(id) {
   const res = await fetch(`/api/records/${id}`, { method: 'DELETE' });

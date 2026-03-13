@@ -1,7 +1,7 @@
 const state = {
   records: [],
   filtered: [],
-  currentMapView: 'clusters',
+  currentMapView: 'markers',
 };
 
 const els = {
@@ -42,6 +42,9 @@ let baseLayer;
 let heatLayer = null;
 let markerLayer = null;
 let clusterLayer = null;
+let provinceChartInstance = null;
+let cityChartInstance = null;
+let monthlyChartInstance = null;
 
 function setBox(el, message, isError = false) {
   if (!el) return;
@@ -64,7 +67,7 @@ function popupHtml(record) {
       <div><b>MF File:</b> ${record.mfFile || '-'}</div>
       <div><b>DOD:</b> ${record.dod || '-'}</div>
       <div><b>Address:</b> ${record.fullAddress || record.address || '-'}</div>
-      <div><b>City:</b> ${record.city || '-'}</div>
+      <div><b>Town:</b> ${record.city || '-'}</div>
       <div><b>Province:</b> ${record.province || '-'}</div>
       <div><b>Contact:</b> ${record.contactNumber || '-'}</div>
       <div><a href="https://www.google.com/maps?q=${record.latitude},${record.longitude}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div>
@@ -113,9 +116,9 @@ function initAddressAutocomplete() {
   });
 
   streetInput.addEventListener('input', () => {
-    els.latitude.value = '';
-    els.longitude.value = '';
-    els.fullAddress.value = '';
+    if (els.latitude) els.latitude.value = '';
+    if (els.longitude) els.longitude.value = '';
+    if (els.fullAddress) els.fullAddress.value = '';
     if (els.country && !els.country.value) els.country.value = 'South Africa';
   });
 
@@ -145,8 +148,8 @@ function initAddressAutocomplete() {
       streetInput.value ||
       '';
 
-    els.address.value = streetValue;
-    els.city.value = locality && locality.long_name ? locality.long_name : '';
+    if (els.address) els.address.value = streetValue;
+    if (els.city) els.city.value = locality && locality.long_name ? locality.long_name : '';
     if (els.province) {
       els.province.value = normalizeProvinceName(
         province && province.long_name ? province.long_name : ''
@@ -155,14 +158,16 @@ function initAddressAutocomplete() {
     if (els.postalCode) {
       els.postalCode.value = postalCode && postalCode.long_name ? postalCode.long_name : '';
     }
-    els.country.value = country && country.long_name ? country.long_name : 'South Africa';
-    els.fullAddress.value = place.formatted_address || '';
+    if (els.country) {
+      els.country.value = country && country.long_name ? country.long_name : 'South Africa';
+    }
+    if (els.fullAddress) els.fullAddress.value = place.formatted_address || '';
 
     if (place.geometry && place.geometry.location) {
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
-      els.latitude.value = lat;
-      els.longitude.value = lng;
+      if (els.latitude) els.latitude.value = lat;
+      if (els.longitude) els.longitude.value = lng;
 
       if (map) {
         map.setView([lat, lng], 15, { animate: true });
@@ -192,7 +197,6 @@ function buildTileLayer(url, options = {}) {
   });
 }
 
-
 function attachTileFallbacks() {
   if (!baseLayer || !map) return;
 
@@ -215,6 +219,10 @@ function attachTileFallbacks() {
 
     baseLayer.addTo(map);
   });
+}
+
+function refreshMapSize() {
+  if (map) map.invalidateSize();
 }
 
 function initMap() {
@@ -261,10 +269,6 @@ function initMap() {
   els.heatRadius?.addEventListener('input', renderMap);
   els.pinRadius?.addEventListener('input', renderMap);
 
-  const refreshMapSize = () => {
-    if (map) map.invalidateSize();
-  };
-
   window.addEventListener('load', () => setTimeout(refreshMapSize, 300));
   setTimeout(refreshMapSize, 300);
 }
@@ -290,9 +294,12 @@ function renderMap() {
     (r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude))
   );
 
-  if (!mapped.length) return;
+  if (!mapped.length) {
+    map.setView([-28.5, 24.5], 5);
+    return;
+  }
 
-  map.invalidateSize();
+  refreshMapSize();
 
   const heatRadius = parseInt(els.heatRadius?.value || '25', 10);
   const pinRadius = parseInt(els.pinRadius?.value || '6', 10);
@@ -342,7 +349,7 @@ function renderMap() {
   }
 
   if (bounds.length === 1) {
-    map.setView(bounds[0], 8, { animate: true });
+    map.setView(bounds[0], 8);
   } else {
     map.fitBounds(bounds, { padding: [24, 24] });
   }
@@ -370,14 +377,8 @@ function focusSavedRecordOnMap(record) {
   markerLayer.addLayer(circle);
   clusterLayer.addLayer(clusterMarker);
 
-  if (state.currentMapView === 'clusters') {
-    clusterLayer.addTo(map);
-    clusterMarker.openPopup();
-  } else {
-    markerLayer.addTo(map);
-    circle.openPopup();
-  }
-
+  markerLayer.addTo(map);
+  circle.openPopup();
   map.setView([lat, lng], 16, { animate: true });
 }
 
@@ -435,24 +436,24 @@ function applyFilters() {
 }
 
 function fillForm(record) {
-  els.recordId.value = record.id || '';
-  els.mfFile.value = record.mfFile || '';
-  els.dod.value = record.dod || '';
-  els.deceasedName.value = record.deceasedName || '';
-  els.deceasedSurname.value = record.deceasedSurname || '';
-  els.address.value = record.address || '';
-  els.city.value = record.city || '';
-  els.province.value = record.province || '';
-  els.postalCode.value = record.postalCode || '';
-  els.country.value = record.country || 'South Africa';
-  els.fullAddress.value = record.fullAddress || '';
-  els.latitude.value = record.latitude ?? '';
-  els.longitude.value = record.longitude ?? '';
-  els.weight.value = record.weight ?? 1;
-  els.nextOfKinName.value = record.nextOfKinName || '';
-  els.nextOfKinSurname.value = record.nextOfKinSurname || '';
-  els.relationship.value = record.relationship || '';
-  els.contactNumber.value = record.contactNumber || '';
+  if (els.recordId) els.recordId.value = record.id || '';
+  if (els.mfFile) els.mfFile.value = record.mfFile || '';
+  if (els.dod) els.dod.value = record.dod || '';
+  if (els.deceasedName) els.deceasedName.value = record.deceasedName || '';
+  if (els.deceasedSurname) els.deceasedSurname.value = record.deceasedSurname || '';
+  if (els.address) els.address.value = record.address || '';
+  if (els.city) els.city.value = record.city || '';
+  if (els.province) els.province.value = record.province || '';
+  if (els.postalCode) els.postalCode.value = record.postalCode || '';
+  if (els.country) els.country.value = record.country || 'South Africa';
+  if (els.fullAddress) els.fullAddress.value = record.fullAddress || '';
+  if (els.latitude) els.latitude.value = record.latitude ?? '';
+  if (els.longitude) els.longitude.value = record.longitude ?? '';
+  if (els.weight) els.weight.value = record.weight ?? 1;
+  if (els.nextOfKinName) els.nextOfKinName.value = record.nextOfKinName || '';
+  if (els.nextOfKinSurname) els.nextOfKinSurname.value = record.nextOfKinSurname || '';
+  if (els.relationship) els.relationship.value = record.relationship || '';
+  if (els.contactNumber) els.contactNumber.value = record.contactNumber || '';
 }
 
 function clearForm() {
@@ -479,24 +480,24 @@ async function saveRecord(event) {
   clearBox(els.formStatus);
 
   const payload = {
-    id: els.recordId.value,
-    mfFile: els.mfFile.value,
-    dod: els.dod.value,
-    deceasedName: els.deceasedName.value,
-    deceasedSurname: els.deceasedSurname.value,
-    address: els.address.value,
-    city: els.city.value,
-    province: els.province.value,
-    postalCode: els.postalCode.value,
-    country: els.country.value,
-    fullAddress: els.fullAddress.value,
-    latitude: els.latitude.value,
-    longitude: els.longitude.value,
-    weight: els.weight.value,
-    nextOfKinName: els.nextOfKinName.value,
-    nextOfKinSurname: els.nextOfKinSurname.value,
-    relationship: els.relationship.value,
-    contactNumber: els.contactNumber.value,
+    id: els.recordId?.value,
+    mfFile: els.mfFile?.value,
+    dod: els.dod?.value,
+    deceasedName: els.deceasedName?.value,
+    deceasedSurname: els.deceasedSurname?.value,
+    address: els.address?.value,
+    city: els.city?.value,
+    province: els.province?.value,
+    postalCode: els.postalCode?.value,
+    country: els.country?.value,
+    fullAddress: els.fullAddress?.value,
+    latitude: els.latitude?.value,
+    longitude: els.longitude?.value,
+    weight: els.weight?.value,
+    nextOfKinName: els.nextOfKinName?.value,
+    nextOfKinSurname: els.nextOfKinSurname?.value,
+    relationship: els.relationship?.value,
+    contactNumber: els.contactNumber?.value,
   };
 
   const res = await fetch('/api/records', {
@@ -552,20 +553,31 @@ function showHeat() {
   renderMap();
 }
 
-window.showMarkers = showMarkers;
-window.showClusters = showClusters;
-window.showHeat = showHeat;
+function destroyChart(instance) {
+  if (instance && typeof instance.destroy === 'function') {
+    instance.destroy();
+  }
+}
 
 async function loadAnalytics() {
-  const provinceChart = document.getElementById('provinceChart');
-  const cityChart = document.getElementById('cityChart');
-  const monthlyChart = document.getElementById('monthlyChart');
-  if (!provinceChart || !cityChart || !monthlyChart || typeof Chart === 'undefined') return;
+  const provinceCanvas = document.getElementById('provinceChart');
+  const cityCanvas = document.getElementById('cityChart');
+  const monthlyCanvas = document.getElementById('monthlyChart');
+
+  if (!provinceCanvas || !cityCanvas || !monthlyCanvas || typeof Chart === 'undefined') {
+    return;
+  }
 
   const res = await fetch('/api/analytics');
+  if (!res.ok) return;
+
   const data = await res.json();
 
-  new Chart(provinceChart, {
+  destroyChart(provinceChartInstance);
+  destroyChart(cityChartInstance);
+  destroyChart(monthlyChartInstance);
+
+  provinceChartInstance = new Chart(provinceCanvas, {
     type: 'bar',
     data: {
       labels: Object.keys(data.province || {}),
@@ -576,7 +588,7 @@ async function loadAnalytics() {
     },
   });
 
-  new Chart(cityChart, {
+  cityChartInstance = new Chart(cityCanvas, {
     type: 'bar',
     data: {
       labels: Object.keys(data.cities || {}),
@@ -587,7 +599,7 @@ async function loadAnalytics() {
     },
   });
 
-  new Chart(monthlyChart, {
+  monthlyChartInstance = new Chart(monthlyCanvas, {
     type: 'line',
     data: {
       labels: Object.keys(data.months || {}),
@@ -598,6 +610,10 @@ async function loadAnalytics() {
     },
   });
 }
+
+window.showMarkers = showMarkers;
+window.showClusters = showClusters;
+window.showHeat = showHeat;
 
 document.addEventListener('DOMContentLoaded', () => {
   initMap();

@@ -4,12 +4,6 @@
 {% block content %}
 <section class="dashboard-wrap">
   <section class="dashboard-top-fixed">
-    <div class="dashboard-buttons">
-      <a class="primary-btn" href="{{ url_for('upload_page') }}">Upload Excel File</a>
-      <a class="ghost-btn" href="{{ url_for('download_template') }}">Download Excel Template</a>
-      <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download My Data</a>
-    </div>
-
     <section class="stats-grid">
       <article class="stat-card">
         <span>Total rows</span>
@@ -109,7 +103,6 @@
           <button id="clearFormBtn" class="ghost-btn" type="button">Clear form</button>
         </div>
 
-        
         <form id="recordForm" class="editor-grid" novalidate>
           <input type="hidden" id="recordId">
           <input id="latitude" type="hidden">
@@ -120,19 +113,23 @@
           <div class="form-section-card full-span">
             <h3>Deceased Details</h3>
             <div class="editor-grid">
-              <label>MF File
+              <label>
+                MF File
                 <input id="mfFile" required>
               </label>
 
-              <label>DOD
+              <label>
+                DOD
                 <input id="dod" type="date">
               </label>
 
-              <label>Deceased name
+              <label>
+                Deceased name
                 <input id="deceasedName">
               </label>
 
-              <label>Deceased surname
+              <label>
+                Deceased surname
                 <input id="deceasedSurname">
               </label>
             </div>
@@ -141,7 +138,8 @@
           <div class="form-section-card full-span">
             <h3>Address Details</h3>
             <div class="editor-grid">
-              <label>Street address
+              <label>
+                Street address
                 <input
                   id="address"
                   name="address"
@@ -151,14 +149,15 @@
                   spellcheck="false"
                   autocorrect="off"
                   autocapitalize="off">
-
               </label>
 
-              <label>Town / city
+              <label>
+                Town / city
                 <input id="city" autocomplete="address-level2">
               </label>
 
-              <label>Province
+              <label>
+                Province
                 <select id="province" autocomplete="address-level1">
                   <option value="">Choose province</option>
                   {% for province in provinces %}
@@ -167,11 +166,13 @@
                 </select>
               </label>
 
-              <label>Postal code
+              <label>
+                Postal code
                 <input id="postalCode" autocomplete="postal-code">
               </label>
 
-              <label>Country
+              <label>
+                Country
                 <input id="country" value="South Africa" autocomplete="country-name">
               </label>
             </div>
@@ -180,19 +181,25 @@
           <div class="form-section-card full-span">
             <h3>Next of Kin Details</h3>
             <div class="editor-grid">
-              <label>Next of kin name
+              <label>
+                Next of kin name
                 <input id="nextOfKinName">
               </label>
 
-              <label>Next of kin surname
+              <label>
+                Next of kin surname
                 <input id="nextOfKinSurname">
               </label>
 
-              <label>Relationship
+              <label>
+                Relationship
                 <input id="relationship">
               </label>
 
-              <input id="contactNumber" inputmode="numeric" maxlength="12" placeholder="082 123 4567" required>
+              <label>
+                Contact number
+                <input id="contactNumber" inputmode="numeric" maxlength="12" placeholder="082 123 4567" required>
+              </label>
             </div>
           </div>
 
@@ -201,7 +208,6 @@
             <p class="form-required-note">Fields marked required must be completed before saving.</p>
           </div>
         </form>
-
 
         <div id="formStatus" class="info-box hidden"></div>
         <p id="addressHelp" class="address-help muted hidden"></p>
@@ -241,12 +247,14 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
 <script>
   window.APP_CONTEXT = {
     isAdmin: {{ 'true' if current_user.is_admin else 'false' }},
     googleMapsApiKey: {{ google_maps_api_key|tojson if google_maps_api_key else '""' }}
   };
 </script>
+
 {% if google_maps_api_key %}
 <script>
   window.APP_CONTEXT.googleMapsApiKey = {{ google_maps_api_key|tojson }};
@@ -277,8 +285,7 @@
       if (!field.hasAttribute('required')) return;
       const label = field.closest('label');
       if (!label) return;
-      const marker = label.querySelector('.required-star');
-      if (!marker) {
+      if (!label.querySelector('.required-star')) {
         const star = document.createElement('span');
         star.className = 'required-star';
         star.textContent = ' *';
@@ -334,25 +341,19 @@
 </script>
 
 <script>
-document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener('DOMContentLoaded', function () {
+    const contactField = document.getElementById('contactNumber');
+    if (!contactField) return;
 
-  const form = document.getElementById("recordForm");
-  const contactField = document.getElementById("contactNumber");
-
-  if (contactField) {
     function formatSAPhoneNumber(value) {
-      const digits = value.replace(/\D/g, "").slice(0, 10);
+      const digits = value.replace(/\D/g, '').slice(0, 10);
 
-      if (digits.length <= 3) {
-        return digits;
-      }
-      if (digits.length <= 6) {
-        return digits.slice(0, 3) + " " + digits.slice(3);
-      }
-      return digits.slice(0, 3) + " " + digits.slice(3, 6) + " " + digits.slice(6, 10);
+      if (digits.length <= 3) return digits;
+      if (digits.length <= 6) return digits.slice(0, 3) + ' ' + digits.slice(3);
+      return digits.slice(0, 3) + ' ' + digits.slice(3, 6) + ' ' + digits.slice(6, 10);
     }
 
-    contactField.addEventListener("input", function () {
+    contactField.addEventListener('input', function () {
       const start = this.selectionStart;
       const beforeLength = this.value.length;
       this.value = formatSAPhoneNumber(this.value);
@@ -361,95 +362,25 @@ document.addEventListener("DOMContentLoaded", function () {
 
       try {
         this.setSelectionRange(start + diff, start + diff);
-      } catch (e) {}
-    });
-
-    contactField.addEventListener("blur", function () {
-      const digits = this.value.replace(/\D/g, "");
-      if (digits.length > 0 && digits.length !== 10) {
-        this.setCustomValidity("Enter a valid South African phone number with 10 digits.");
-      } else {
-        this.setCustomValidity("");
+      } catch (e) {
+        // ignore caret issues on unsupported browsers
       }
     });
 
-    contactField.addEventListener("focus", function () {
-      this.setCustomValidity("");
+    contactField.addEventListener('blur', function () {
+      const digits = this.value.replace(/\D/g, '');
+      if (digits.length > 0 && digits.length !== 10) {
+        this.setCustomValidity('Enter a valid South African phone number with 10 digits.');
+      } else {
+        this.setCustomValidity('');
+      }
     });
-  }
 
-});
+    contactField.addEventListener('focus', function () {
+      this.setCustomValidity('');
+    });
+  });
 </script>
-
-{% extends 'base.html' %}
-{% block title %}Dashboard · Martins Density Map{% endblock %}
-
-{% block content %}
-<section class="dashboard-wrap">
-
-  <section class="dashboard-top-fixed">
-
-    <section class="stats-grid">
-      <article class="stat-card">
-        <span>Total rows</span>
-        <strong id="totalRows">-</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Mapped</span>
-        <strong id="mappedRows">-</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Unmapped</span>
-        <strong id="unmappedRows">-</strong>
-      </article>
-
-      <article class="stat-card">
-        <span>Scope</span>
-        <strong>{{ 'All users' if current_user.is_admin else 'My data only' }}</strong>
-      </article>
-    </section>
-
-    <section class="dashboard-grid">
-      <article class="panel">
-        <div class="panel-head">
-          <div>
-            <h2>Filters</h2>
-            <p class="muted">View your map and record list faster.</p>
-          </div>
-        </div>
-
-        <div class="filters">
-          <label>
-            Town / city
-            <input id="townFilter" type="search" placeholder="Search town">
-          </label>
-
-          <label>
-            Province
-            <select id="provinceFilter">
-              <option value="">All provinces</option>
-              {% for province in provinces %}
-              <option value="{{ province }}">{{ province }}</option>
-              {% endfor %}
-            </select>
-          </label>
-
-          <label>
-            View mode
-            <select id="mapMode">
-              <option value="clusters">Clusters</option>
-              <option value="pins">Pins</option>
-              <option value="heatmap">Heatmap</option>
-            </select>
-          </label>
-        </div>
-
-      </article>
-    </section>
-
-  </section>
 
 <script src="{{ url_for('static', filename='js/dashboard.js', v='20260313-4') }}"></script>
 {% endblock %}

@@ -878,11 +878,6 @@ td {
   font-weight: 800;
 }
 
-label:has(input[required])::after {
-  content: " *";
-  color: #d44;
-  font-weight: 600;
-}
 
 .form-section-card label {
   position: relative;
@@ -988,5 +983,32 @@ label:has(input[required])::after {
 @media (max-width: 720px) {
   .form-section-card .editor-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Mobile only: let top toolbar scroll away, and hide file action buttons */
+@media (max-width: 1080px) {
+  .sidebar {
+    position: static;
+    top: auto;
+    left: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding: 16px;
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 12px;
+  }
+
+  .sidebar-actions {
+    display: none;
   }
 }

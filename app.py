@@ -3,11 +3,9 @@ from datetime import datetime
 from functools import wraps
 from io import BytesIO
 
-import requests
-import threading
-import time
-
-import pandas as pd
+import json
+from urllib.parse import urlencode
+from urllib.request import urlopen
 from flask import (
     Flask,
     flash,
@@ -105,18 +103,18 @@ def geocode_address(full_address):
         return None, None
 
     try:
-        url = "https://maps.googleapis.com/maps/api/geocode/json"
-        params = {
+        params = urlencode({
             "address": full_address,
-            "key": GOOGLE_MAPS_API_KEY
-        }
+            "key": GOOGLE_MAPS_API_KEY,
+        })
+        url = f"https://maps.googleapis.com/maps/api/geocode/json?{params}"
 
-        r = requests.get(url, params=params, timeout=5)
-        data = r.json()
+        with urlopen(url, timeout=5) as response:
+            data = json.load(response)
 
-        if data["status"] == "OK":
+        if data.get("status") == "OK" and data.get("results"):
             location = data["results"][0]["geometry"]["location"]
-            return location["lat"], location["lng"]
+            return location.get("lat"), location.get("lng")
 
     except Exception as e:
         print("Geocode error:", e)
@@ -610,7 +608,6 @@ def api_save_record():
         db.session.rollback()
         return jsonify({"error": "Could not save record."}), 500
 
-    write_records_to_disk(current_user, f"{current_user.name}.xlsx")
     return jsonify({"message": "Record saved.", "record": record.to_dict()})
 
 
@@ -624,42 +621,7 @@ def api_delete_record(record_id):
 
     db.session.delete(record)
     db.session.commit()
-    write_records_to_disk(current_user, f"{current_user.name}.xlsx")
     return jsonify({"message": "Record deleted."})
-
-
-@app.route("/api/analytics")
-@login_required
-def api_analytics():
-    query = Record.query
-    if not current_user.is_admin:
-        query = query.filter_by(user_id=current_user.id)
-
-    records = query.order_by(Record.created_at.asc()).all()
-
-    province = {}
-    cities = {}
-    months = {}
-
-    for record in records:
-        province_name = normalize_text(record.province) or "Unknown"
-        province[province_name] = province.get(province_name, 0) + 1
-
-        city_name = normalize_text(record.city) or "Unknown"
-        cities[city_name] = cities.get(city_name, 0) + 1
-
-        month_key = record.created_at.strftime("%Y-%m") if record.created_at else "Unknown"
-        months[month_key] = months.get(month_key, 0) + 1
-
-    cities = dict(sorted(cities.items(), key=lambda item: (-item[1], item[0]))[:10])
-    province = dict(sorted(province.items(), key=lambda item: item[0]))
-    months = dict(sorted(months.items(), key=lambda item: item[0]))
-
-    return jsonify({
-        "province": province,
-        "cities": cities,
-        "months": months,
-    })
 
 
 @app.route("/api/upload", methods=["POST"])

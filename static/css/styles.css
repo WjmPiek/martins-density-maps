@@ -832,7 +832,7 @@ td {
 
 @media (max-width: 1080px) {
   .sidebar-logo {
-    width: 150px;
+    width: 50px;
   }
 
   .sidebar-brand .eyebrow {
@@ -845,7 +845,7 @@ td {
 }
 
   .sidebar-logo {
-    width: 110px;
+    width: 210px;
   }
 
   .sidebar-brand .eyebrow,

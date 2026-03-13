@@ -878,6 +878,12 @@ td {
   font-weight: 800;
 }
 
+label:has(input[required])::after {
+  content: " *";
+  color: #d44;
+  font-weight: 600;
+}
+
 .form-section-card label {
   position: relative;
   display: grid;

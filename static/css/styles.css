@@ -102,6 +102,17 @@ label {
 }
 
 /* login page */
+/* =====================================
+   AUTH / LOGIN PAGE
+   DO NOT MODIFY WITHOUT TESTING LOGIN
+===================================== */
+
+.auth-body {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(180deg, #f8f7fb 0%, #f1eff7 100%);
+}
 .auth-wrap {
   min-height: 100vh;
   display: grid;

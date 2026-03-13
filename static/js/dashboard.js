@@ -180,34 +180,30 @@ window.initGoogleAddress = function initGoogleAddress() {
 };
 
 function autoMapMode() {
-  const count = state.filtered.length;
-  if (count < 30) {
-    state.currentMapView = 'markers';
-  } else if (count < 200) {
-    state.currentMapView = 'clusters';
-  } else {
-    state.currentMapView = 'heat';
-  }
+  state.currentMapView = 'markers';
+  if (els.mapMode) els.mapMode.value = 'pins';
 }
 
 function buildTileLayer(url, options = {}) {
   return L.tileLayer(url, {
     maxZoom: 19,
     attribution: '&copy; OpenStreetMap contributors',
-    ...options
+    ...options,
   });
 }
+
 
 function attachTileFallbacks() {
   if (!baseLayer || !map) return;
 
   let fallbackUsed = false;
-
   baseLayer.on('tileerror', () => {
     if (fallbackUsed || !map) return;
     fallbackUsed = true;
 
-    map.removeLayer(baseLayer);
+    if (map.hasLayer(baseLayer)) {
+      map.removeLayer(baseLayer);
+    }
 
     baseLayer = buildTileLayer(
       'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
@@ -226,25 +222,22 @@ function initMap() {
   if (!mapEl || typeof L === 'undefined') return;
 
   const southAfricaBounds = [
-    [-35.5, 16.0], // south-west
-    [-22.0, 33.5], // north-east
+    [-35.5, 16.0],
+    [-22.0, 33.5],
   ];
 
   map = L.map('map', {
     preferCanvas: true,
     zoomControl: true,
     maxBounds: southAfricaBounds,
-    maxBoundsViscosity: 1.0
+    maxBoundsViscosity: 1.0,
   });
 
   map.fitBounds(southAfricaBounds);
 
-  baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
-  });
-
+  baseLayer = buildTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
   baseLayer.addTo(map);
+  attachTileFallbacks();
 
   markerLayer = L.layerGroup();
   clusterLayer = L.markerClusterGroup({
@@ -254,18 +247,28 @@ function initMap() {
     showCoverageOnHover: false,
   });
 
-  els.mapMode?.addEventListener('change', () => {
-    const value = els.mapMode.value;
-    if (value === 'pins') state.currentMapView = 'markers';
-    else if (value === 'heatmap') state.currentMapView = 'heat';
-    else state.currentMapView = 'clusters';
-    renderMap();
-  });
+  if (els.mapMode) {
+    els.mapMode.value = 'pins';
+    els.mapMode.addEventListener('change', () => {
+      const value = els.mapMode.value;
+      if (value === 'heatmap') state.currentMapView = 'heat';
+      else if (value === 'clusters') state.currentMapView = 'clusters';
+      else state.currentMapView = 'markers';
+      renderMap();
+    });
+  }
 
   els.heatRadius?.addEventListener('input', renderMap);
   els.pinRadius?.addEventListener('input', renderMap);
 
-  
+  const refreshMapSize = () => {
+    if (map) map.invalidateSize();
+  };
+
+  window.addEventListener('load', () => setTimeout(refreshMapSize, 300));
+  setTimeout(refreshMapSize, 300);
+}
+
 function clearMapLayers() {
   if (!map) return;
 
@@ -318,7 +321,7 @@ function renderMap() {
     clusterLayer.addLayer(clusterMarker);
   });
 
-  if (state.currentMapView === 'heat') {
+  if (state.currentMapView === 'heat' && mapped.length > 20) {
     heatLayer = L.heatLayer(heatData, {
       radius: heatRadius,
       blur: 25,
@@ -332,13 +335,17 @@ function renderMap() {
         1.0: 'red',
       },
     }).addTo(map);
-  } else if (state.currentMapView === 'markers') {
-    markerLayer.addTo(map);
-  } else {
+  } else if (state.currentMapView === 'clusters' && mapped.length > 1) {
     clusterLayer.addTo(map);
+  } else {
+    markerLayer.addTo(map);
   }
 
-  map.fitBounds(bounds, { padding: [24, 24] });
+  if (bounds.length === 1) {
+    map.setView(bounds[0], 8, { animate: true });
+  } else {
+    map.fitBounds(bounds, { padding: [24, 24] });
+  }
 }
 
 function focusSavedRecordOnMap(record) {
@@ -363,18 +370,12 @@ function focusSavedRecordOnMap(record) {
   markerLayer.addLayer(circle);
   clusterLayer.addLayer(clusterMarker);
 
-  if (state.currentMapView === 'heat') {
-    heatLayer = L.heatLayer([[lat, lng, Number(record.weight || 1)]], {
-      radius: parseInt(els.heatRadius?.value || '25', 10),
-      blur: 20,
-      maxZoom: 10,
-    }).addTo(map);
-  } else if (state.currentMapView === 'markers') {
-    markerLayer.addTo(map);
-    circle.openPopup();
-  } else {
+  if (state.currentMapView === 'clusters') {
     clusterLayer.addTo(map);
     clusterMarker.openPopup();
+  } else {
+    markerLayer.addTo(map);
+    circle.openPopup();
   }
 
   map.setView([lat, lng], 16, { animate: true });

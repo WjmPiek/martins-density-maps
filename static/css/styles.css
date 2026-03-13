@@ -293,7 +293,37 @@ label {
   border-color: transparent;
 }
 
+.sidebar-actions {
+  display: grid;
+  gap: 10px;
+  margin: 8px 0 16px;
+}
 
+.sidebar-actions .primary-btn,
+.sidebar-actions .ghost-btn {
+  width: 100%;
+  min-width: 0;
+  justify-content: center;
+  text-align: center;
+  padding: 12px 14px;
+  border-radius: 14px;
+}
+
+.sidebar-actions .primary-btn {
+  background: var(--primary);
+  color: #fff;
+  border: 1px solid transparent;
+}
+
+.sidebar-actions .ghost-btn {
+  background: #fff;
+  color: var(--text);
+  border: 1px solid var(--line);
+}
+
+.dashboard-buttons {
+  display: none;
+}
 
 .shell {
   width: 100%;

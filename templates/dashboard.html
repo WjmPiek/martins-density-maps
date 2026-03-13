@@ -381,5 +381,75 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+{% extends 'base.html' %}
+{% block title %}Dashboard · Martins Density Map{% endblock %}
+
+{% block content %}
+<section class="dashboard-wrap">
+
+  <section class="dashboard-top-fixed">
+
+    <section class="stats-grid">
+      <article class="stat-card">
+        <span>Total rows</span>
+        <strong id="totalRows">-</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Mapped</span>
+        <strong id="mappedRows">-</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Unmapped</span>
+        <strong id="unmappedRows">-</strong>
+      </article>
+
+      <article class="stat-card">
+        <span>Scope</span>
+        <strong>{{ 'All users' if current_user.is_admin else 'My data only' }}</strong>
+      </article>
+    </section>
+
+    <section class="dashboard-grid">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Filters</h2>
+            <p class="muted">View your map and record list faster.</p>
+          </div>
+        </div>
+
+        <div class="filters">
+          <label>
+            Town / city
+            <input id="townFilter" type="search" placeholder="Search town">
+          </label>
+
+          <label>
+            Province
+            <select id="provinceFilter">
+              <option value="">All provinces</option>
+              {% for province in provinces %}
+              <option value="{{ province }}">{{ province }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label>
+            View mode
+            <select id="mapMode">
+              <option value="clusters">Clusters</option>
+              <option value="pins">Pins</option>
+              <option value="heatmap">Heatmap</option>
+            </select>
+          </label>
+        </div>
+
+      </article>
+    </section>
+
+  </section>
+
 <script src="{{ url_for('static', filename='js/dashboard.js', v='20260313-4') }}"></script>
 {% endblock %}

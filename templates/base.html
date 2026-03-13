@@ -54,11 +54,15 @@
         </div>
       </div>
 
+      <div class="sidebar-actions">
+        <a class="primary-btn" href="{{ url_for('upload_page') }}">Upload Excel File</a>
+        <a class="ghost-btn" href="{{ url_for('download_template') }}">Download Excel Template</a>
+        <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download My Data</a>
+      </div>
+
       <nav class="sidebar-nav">
         <a href="{{ url_for('dashboard') }}">Dashboard</a>
-        {% if current_user.is_admin %}
         <a href="{{ url_for('admin') }}">Admin</a>
-        {% endif %}
         <a href="{{ url_for('logout') }}">Logout</a>
       </nav>
     </aside>

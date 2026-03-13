@@ -23,7 +23,6 @@ from flask_login import (
     logout_user,
 )
 from flask_sqlalchemy import SQLAlchemy
-from geopy.geocoders import Nominatim
 from openpyxl import Workbook, load_workbook
 from sqlalchemy import func
 from sqlalchemy.orm import joinedload
@@ -35,8 +34,6 @@ app = Flask(__name__)
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
-BRANCH_DIR = os.path.join(UPLOAD_DIR, "branches")
-EXPORT_DIR = os.path.join(UPLOAD_DIR, "exports")
 INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
 LOGO_PATH = os.path.join(BASE_DIR, "static", "img", "martins-logo.png")
 TEMPLATE_EXPORT = os.path.join(BASE_DIR, "martins_density_map_data.xlsx")
@@ -78,8 +75,6 @@ EXPORT_COLUMNS = [
     "Contact Number",
 ]
 
-OPTIONAL_UPLOAD_COLUMNS = ["Full Address", "Latitude", "Longitude", "Weight"]
-
 PROVINCES = [
     "Eastern Cape",
     "Free State",
@@ -92,10 +87,12 @@ PROVINCES = [
     "Western Cape",
 ]
 
+BRANCH_DIR = os.path.join(BASE_DIR, "data")
+CENTRAL_XLSX_PATH = os.path.join(BRANCH_DIR, "central.xlsx")
+
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-os.makedirs(BRANCH_DIR, exist_ok=True)
-os.makedirs(EXPORT_DIR, exist_ok=True)
 os.makedirs(INSTANCE_DIR, exist_ok=True)
+os.makedirs(BRANCH_DIR, exist_ok=True)
 
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me-in-render")
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
@@ -252,58 +249,32 @@ def normalize_float(value):
 
 
 def build_full_address(address, city, province, country):
-    return ", ".join([part for part in [address, city, province, country] if normalize_text(part)])
-
-
-def branch_storage_name(filename, fallback_name="branch"):
-    safe_name = secure_filename(filename or "")
-    if not safe_name:
-        safe_name = f"{fallback_name}.xlsx"
-    root, ext = os.path.splitext(safe_name)
-    if ext.lower() not in {".xlsx", ".xlsm"}:
-        ext = ".xlsx"
-    return f"{root}{ext}"
-
-
-def branch_file_path(filename):
-    return os.path.join(BRANCH_DIR, branch_storage_name(filename))
-
-
-def geocode_address(full_address):
-    if not full_address:
-        return None, None
-
-    geolocator = Nominatim(user_agent="martins_density_map")
-    try:
-        location = geolocator.geocode(full_address, timeout=10)
-        if location:
-            return location.latitude, location.longitude
-    except Exception:
-        pass
-    return None, None
+    return ", ".join([part for part in [address, city, province, country] if part])
 
 
 def parse_upload(file_storage):
+    file_storage.stream.seek(0)
     wb = load_workbook(file_storage, data_only=True)
     ws = wb[wb.sheetnames[0]]
     header_row = [normalize_text(cell) for cell in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
 
-    missing_required = [col for col in UPLOAD_COLUMNS if col not in header_row]
-    if missing_required:
-        raise ValueError("Workbook is missing required columns: " + ", ".join(missing_required))
+    has_basic = header_row[: len(UPLOAD_COLUMNS)] == UPLOAD_COLUMNS
+    has_full = header_row[: len(EXPORT_COLUMNS)] == EXPORT_COLUMNS
 
-    usable_columns = [col for col in header_row if col in set(UPLOAD_COLUMNS + OPTIONAL_UPLOAD_COLUMNS)]
+    if not has_basic and not has_full:
+        raise ValueError("Workbook columns do not match the required Martins template.")
+
+    active_columns = EXPORT_COLUMNS if has_full else UPLOAD_COLUMNS
 
     records = []
     warnings = []
     seen_mf = set()
 
     for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
-        data = dict(zip(header_row, row[: len(header_row)]))
-        filtered_values = [data.get(col) for col in usable_columns]
+        data = dict(zip(active_columns, row[: len(active_columns)]))
         mf_file = normalize_text(data.get("MF File"))
 
-        if not any(normalize_text(v) for v in filtered_values):
+        if not any(normalize_text(v) for v in data.values()):
             continue
 
         if not mf_file:
@@ -311,44 +282,71 @@ def parse_upload(file_storage):
             continue
 
         if mf_file in seen_mf:
-            warnings.append(f"Row {idx}: duplicate MF File '{mf_file}' in upload; keeping latest row.")
+            warnings.append(f"Row {idx}: duplicate MF File '{mf_file}' skipped.")
+            continue
         seen_mf.add(mf_file)
 
         address = normalize_text(data.get("Address"))
         city = normalize_text(data.get("City"))
         province = normalize_text(data.get("Province"))
-        country = normalize_text(data.get("Country")) or "South Africa"
+        country = normalize_text(data.get("Country"))
         full_address = normalize_text(data.get("Full Address")) or build_full_address(address, city, province, country)
-        latitude = normalize_float(data.get("Latitude"))
-        longitude = normalize_float(data.get("Longitude"))
-        weight = normalize_float(data.get("Weight")) or 1.0
 
-        if latitude is None or longitude is None:
-            latitude, longitude = geocode_address(full_address)
-
-        row_payload = {
-            "mf_file": mf_file,
-            "deceased_name": normalize_text(data.get("Deceased Name")),
-            "deceased_surname": normalize_text(data.get("Deceased Surname")),
-            "dod": normalize_text(data.get("DOD")),
-            "address": address,
-            "city": city,
-            "province": province,
-            "country": country,
-            "full_address": full_address,
-            "latitude": latitude,
-            "longitude": longitude,
-            "weight": weight,
-            "next_of_kin_name": normalize_text(data.get("Next of Kin Name")),
-            "next_of_kin_surname": normalize_text(data.get("Next of Kin Surname")),
-            "relationship": normalize_text(data.get("Relationship")),
-            "contact_number": normalize_text(data.get("Contact Number")),
-        }
-
-        records = [r for r in records if r["mf_file"] != mf_file]
-        records.append(row_payload)
+        records.append(
+            {
+                "mf_file": mf_file,
+                "deceased_name": normalize_text(data.get("Deceased Name")),
+                "deceased_surname": normalize_text(data.get("Deceased Surname")),
+                "dod": normalize_text(data.get("DOD")),
+                "address": address,
+                "city": city,
+                "province": province,
+                "country": country,
+                "full_address": full_address,
+                "latitude": normalize_float(data.get("Latitude")),
+                "longitude": normalize_float(data.get("Longitude")),
+                "weight": normalize_float(data.get("Weight")) or 1.0,
+                "next_of_kin_name": normalize_text(data.get("Next of Kin Name")),
+                "next_of_kin_surname": normalize_text(data.get("Next of Kin Surname")),
+                "relationship": normalize_text(data.get("Relationship")),
+                "contact_number": normalize_text(data.get("Contact Number")),
+            }
+        )
 
     return records, warnings
+
+
+def workbook_path_for_filename(filename):
+    safe_name = secure_filename(filename or "")
+    stem, ext = os.path.splitext(safe_name)
+    if not stem:
+        stem = f"user_{current_user.id}"
+    if ext.lower() != ".xlsx":
+        ext = ".xlsx"
+    return os.path.join(BRANCH_DIR, f"{stem}{ext}")
+
+
+def write_records_to_disk(user, original_filename=None):
+    user_records = (
+        Record.query.filter_by(user_id=user.id)
+        .order_by(Record.city.asc(), Record.mf_file.asc())
+        .all()
+    )
+
+    branch_path = workbook_path_for_filename(original_filename or f"{user.name}.xlsx")
+    with open(branch_path, "wb") as fh:
+        fh.write(build_workbook(user_records).getvalue())
+
+    all_records = (
+        Record.query.options(joinedload(Record.user))
+        .join(User)
+        .order_by(User.name.asc(), Record.city.asc(), Record.mf_file.asc())
+        .all()
+    )
+    with open(CENTRAL_XLSX_PATH, "wb") as fh:
+        fh.write(build_workbook(all_records).getvalue())
+
+    return branch_path
 
 
 def upsert_record(user_id, payload):
@@ -367,42 +365,18 @@ def upsert_record(user_id, payload):
     record.address = normalize_text(payload.get("address"))
     record.city = normalize_text(payload.get("city"))
     record.province = normalize_text(payload.get("province"))
-    record.country = normalize_text(payload.get("country")) or "South Africa"
+    record.country = normalize_text(payload.get("country"))
     record.full_address = normalize_text(payload.get("fullAddress")) or build_full_address(
         record.address, record.city, record.province, record.country
     )
     record.latitude = normalize_float(payload.get("latitude"))
     record.longitude = normalize_float(payload.get("longitude"))
-    if record.latitude is None or record.longitude is None:
-        record.latitude, record.longitude = geocode_address(record.full_address)
     record.weight = normalize_float(payload.get("weight")) or 1.0
     record.next_of_kin_name = normalize_text(payload.get("NextOfKinName") or payload.get("nextOfKinName"))
     record.next_of_kin_surname = normalize_text(payload.get("NextOfKinSurname") or payload.get("nextOfKinSurname"))
     record.relationship = normalize_text(payload.get("relationship"))
     record.contact_number = normalize_text(payload.get("contactNumber"))
     return record
-
-
-def sync_excel_exports_for_user(user, branch_filename=None):
-    user_records = (
-        Record.query.filter_by(user_id=user.id)
-        .order_by(Record.city.asc(), Record.mf_file.asc())
-        .all()
-    )
-    branch_filename = branch_filename or f"{user.name}.xlsx"
-    branch_stream = build_workbook(user_records)
-    with open(branch_file_path(branch_filename), "wb") as handle:
-        handle.write(branch_stream.getvalue())
-
-    all_records = (
-        Record.query.options(joinedload(Record.user))
-        .join(User)
-        .order_by(User.name.asc(), Record.city.asc(), Record.mf_file.asc())
-        .all()
-    )
-    central_stream = build_workbook(all_records)
-    with open(os.path.join(EXPORT_DIR, "central.xlsx"), "wb") as handle:
-        handle.write(central_stream.getvalue())
 
 
 def build_workbook(records):
@@ -444,11 +418,11 @@ def build_workbook(records):
 
 
 def dataset_for_user(user):
-    query = Record.query.options(joinedload(Record.user))
+    query = Record.query
     if not user.is_admin:
         query = query.filter_by(user_id=user.id)
 
-    records = query.order_by(Record.city.asc(), Record.mf_file.asc()).all()
+    records = query.options(joinedload(Record.user)).order_by(Record.city.asc(), Record.mf_file.asc()).all()
     mapped = sum(1 for r in records if r.latitude is not None and r.longitude is not None)
     provinces = sorted({r.province for r in records if r.province})
     owners = sorted({r.user.name for r in records})
@@ -634,7 +608,6 @@ def api_upload():
             db.session.add(Record(user_id=current_user.id, **row))
 
         stored_name = f"{current_user.id}_{int(datetime.utcnow().timestamp())}_{filename}"
-        branch_name = branch_storage_name(filename, fallback_name=current_user.name or "branch")
         file.stream.seek(0)
         file.save(os.path.join(UPLOAD_DIR, stored_name))
 
@@ -649,7 +622,7 @@ def api_upload():
         )
 
         db.session.commit()
-        sync_excel_exports_for_user(current_user, branch_name)
+        write_records_to_disk(current_user, filename)
 
         return jsonify(
             {
@@ -674,26 +647,15 @@ def upload_excel():
         return redirect(url_for("dashboard"))
 
     original_filename = file.filename
-    filename = original_filename.lower()
 
     try:
         imported_rows, warnings = parse_upload(file)
-    except ValueError as exc:
-        flash(str(exc), "danger")
-        return redirect(url_for("upload_page"))
-    except Exception:
-        flash("Could not read the uploaded file. Please use the Martins template.", "danger")
-        return redirect(url_for("upload_page"))
-
-    try:
         Record.query.filter_by(user_id=current_user.id).delete()
 
         for row in imported_rows:
             db.session.add(Record(user_id=current_user.id, **row))
 
         stored_name = f"{current_user.id}_{int(datetime.utcnow().timestamp())}_{secure_filename(original_filename)}"
-        branch_name = branch_storage_name(original_filename, fallback_name=current_user.name or "branch")
-
         file.stream.seek(0)
         file.save(os.path.join(UPLOAD_DIR, stored_name))
 
@@ -701,22 +663,25 @@ def upload_excel():
             Upload(
                 user_id=current_user.id,
                 filename=stored_name,
-                original_filename=original_filename,
+                original_filename=secure_filename(original_filename),
                 imported_rows=len(imported_rows),
                 status="completed",
             )
         )
 
         db.session.commit()
-        sync_excel_exports_for_user(current_user, branch_name)
+        write_records_to_disk(current_user, original_filename)
 
-        success_message = f"File uploaded successfully. Imported {len(imported_rows)} records."
+        success = f"File uploaded successfully. Imported {len(imported_rows)} records."
         if warnings:
-            success_message += " " + " ".join(warnings[:5])
-        flash(success_message, "success")
+            success += " " + " ".join(warnings[:5])
+        flash(success, "success")
+    except ValueError as exc:
+        db.session.rollback()
+        flash(str(exc), "danger")
     except Exception as exc:
         db.session.rollback()
-        flash(f"Upload failed. Please verify the template columns and data types. {exc}", "danger")
+        flash(f"Upload failed: {exc}", "danger")
 
     return redirect(url_for("dashboard"))
 
@@ -734,7 +699,7 @@ def download_my_data():
     return send_file(
         stream,
         as_attachment=True,
-        download_name=f"{secure_filename(current_user.name) or 'my_data'}.xlsx",
+        download_name="my_martins_density_map_data.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 
@@ -753,7 +718,7 @@ def download_central():
     return send_file(
         stream,
         as_attachment=True,
-        download_name="central.xlsx",
+        download_name="martins_density_map_data.xlsx",
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )
 

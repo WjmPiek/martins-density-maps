@@ -109,6 +109,7 @@
           <button id="clearFormBtn" class="ghost-btn" type="button">Clear form</button>
         </div>
 
+        
         <form id="recordForm" class="editor-grid">
           <input type="hidden" id="recordId">
           <input id="latitude" type="hidden">
@@ -116,80 +117,83 @@
           <input id="weight" type="hidden" value="1">
           <input id="fullAddress" type="hidden">
 
-          <label>
-            MF File
-            <input id="mfFile" required>
-          </label>
+          <div class="form-section-card full-span">
+            <h3>Deceased Details</h3>
+            <div class="editor-grid">
+              <label>MF File
+                <input id="mfFile" required>
+              </label>
 
-          <label>
-            DOD
-            <input id="dod" type="date">
-          </label>
+              <label>DOD
+                <input id="dod" type="date">
+              </label>
 
-          <label>
-            Deceased name
-            <input id="deceasedName">
-          </label>
+              <label>Deceased name
+                <input id="deceasedName">
+              </label>
 
-          <label>
-            Deceased surname
-            <input id="deceasedSurname">
-          </label>
+              <label>Deceased surname
+                <input id="deceasedSurname">
+              </label>
+            </div>
+          </div>
 
-          <label>
-            Street address
-            <input id="address" name="address" type="text" placeholder="Enter South African street address" autocomplete="off">
-          </label>
+          <div class="form-section-card full-span">
+            <h3>Address Details</h3>
+            <div class="editor-grid">
+              <label>Street address
+                <input id="address" name="address" type="text" placeholder="Enter South African street address" autocomplete="off">
+              </label>
 
-          <label>
-            Town / city
-            <input id="city" autocomplete="address-level2">
-          </label>
+              <label>Town / city
+                <input id="city" autocomplete="address-level2">
+              </label>
 
-          <label>
-            Province
-            <select id="province" autocomplete="address-level1">
-              <option value="">Choose province</option>
-              {% for province in provinces %}
-              <option value="{{ province }}">{{ province }}</option>
-              {% endfor %}
-            </select>
-          </label>
+              <label>Province
+                <select id="province" autocomplete="address-level1">
+                  <option value="">Choose province</option>
+                  {% for province in provinces %}
+                  <option value="{{ province }}">{{ province }}</option>
+                  {% endfor %}
+                </select>
+              </label>
 
-          <label>
-            Postal code
-            <input id="postalCode" autocomplete="postal-code">
-          </label>
+              <label>Postal code
+                <input id="postalCode" autocomplete="postal-code">
+              </label>
 
-          <label>
-            Country
-            <input id="country" value="South Africa" autocomplete="country-name">
-          </label>
+              <label>Country
+                <input id="country" value="South Africa" autocomplete="country-name">
+              </label>
+            </div>
+          </div>
 
-          <label>
-            Next of kin name
-            <input id="nextOfKinName">
-          </label>
+          <div class="form-section-card full-span">
+            <h3>Next of Kin Details</h3>
+            <div class="editor-grid">
+              <label>Next of kin name
+                <input id="nextOfKinName">
+              </label>
 
-          <label>
-            Next of kin surname
-            <input id="nextOfKinSurname">
-          </label>
+              <label>Next of kin surname
+                <input id="nextOfKinSurname">
+              </label>
 
-          <label>
-            Relationship
-            <input id="relationship">
-          </label>
+              <label>Relationship
+                <input id="relationship">
+              </label>
 
-          <label>
-            Contact number
-            <input id="contactNumber">
-          </label>
+              <label>Contact number
+                <input id="contactNumber">
+              </label>
+            </div>
+          </div>
 
           <div class="form-actions full-span">
             <button class="primary-btn" type="submit">Save record</button>
           </div>
         </form>
+
 
         <div id="formStatus" class="info-box hidden"></div>
         <p id="addressHelp" class="address-help muted hidden"></p>

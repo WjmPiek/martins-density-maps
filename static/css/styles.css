@@ -782,3 +782,35 @@ td {
     padding: 8px 12px;
   }
 }
+
+/* ===== Form card layout (hospital style) ===== */
+
+.form-section-card{
+  background:#ffffff;
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:18px 20px;
+  margin-bottom:16px;
+  box-shadow:0 8px 20px rgba(92,74,140,0.05);
+}
+
+.form-section-card h3{
+  font-size:18px;
+  font-weight:800;
+  margin-bottom:12px;
+  color:var(--text);
+  border-bottom:2px solid var(--panel-2);
+  padding-bottom:6px;
+}
+
+.form-section-card .editor-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+}
+
+@media (max-width:720px){
+  .form-section-card .editor-grid{
+    grid-template-columns:1fr;
+  }
+}

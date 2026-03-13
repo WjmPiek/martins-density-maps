@@ -674,3 +674,67 @@ td {
     border-radius: 16px;
   }
 }
+
+/* ===== Professional Sidebar Upgrade ===== */
+
+.sidebar {
+  background: linear-gradient(180deg,#fcfbff 0%,#f5f1fb 100%);
+  border-right:1px solid #ddd6ee;
+  box-shadow:8px 0 30px rgba(92,74,140,0.06);
+  padding:28px 22px 26px;
+}
+
+.sidebar-brand{
+  display:grid;
+  grid-template-columns:88px 1fr;
+  align-items:center;
+  gap:16px;
+  margin-bottom:26px;
+}
+
+.sidebar-logo{
+  width:88px;
+  height:88px;
+  object-fit:contain;
+  border-radius:18px;
+  background:#fff;
+  padding:8px;
+  border:1px solid #e4dcf3;
+  box-shadow:0 10px 22px rgba(92,74,140,0.08);
+}
+
+.sidebar-brand strong{
+  font-size:20px;
+  font-weight:800;
+  color:#2d2440;
+}
+
+.sidebar-nav{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  flex:1;
+}
+
+.sidebar-nav a{
+  display:flex;
+  align-items:center;
+  min-height:54px;
+  padding:0 18px;
+  border-radius:16px;
+  border:1px solid #e2daf2;
+  background:white;
+  font-size:18px;
+  font-weight:700;
+  color:#2f2745;
+}
+
+.sidebar-nav a:hover{
+  background:#f1ebfb;
+}
+
+.sidebar-nav a:last-child{
+  margin-top:auto;
+  background:#b94b6b;
+  color:white;
+}

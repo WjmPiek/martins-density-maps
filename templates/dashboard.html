@@ -265,13 +265,67 @@
 </script>
 <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&loading=async&callback=initGoogleAddress"></script>
 {% else %}
+
 <script>
   document.addEventListener('DOMContentLoaded', function () {
-    const help = document.getElementById('addressHelp');
-    if (!help) return;
-    help.textContent = 'Google Places API key is missing, so address autocomplete is disabled.';
-    help.classList.remove('hidden');
-    help.classList.add('error-text');
+    const form = document.getElementById('recordForm');
+    if (!form) return;
+
+    const fields = Array.from(form.querySelectorAll('input, select, textarea')).filter(function (field) {
+      return field.type !== 'hidden';
+    });
+
+    let triedSubmit = false;
+
+    function setFieldState(field) {
+      const label = field.closest('label');
+      if (!label) return;
+
+      const isRequired = field.hasAttribute('required');
+      const value = (field.value || '').trim();
+      const emptyRequired = isRequired && !value;
+      const invalidValue = value !== '' && !field.checkValidity();
+
+      label.classList.remove('field-error', 'field-valid');
+
+      if (!triedSubmit) return;
+
+      if (emptyRequired || invalidValue) {
+        label.classList.add('field-error');
+      } else if (isRequired && value !== '' && field.checkValidity()) {
+        label.classList.add('field-valid');
+      }
+    }
+
+    fields.forEach(function (field) {
+      ['input', 'change', 'blur'].forEach(function (eventName) {
+        field.addEventListener(eventName, function () {
+          setFieldState(field);
+        });
+      });
+    });
+
+    form.addEventListener('submit', function (event) {
+      let firstInvalid = null;
+      triedSubmit = true;
+
+      fields.forEach(function (field) {
+        setFieldState(field);
+
+        const isRequired = field.hasAttribute('required');
+        const value = (field.value || '').trim();
+        const hasError = (isRequired && !value) || (value !== '' && !field.checkValidity());
+
+        if (hasError && !firstInvalid) {
+          firstInvalid = field;
+        }
+      });
+
+      if (firstInvalid) {
+        event.preventDefault();
+        firstInvalid.focus();
+      }
+    });
   });
 </script>
 {% endif %}
@@ -285,18 +339,7 @@
       return field.type !== 'hidden';
     });
 
-    function decorateRequiredLabel(field) {
-      if (!field.hasAttribute('required')) return;
-      const label = field.closest('label');
-      if (!label) return;
-      if (!label.querySelector('.required-star')) {
-        const star = document.createElement('span');
-        star.className = 'required-star';
-        star.textContent = ' *';
-        label.insertBefore(star, field);
-      }
-    }
-
+    
     function setFieldState(field) {
       const label = field.closest('label');
       if (!label) return;
@@ -312,8 +355,7 @@
     }
 
     fields.forEach(function (field) {
-      decorateRequiredLabel(field);
-      setFieldState(field);
+       setFieldState(field);
 
       ['input', 'change', 'blur'].forEach(function (eventName) {
         field.addEventListener(eventName, function () {

@@ -9,9 +9,51 @@
   <link rel="preload" href="{{ url_for('static', filename='img/martins-logo.png') }}" as="image">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="theme-color" content="#8d6fd1">
 </head>
+
 
 <body class="auth-body">
   {% block content %}{% endblock %}
+
+  <script>
+  let deferredPrompt = null;
+  const installBtn = document.getElementById("installApp");
+
+  window.addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+
+    if (installBtn) {
+      installBtn.style.display = "block";
+    }
+  });
+
+  if (installBtn) {
+    installBtn.addEventListener("click", async () => {
+      if (!deferredPrompt) return;
+      deferredPrompt.prompt();
+      await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      installBtn.style.display = "none";
+    });
+  }
+
+  window.addEventListener("appinstalled", () => {
+    if (installBtn) {
+      installBtn.style.display = "none";
+    }
+    deferredPrompt = null;
+  });
+</script>
+
+<script>
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/static/service-worker.js")
+      .catch(err => console.error("Service worker registration failed:", err));
+  }
+</script>
+
 </body>
 </html>

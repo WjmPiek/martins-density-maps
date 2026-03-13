@@ -193,24 +193,30 @@ function autoMapMode() {
 function buildTileLayer(url, options = {}) {
   return L.tileLayer(url, {
     maxZoom: 19,
-    crossOrigin: true,
     attribution: '&copy; OpenStreetMap contributors',
-    ...options,
+    ...options
   });
 }
 
 function attachTileFallbacks() {
-  if (!baseLayer) return;
+  if (!baseLayer || !map) return;
 
   let fallbackUsed = false;
+
   baseLayer.on('tileerror', () => {
     if (fallbackUsed || !map) return;
     fallbackUsed = true;
+
     map.removeLayer(baseLayer);
-    baseLayer = buildTileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    });
+
+    baseLayer = buildTileLayer(
+      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
+      {
+        subdomains: 'abcd',
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+      }
+    );
+
     baseLayer.addTo(map);
   });
 }
@@ -222,6 +228,11 @@ function initMap() {
   map = L.map('map', { preferCanvas: true, zoomControl: true }).setView([-28.5, 24.5], 5);
 
   baseLayer = buildTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+
+  baseLayer.on('tileerror', () => {
+    console.error('OSM tiles failed to load');
+  });
+
   baseLayer.addTo(map);
   attachTileFallbacks();
 
@@ -245,9 +256,14 @@ function initMap() {
   els.pinRadius?.addEventListener('input', renderMap);
 
   window.addEventListener('load', () => {
-    setTimeout(() => map.invalidateSize(), 150);
+    setTimeout(() => {
+      if (map) map.invalidateSize();
+    }, 300);
   });
-  setTimeout(() => map.invalidateSize(), 300);
+
+  setTimeout(() => {
+    if (map) map.invalidateSize();
+  }, 300);
 }
 
 function clearMapLayers() {

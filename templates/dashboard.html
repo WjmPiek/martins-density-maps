@@ -110,7 +110,7 @@
         </div>
 
         
-        <form id="recordForm" class="editor-grid">
+        <form id="recordForm" class="editor-grid" novalidate>
           <input type="hidden" id="recordId">
           <input id="latitude" type="hidden">
           <input id="longitude" type="hidden">
@@ -183,14 +183,13 @@
                 <input id="relationship">
               </label>
 
-              <label>Contact number
-                <input id="contactNumber">
-              </label>
+              <input id="contactNumber" inputmode="numeric" maxlength="12" placeholder="082 123 4567" required>
             </div>
           </div>
 
           <div class="form-actions full-span">
             <button class="primary-btn" type="submit">Save record</button>
+            <p class="form-required-note">Fields marked required must be completed before saving.</p>
           </div>
         </form>
 
@@ -240,7 +239,7 @@
   };
 </script>
 {% if google_maps_api_key %}
-<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
+<script src="https://maps.googleapis.com/maps/api/js?key={{ AIzaSyD-niMQ5MWxPbSG-kehIIHzlgv89Y0TbaQ }}&libraries=places"></script>
 <script>
   (function () {
     const provinceMap = {
@@ -364,5 +363,123 @@
   });
 </script>
 {% endif %}
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('recordForm');
+    if (!form) return;
+
+    const fields = Array.from(form.querySelectorAll('input, select, textarea')).filter(function (field) {
+      return field.type !== 'hidden';
+    });
+
+    function decorateRequiredLabel(field) {
+      if (!field.hasAttribute('required')) return;
+      const label = field.closest('label');
+      if (!label) return;
+      const marker = label.querySelector('.required-star');
+      if (!marker) {
+        const star = document.createElement('span');
+        star.className = 'required-star';
+        star.textContent = ' *';
+        label.insertBefore(star, field);
+      }
+    }
+
+    function setFieldState(field) {
+      const label = field.closest('label');
+      if (!label) return;
+
+      const isRequired = field.hasAttribute('required');
+      const value = (field.value || '').trim();
+      const emptyRequired = isRequired && !value;
+      const invalidValue = value !== '' && !field.checkValidity();
+
+      label.classList.toggle('field-required', isRequired);
+      label.classList.toggle('field-error', emptyRequired || invalidValue);
+      label.classList.toggle('field-valid', isRequired && value !== '' && field.checkValidity());
+    }
+
+    fields.forEach(function (field) {
+      decorateRequiredLabel(field);
+      setFieldState(field);
+
+      ['input', 'change', 'blur'].forEach(function (eventName) {
+        field.addEventListener(eventName, function () {
+          setFieldState(field);
+        });
+      });
+    });
+
+    form.addEventListener('submit', function (event) {
+      let firstInvalid = null;
+
+      fields.forEach(function (field) {
+        setFieldState(field);
+        const isRequired = field.hasAttribute('required');
+        const value = (field.value || '').trim();
+        const hasError = (isRequired && !value) || (value !== '' && !field.checkValidity());
+
+        if (hasError && !firstInvalid) {
+          firstInvalid = field;
+        }
+      });
+
+      if (firstInvalid) {
+        event.preventDefault();
+        firstInvalid.focus();
+      }
+    });
+  });
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+
+  const form = document.getElementById("recordForm");
+  const contactField = document.getElementById("contactNumber");
+
+  if (contactField) {
+    function formatSAPhoneNumber(value) {
+      const digits = value.replace(/\D/g, "").slice(0, 10);
+
+      if (digits.length <= 3) {
+        return digits;
+      }
+      if (digits.length <= 6) {
+        return digits.slice(0, 3) + " " + digits.slice(3);
+      }
+      return digits.slice(0, 3) + " " + digits.slice(3, 6) + " " + digits.slice(6, 10);
+    }
+
+    contactField.addEventListener("input", function () {
+      const start = this.selectionStart;
+      const beforeLength = this.value.length;
+      this.value = formatSAPhoneNumber(this.value);
+      const afterLength = this.value.length;
+      const diff = afterLength - beforeLength;
+
+      try {
+        this.setSelectionRange(start + diff, start + diff);
+      } catch (e) {}
+    });
+
+    contactField.addEventListener("blur", function () {
+      const digits = this.value.replace(/\D/g, "");
+      if (digits.length > 0 && digits.length !== 10) {
+        this.setCustomValidity("Enter a valid South African phone number with 10 digits.");
+      } else {
+        this.setCustomValidity("");
+      }
+    });
+
+    contactField.addEventListener("focus", function () {
+      this.setCustomValidity("");
+    });
+  }
+
+});
+</script>
+
 <script src="{{ url_for('static', filename='js/dashboard.js', v='20260313-4') }}"></script>
 {% endblock %}

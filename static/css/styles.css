@@ -814,3 +814,58 @@ td {
     grid-template-columns:1fr;
   }
 }
+
+
+/* ===== Required fields and validation ===== */
+
+.form-required-note {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.required-star {
+  color: #cb5a7e;
+  font-weight: 800;
+}
+
+.form-section-card label {
+  position: relative;
+  display: grid;
+  gap: 8px;
+  margin-bottom: 2px;
+}
+
+.form-section-card label input,
+.form-section-card label select,
+.form-section-card label textarea {
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+}
+
+.form-section-card label.field-error {
+  color: #a33f5f;
+}
+
+.form-section-card label.field-error input,
+.form-section-card label.field-error select,
+.form-section-card label.field-error textarea {
+  border-color: #cb5a7e;
+  background: #fff8fa;
+  box-shadow: 0 0 0 3px rgba(203, 90, 126, 0.12);
+}
+
+.form-section-card label.field-valid input,
+.form-section-card label.field-valid select,
+.form-section-card label.field-valid textarea {
+  border-color: #7dba8a;
+  background: #fbfffc;
+  box-shadow: 0 0 0 3px rgba(125, 186, 138, 0.12);
+}
+
+.form-section-card input:focus,
+.form-section-card select:focus,
+.form-section-card textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(141, 111, 209, 0.16);
+}

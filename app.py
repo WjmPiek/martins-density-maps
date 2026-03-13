@@ -456,11 +456,15 @@ def logout():
     logout_user()
     return redirect(url_for("login"))
 
+GOOGLE_MAPS_API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
 
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html", provinces=PROVINCES, google_maps_api_key=os.environ.get("GOOGLE_MAPS_API_KEY", ""))
+    return render_template(
+        "dashboard.html",
+        google_maps_api_key=GOOGLE_MAPS_API_KEY
+    )
 
 
 @app.route("/admin")

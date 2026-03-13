@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Google Maps Test</title>
+  <style>
+    #map {
+      height: 500px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+
+<h2>Google Maps API Test</h2>
+
+<div id="map"></div>
+
+<script>
+function initMap() {
+  const location = { lat: -26.2041, lng: 28.0473 }; // Johannesburg
+
+  const map = new google.maps.Map(document.getElementById("map"), {
+    zoom: 10,
+    center: location,
+  });
+
+  new google.maps.Marker({
+    position: location,
+    map: map,
+  });
+}
+</script>
+
+<script
+  src="https://maps.googleapis.com/maps/api/js?key=AIzaSyD-niMQ5MWxPbSG-kehIIHzlgv89Y0TbaQ&callback=initMap"
+  async
+  defer>
+</script>
+
+</body>
+</html>

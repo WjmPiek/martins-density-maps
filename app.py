@@ -689,7 +689,7 @@ def download_central():
 @app.context_processor
 def inject_globals():
     return {
-        "google_maps_api_key": os.environ.get("GOOGLE_MAPS_API_KEY", ""),
+        "google_maps_api_key": os.environ.get("AIzaSyD-niMQ5MWxPbSG-kehIIHzlgv89Y0TbaQ", ""),
         "logo_path": url_for("static", filename="img/martins-logo.png"),
     }
 

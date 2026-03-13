@@ -149,6 +149,18 @@ label {
   margin: 0 auto 14px;
 }
 
+.auth-install {
+  text-align: center;
+  margin-top: 18px;
+  font-size: 14px;
+  color: #6a627e;
+  cursor: pointer;
+}
+
+.auth-install:hover {
+  text-decoration: underline;
+}
+
 .auth-form,
 .stack-form,
 .editor-grid {

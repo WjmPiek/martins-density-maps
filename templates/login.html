@@ -13,27 +13,29 @@
     <div class="eyebrow">Martin's Franchising</div>
     <h2 style="margin: 6px 0 18px 0;">Sign in</h2>
 
-    <form method="post" class="auth-form">
-      <label>
-        Email
-        <input type="email" name="email" required>
-      </label>
+    <form method="POST" class="auth-form">
 
-      <label>
-        Password
-        <input type="password" name="password" required>
-      </label>
+  <label>
+    Email
+    <input type="email" name="email" required>
+  </label>
 
-      <button class="primary-btn" type="submit">Login</button>
+  <label>
+    Password
+    <input type="password" name="password" required>
+  </label>
 
-      <button id="installApp" class="install-btn" type="button" style="display:none;">
-        Install App
-      </button>
+  <button class="primary-btn" type="submit">Login</button>
 
-      <a class="ghost-btn auth-link-btn" href="{{ url_for('register') }}">
-        Register New User
-      </a>
-    </form>
+  <div class="auth-footer">
+    <a href="{{ url_for('register') }}">Register New User</a>
+  </div>
+
+  <div class="auth-install">
+    Install App
+  </div>
+
+</form>
   </div>
 </div>
 {% endblock %}

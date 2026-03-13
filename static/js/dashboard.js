@@ -225,16 +225,26 @@ function initMap() {
   const mapEl = document.getElementById('map');
   if (!mapEl || typeof L === 'undefined') return;
 
-  map = L.map('map', { preferCanvas: true, zoomControl: true }).setView([-28.5, 24.5], 5);
+  const southAfricaBounds = [
+    [-35.5, 16.0], // south-west
+    [-22.0, 33.5], // north-east
+  ];
 
-  baseLayer = buildTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+  map = L.map('map', {
+    preferCanvas: true,
+    zoomControl: true,
+    maxBounds: southAfricaBounds,
+    maxBoundsViscosity: 1.0
+  });
 
-  baseLayer.on('tileerror', () => {
-    console.error('OSM tiles failed to load');
+  map.fitBounds(southAfricaBounds);
+
+  baseLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap contributors'
   });
 
   baseLayer.addTo(map);
-  attachTileFallbacks();
 
   markerLayer = L.layerGroup();
   clusterLayer = L.markerClusterGroup({
@@ -255,17 +265,7 @@ function initMap() {
   els.heatRadius?.addEventListener('input', renderMap);
   els.pinRadius?.addEventListener('input', renderMap);
 
-  window.addEventListener('load', () => {
-    setTimeout(() => {
-      if (map) map.invalidateSize();
-    }, 300);
-  });
-
-  setTimeout(() => {
-    if (map) map.invalidateSize();
-  }, 300);
-}
-
+  
 function clearMapLayers() {
   if (!map) return;
 

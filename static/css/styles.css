@@ -873,9 +873,21 @@ td {
   color: var(--muted);
 }
 
+/* required star position */
 .required-star {
-  color: #cb5a7e;
-  font-weight: 800;
+  color: #d44;
+  font-weight: 600;
+  margin-left: 4px;
+  display: inline;
+}
+
+/* prevent star from dropping to next line */
+.editor-grid label {
+  flex-direction: column;
+}
+
+.editor-grid label .required-star {
+  display: inline;
 }
 
 

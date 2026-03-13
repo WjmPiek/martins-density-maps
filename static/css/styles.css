@@ -96,49 +96,28 @@ label {
 }
 
 /* Disable splash/loading overlay so dashboard shows immediately after login */
+/* no splash screen before dashboard */
 #splash-screen {
   display: none !important;
-  opacity: 0 !important;
-  visibility: hidden !important;
-  pointer-events: none !important;
 }
 
-/* Login / auth */
+/* login page */
 .auth-wrap {
   min-height: 100vh;
   display: grid;
   place-items: center;
   padding: 24px;
-}
-
-.auth-card,
-.panel,
-.stat-card,
-.topbar {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow);
+  background: linear-gradient(180deg, #f8f7fb 0%, #f1eff7 100%);
 }
 
 .auth-card {
-  width: min(460px, 100%);
-  padding: 36px;
+  width: min(430px, 100%);
+  background: #fbfafe;
+  border: 1px solid #ddd6ee;
   border-radius: 28px;
-  background: linear-gradient(180deg, #fbfafe 0%, #f2eefb 100%);
+  box-shadow: 0 18px 40px rgba(92, 74, 140, 0.12);
+  padding: 34px 28px;
   text-align: center;
-}
-
-.auth-link-btn {
-  text-align: center;
-  text-decoration: none;
-  width: 100%;
-}
-
-.auth-logo {
-  width: 96px;
-  height: 96px;
-  border-radius: 22px;
-  margin: 0 auto 18px;
 }
 
 .login-logo {
@@ -146,36 +125,51 @@ label {
   max-width: 260px;
   height: 96px;
   object-fit: contain;
-  margin: 0 auto 14px;
+  margin: 0 auto 20px;
+  display: block;
 }
 
-.auth-install {
-  text-align: center;
-  margin-top: 18px;
-  font-size: 14px;
-  color: #6a627e;
-  cursor: pointer;
-}
-
-.auth-install:hover {
-  text-decoration: underline;
-}
-
-.auth-form,
-.stack-form,
-.editor-grid {
+.auth-form {
   display: grid;
   gap: 14px;
 }
 
-.auth-footer {
-  margin-top: 16px;
-  text-align: center;
+.auth-form label {
+  display: grid;
+  gap: 8px;
+  text-align: left;
   font-size: 14px;
+  font-weight: 600;
+  color: #2d2440;
+}
+
+.auth-form input {
+  width: 100%;
+  border: 1px solid #ddd6ee;
+  border-radius: 14px;
+  padding: 12px 14px;
+  font: inherit;
+}
+
+.primary-btn {
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: #8d6fd1;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.auth-footer {
+  margin-top: 2px;
+  font-size: 14px;
+  text-align: center;
 }
 
 .auth-footer a {
-  color: var(--primary-strong);
+  color: #7554c7;
   text-decoration: none;
   font-weight: 600;
 }
@@ -184,19 +178,16 @@ label {
   text-decoration: underline;
 }
 
-.install-btn {
-  margin-top: 8px;
-  padding: 8px 12px;
+.auth-install {
+  margin-top: 14px;
+  text-align: center;
   font-size: 14px;
-  border-radius: 10px;
-  background: #e9e5f6;
-  border: 1px solid var(--line);
-  color: var(--text);
-  width: 100%;
+  color: #6a627e;
+  cursor: pointer;
 }
 
-.install-btn:hover {
-  background: #ddd6f3;
+.auth-install:hover {
+  text-decoration: underline;
 }
 
 /* App layout */

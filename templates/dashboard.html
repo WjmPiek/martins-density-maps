@@ -3,7 +3,8 @@
 
 {% block content %}
 <section class="dashboard-wrap">
-  <div class="dashboard-buttons">
+  <section class="dashboard-top-fixed">
+    <div class="dashboard-buttons">
     <a class="primary-btn" href="{{ url_for('upload_page') }}">Upload Excel File</a>
     <a class="ghost-btn" href="{{ url_for('download_template') }}">Download Excel Template</a>
     <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download My Data</a>
@@ -64,7 +65,9 @@
       </div>
     </article>
   </section>
+  </section>
 
+  <section class="dashboard-scroll-content">
   <section class="map-layout">
     <article class="panel map-panel">
       <div class="panel-head">
@@ -135,7 +138,7 @@
 
         <label>
           Street address
-          <input id="address" autocomplete="off">
+          <input id="address" name="address" type="text" placeholder="Enter address" autocomplete="off">
         </label>
 
         <label>
@@ -212,6 +215,7 @@
       </table>
     </div>
   </section>
+  </section>
 </section>
 {% endblock %}
 
@@ -220,7 +224,13 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script>
-  window.APP_CONTEXT = { isAdmin: {{ 'true' if current_user.is_admin else 'false' }} };
+  window.APP_CONTEXT = {
+    isAdmin: {{ 'true' if current_user.is_admin else 'false' }},
+    googleMapsApiKey: {{ google_maps_api_key|tojson if google_maps_api_key else '""' }}
+  };
 </script>
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% if google_maps_api_key %}
+<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
+{% endif %}
+<script src="{{ url_for('static', filename='js/dashboard.js', v='20260313-2') }}"></script>
 {% endblock %}

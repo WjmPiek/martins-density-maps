@@ -137,8 +137,15 @@ function initAddressAutocomplete() {
     els.country.value = country || '';
 
     if (place.geometry && place.geometry.location) {
-      els.latitude.value = place.geometry.location.lat();
-      els.longitude.value = place.geometry.location.lng();
+      const lat = place.geometry.location.lat();
+      const lng = place.geometry.location.lng();
+
+      els.latitude.value = lat;
+      els.longitude.value = lng;
+
+      if (map) {
+        map.setView([lat, lng], 15, { animate: true });
+      }
     }
   });
 }
@@ -372,13 +379,15 @@ async function saveRecord(event) {
   }
 
   setBox(els.formStatus, data.message || 'Record saved.');
-await loadData();
+  await loadData();
 
-if (data.record) {
-  focusSavedRecordOnMap(data.record);
+  if (data.record) {
+    fillForm(data.record);
+    focusSavedRecordOnMap(data.record);
+  } else {
+    clearForm();
+  }
 }
-
-clearForm();
 
 async function deleteRecord(id) {
   const res = await fetch(`/api/records/${id}`, { method: 'DELETE' });
@@ -406,6 +415,10 @@ function showHeat() {
   state.currentMapView = 'heat';
   renderMap();
 }
+
+window.showMarkers = showMarkers;
+window.showClusters = showClusters;
+window.showHeat = showHeat;
 
 document.addEventListener('DOMContentLoaded', () => {
   initMap();

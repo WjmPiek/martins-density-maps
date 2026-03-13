@@ -4,6 +4,7 @@ services:
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app
+    
     envVars:
       - key: SECRET_KEY
         generateValue: true
@@ -23,3 +24,4 @@ databases:
     plan: basic-256mb
 
 GOOGLE_MAPS_API_KEY=AIzaSyD-niMQ5MWxPbSG-kehIIHzlgv89Y0TbaQ
+

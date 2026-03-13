@@ -3,6 +3,10 @@ from datetime import datetime
 from functools import wraps
 from io import BytesIO
 
+import requests
+import threading
+import time
+
 import pandas as pd
 from flask import (
     Flask,
@@ -93,6 +97,31 @@ CENTRAL_XLSX_PATH = os.path.join(BRANCH_DIR, "central.xlsx")
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 os.makedirs(INSTANCE_DIR, exist_ok=True)
 os.makedirs(BRANCH_DIR, exist_ok=True)
+
+GOOGLE_MAPS_API_KEY = os.environ.get("GOOGLE_MAPS_API_KEY")
+
+def geocode_address(full_address):
+    if not full_address or not GOOGLE_MAPS_API_KEY:
+        return None, None
+
+    try:
+        url = "https://maps.googleapis.com/maps/api/geocode/json"
+        params = {
+            "address": full_address,
+            "key": GOOGLE_MAPS_API_KEY
+        }
+
+        r = requests.get(url, params=params, timeout=5)
+        data = r.json()
+
+        if data["status"] == "OK":
+            location = data["results"][0]["geometry"]["location"]
+            return location["lat"], location["lng"]
+
+    except Exception as e:
+        print("Geocode error:", e)
+
+    return None, None
 
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "change-me-in-render")
 app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get(
@@ -254,7 +283,7 @@ def build_full_address(address, city, province, country):
 
 def parse_upload(file_storage):
     file_storage.stream.seek(0)
-    wb = load_workbook(file_storage, data_only=True)
+    wb = load_workbook(file_storage.stream, data_only=True)
     ws = wb[wb.sheetnames[0]]
     header_row = [normalize_text(cell) for cell in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
 
@@ -291,6 +320,11 @@ def parse_upload(file_storage):
         province = normalize_text(data.get("Province"))
         country = normalize_text(data.get("Country"))
         full_address = normalize_text(data.get("Full Address")) or build_full_address(address, city, province, country)
+        latitude = normalize_float(data.get("Latitude"))
+        longitude = normalize_float(data.get("Longitude"))
+
+        if latitude is None or longitude is None:
+            latitude, longitude = geocode_address(full_address)
 
         records.append(
             {
@@ -303,8 +337,8 @@ def parse_upload(file_storage):
                 "province": province,
                 "country": country,
                 "full_address": full_address,
-                "latitude": normalize_float(data.get("Latitude")),
-                "longitude": normalize_float(data.get("Longitude")),
+                "latitude": latitude,
+                "longitude": longitude,
                 "weight": normalize_float(data.get("Weight")) or 1.0,
                 "next_of_kin_name": normalize_text(data.get("Next of Kin Name")),
                 "next_of_kin_surname": normalize_text(data.get("Next of Kin Surname")),
@@ -371,6 +405,8 @@ def upsert_record(user_id, payload):
     )
     record.latitude = normalize_float(payload.get("latitude"))
     record.longitude = normalize_float(payload.get("longitude"))
+    if record.latitude is None or record.longitude is None:
+        record.latitude, record.longitude = geocode_address(record.full_address)
     record.weight = normalize_float(payload.get("weight")) or 1.0
     record.next_of_kin_name = normalize_text(payload.get("NextOfKinName") or payload.get("nextOfKinName"))
     record.next_of_kin_surname = normalize_text(payload.get("NextOfKinSurname") or payload.get("nextOfKinSurname"))
@@ -574,6 +610,7 @@ def api_save_record():
         db.session.rollback()
         return jsonify({"error": "Could not save record."}), 500
 
+    write_records_to_disk(current_user, f"{current_user.name}.xlsx")
     return jsonify({"message": "Record saved.", "record": record.to_dict()})
 
 
@@ -587,7 +624,42 @@ def api_delete_record(record_id):
 
     db.session.delete(record)
     db.session.commit()
+    write_records_to_disk(current_user, f"{current_user.name}.xlsx")
     return jsonify({"message": "Record deleted."})
+
+
+@app.route("/api/analytics")
+@login_required
+def api_analytics():
+    query = Record.query
+    if not current_user.is_admin:
+        query = query.filter_by(user_id=current_user.id)
+
+    records = query.order_by(Record.created_at.asc()).all()
+
+    province = {}
+    cities = {}
+    months = {}
+
+    for record in records:
+        province_name = normalize_text(record.province) or "Unknown"
+        province[province_name] = province.get(province_name, 0) + 1
+
+        city_name = normalize_text(record.city) or "Unknown"
+        cities[city_name] = cities.get(city_name, 0) + 1
+
+        month_key = record.created_at.strftime("%Y-%m") if record.created_at else "Unknown"
+        months[month_key] = months.get(month_key, 0) + 1
+
+    cities = dict(sorted(cities.items(), key=lambda item: (-item[1], item[0]))[:10])
+    province = dict(sorted(province.items(), key=lambda item: item[0]))
+    months = dict(sorted(months.items(), key=lambda item: item[0]))
+
+    return jsonify({
+        "province": province,
+        "cities": cities,
+        "months": months,
+    })
 
 
 @app.route("/api/upload", methods=["POST"])

@@ -142,7 +142,16 @@
             <h3>Address Details</h3>
             <div class="editor-grid">
               <label>Street address
-                <input id="address" name="address" type="text" placeholder="Enter South African street address" autocomplete="off">
+                <input
+                  id="address"
+                  name="address"
+                  type="text"
+                  placeholder="Enter South African street address"
+                  autocomplete="new-password"
+                  spellcheck="false"
+                  autocorrect="off"
+                  autocapitalize="off">
+
               </label>
 
               <label>Town / city
@@ -324,33 +333,50 @@
     }
 
     function initAddressAutocomplete() {
-      const addressInput = byId('address');
-      if (!addressInput || !window.google || !google.maps || !google.maps.places) {
+    const addressInput = byId('address');
+    if (!addressInput || !window.google || !google.maps || !google.maps.places) {
+      return;
+    }
+
+    const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+      types: ['address'],
+      fields: ['address_components', 'formatted_address', 'geometry', 'name'],
+      componentRestrictions: { country: 'za' }
+    });
+
+    autocomplete.setOptions({
+      strictBounds: false
+    });
+
+    addressInput.addEventListener('keydown', function (event) {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+      }
+    });
+
+    addressInput.addEventListener('input', function () {
+      setValue('latitude', '');
+      setValue('longitude', '');
+      setValue('fullAddress', '');
+      setValue('city', '');
+      setValue('province', '');
+      setValue('postalCode', '');
+      setValue('country', 'South Africa');
+      showHelp('Choose an address from the South Africa suggestions list.');
+    });
+
+    autocomplete.addListener('place_changed', function () {
+      const place = autocomplete.getPlace();
+
+      if (!place || !place.address_components) {
+        showHelp('Select a valid address from the suggestions list.', true);
         return;
       }
 
-      const autocomplete = new google.maps.places.Autocomplete(addressInput, {
-        types: ['address'],
-        fields: ['address_components', 'formatted_address', 'geometry', 'name'],
-        componentRestrictions: { country: 'za' }
-      });
-
-      autocomplete.addListener('place_changed', function () {
-        fillAddressFields(autocomplete.getPlace());
-      });
-
-      addressInput.addEventListener('input', function () {
-        setValue('country', 'South Africa');
-        showHelp('Suggestions limited to South Africa.');
-      });
-    }
-
-    if (document.readyState === 'loading') {
-      document.addEventListener('DOMContentLoaded', initAddressAutocomplete);
-    } else {
-      initAddressAutocomplete();
-    }
-  })();
+      fillAddressFields(place);
+    });
+  }
+  
 </script>
 {% else %}
 <script>

@@ -540,7 +540,11 @@ td {
 }
 
 .pac-container {
-  z-index: 3000 !important;
+  z-index: 99999 !important;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 12px 24px rgba(92, 74, 140, 0.14);
+  font-family: "Inter", sans-serif;
 }
 
 @media (max-width: 1180px) {

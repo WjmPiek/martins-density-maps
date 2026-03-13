@@ -460,7 +460,7 @@ def logout():
 @app.route("/dashboard")
 @login_required
 def dashboard():
-    return render_template("dashboard.html", provinces=PROVINCES)
+    return render_template("dashboard.html", provinces=PROVINCES, google_maps_api_key=os.environ.get("GOOGLE_MAPS_API_KEY", ""))
 
 
 @app.route("/admin")
@@ -478,6 +478,7 @@ def admin():
         record_count=record_count,
         upload_count=upload_count,
         latest_uploads=latest_uploads,
+        google_maps_api_key=os.environ.get("GOOGLE_MAPS_API_KEY", ""),
     )
 
 
@@ -689,7 +690,7 @@ def download_central():
 @app.context_processor
 def inject_globals():
     return {
-        "google_maps_api_key": os.environ.get("AIzaSyD-niMQ5MWxPbSG-kehIIHzlgv89Y0TbaQ", ""),
+        "google_maps_api_key": os.environ.get("GOOGLE_MAPS_API_KEY", ""),
         "logo_path": url_for("static", filename="img/martins-logo.png"),
     }
 

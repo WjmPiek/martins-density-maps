@@ -100,72 +100,115 @@ function focusSavedRecordOnMap(record) {
 
 function initAddressAutocomplete() {
   const streetInput = document.getElementById('address');
-  if (!streetInput || !window.google || !google.maps || !google.maps.places) return;
+  const help = document.getElementById('addressHelp');
+
+  if (!streetInput) return;
+
+  if (!window.google || !google.maps || !google.maps.places) {
+    if (help && window.APP_CONTEXT && !window.APP_CONTEXT.googleMapsApiKey) {
+      help.textContent = 'Google Places API key is missing, so address autocomplete is disabled.';
+      help.classList.remove('hidden');
+      help.classList.add('error-text');
+    }
+    return;
+  }
+
+  const provinceMap = {
+    'eastern cape': 'Eastern Cape',
+    'free state': 'Free State',
+    'gauteng': 'Gauteng',
+    'kwazulu-natal': 'KwaZulu-Natal',
+    'kwa-zulu natal': 'KwaZulu-Natal',
+    'limpopo': 'Limpopo',
+    'mpumalanga': 'Mpumalanga',
+    'north west': 'North West',
+    'northern cape': 'Northern Cape',
+    'western cape': 'Western Cape',
+  };
+
+  const normalizeProvince = (value) => {
+    const key = String(value || '').trim().toLowerCase();
+    return provinceMap[key] || value || '';
+  };
+
+  const getComponent = (place, type) => (place.address_components || []).find((component) =>
+    component.types && component.types.includes(type)
+  );
+
+  const setHelp = (message, isError = false) => {
+    if (!help) return;
+    help.textContent = message || '';
+    help.classList.toggle('hidden', !message);
+    help.classList.toggle('error-text', !!isError);
+  };
 
   const autocomplete = new google.maps.places.Autocomplete(streetInput, {
-    fields: ['formatted_address', 'geometry', 'address_components'],
+    fields: ['address_components', 'formatted_address', 'geometry', 'name'],
     types: ['address'],
+    componentRestrictions: { country: 'za' },
   });
 
-  <input id="address" type="text" placeholder="Street address"></input>
+  streetInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') event.preventDefault();
+  });
 
-  function initAutocomplete() {
-    const input = document.getElementById("address");
-
-    const autocomplete = new google.maps.places.Autocomplete(input, {
-        types: ["address"]
-    });
-
-    autocomplete.addListener("place_changed", function () {
-        const place = autocomplete.getPlace();
-        console.log(place);
-    });
-}
-
-google.maps.event.addDomListener(window, "load", initAutocomplete);
+  streetInput.addEventListener('input', () => {
+    if (els.latitude) els.latitude.value = '';
+    if (els.longitude) els.longitude.value = '';
+    if (els.fullAddress) els.fullAddress.value = '';
+    if (els.city) els.city.value = '';
+    if (els.province) els.province.value = '';
+    const postal = document.getElementById('postalCode');
+    if (postal) postal.value = '';
+    if (els.country) els.country.value = 'South Africa';
+    setHelp('Choose an address from the South Africa suggestions list.');
+  });
 
   autocomplete.addListener('place_changed', () => {
     const place = autocomplete.getPlace();
-    if (!place) return;
+    if (!place || !place.address_components) {
+      setHelp('Select a valid address from the suggestions list.', true);
+      return;
+    }
 
-    const components = place.address_components || [];
-    let city = '';
-    let province = '';
-    let country = '';
-    let streetNumber = '';
-    let route = '';
-    let suburb = '';
+    const country = getComponent(place, 'country');
+    const countryCode = country && country.short_name ? country.short_name.toUpperCase() : '';
+    if (countryCode && countryCode !== 'ZA') {
+      if (els.country) els.country.value = 'South Africa';
+      setHelp('Please choose an address in South Africa.', true);
+      return;
+    }
 
-    components.forEach((c) => {
-      if (c.types.includes('street_number')) streetNumber = c.long_name;
-      if (c.types.includes('route')) route = c.long_name;
-      if (c.types.includes('sublocality') || c.types.includes('sublocality_level_1')) suburb = c.long_name;
-      if (c.types.includes('locality')) city = c.long_name;
-      if (c.types.includes('administrative_area_level_1')) province = c.long_name;
-      if (c.types.includes('country')) country = c.long_name;
-    });
+    const streetNumber = getComponent(place, 'street_number');
+    const route = getComponent(place, 'route');
+    const suburb = getComponent(place, 'sublocality_level_1') || getComponent(place, 'sublocality');
+    const locality = getComponent(place, 'locality') || getComponent(place, 'postal_town') || getComponent(place, 'administrative_area_level_2');
+    const province = getComponent(place, 'administrative_area_level_1');
+    const postalCode = getComponent(place, 'postal_code');
 
-    const streetAddress = [streetNumber, route].filter(Boolean).join(' ').trim();
+    const streetAddress = [streetNumber && streetNumber.long_name, route && route.long_name].filter(Boolean).join(' ').trim() || (place.name || streetInput.value || '');
 
-    els.address.value = streetAddress || streetInput.value || '';
-    els.fullAddress.value = place.formatted_address || '';
-    els.city.value = city || suburb || '';
-    els.province.value = province || '';
-    els.country.value = country || '';
+    if (els.address) els.address.value = streetAddress;
+    if (els.fullAddress) els.fullAddress.value = place.formatted_address || '';
+    if (els.city) els.city.value = locality && locality.long_name ? locality.long_name : '';
+    if (els.province) els.province.value = normalizeProvince(province && province.long_name ? province.long_name : '');
+    if (els.country) els.country.value = 'South Africa';
+    const postal = document.getElementById('postalCode');
+    if (postal) postal.value = postalCode && postalCode.long_name ? postalCode.long_name : '';
 
     if (place.geometry && place.geometry.location) {
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
-
-      els.latitude.value = lat;
-      els.longitude.value = lng;
-
-      if (map) {
-        map.setView([lat, lng], 15, { animate: true });
-      }
+      if (els.latitude) els.latitude.value = String(lat);
+      if (els.longitude) els.longitude.value = String(lng);
+      if (map) map.setView([lat, lng], 15, { animate: true });
     }
+
+    setHelp(suburb && suburb.long_name ? `Suburb: ${suburb.long_name}` : 'South Africa address selected.');
   });
 }
+
+window.initAddressAutocomplete = initAddressAutocomplete;
 
 function initMap() {
   const mapEl = document.getElementById('map');
@@ -439,7 +482,6 @@ window.showHeat = showHeat;
 
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
-  initAddressAutocomplete();
   clearForm();
   loadData();
 

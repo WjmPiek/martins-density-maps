@@ -193,9 +193,7 @@ label {
 }
 
 /* App layout */
-.app-layout {
-  display: grid;
-  grid-template-columns: var(--sidebar-width) 1fr;
+..app-layout {
   min-height: 100vh;
 }
 
@@ -206,45 +204,47 @@ label {
   display: flex;
   flex-direction: column;
   gap: 24px;
-  position: sticky;
+  position: fixed;
   top: 0;
+  left: 0;
+  bottom: 0;
+  width: var(--sidebar-width);
   height: 100vh;
-  align-self: start;
+  overflow-y: auto;
+  z-index: 1000;
 }
 
-.sidebar-brand {
-  display: flex;
-  align-items: center;
-  gap: 14px;
+.main-content {
+  min-width: 0;
+  margin-left: var(--sidebar-width);
+  padding: 14px 18px;
 }
 
-.sidebar-logo {
-  width: 88px;
-  max-width: none;
-  height: auto;
-  flex-shrink: 0;
-}
+@media (max-width: 1080px) {
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: auto;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    border-right: none;
+    border-bottom: 1px solid var(--line);
+    padding: 16px;
+    overflow: visible;
+  }
 
-.sidebar-brand strong {
-  font-size: 20px;
-  line-height: 1.15;
-}
+  .sidebar-nav {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
 
-.sidebar-nav {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.sidebar-nav a {
-  padding: 12px 14px;
-  border-radius: 12px;
-  color: var(--text);
-  font-weight: 600;
-}
-
-.sidebar-nav a:hover {
-  background: var(--panel-2);
+  .main-content {
+    margin-left: 0;
+    padding: 170px 12px 12px;
+  }
 }
 
 .main-content {

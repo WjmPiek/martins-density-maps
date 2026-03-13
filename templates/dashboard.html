@@ -5,216 +5,222 @@
 <section class="dashboard-wrap">
   <section class="dashboard-top-fixed">
     <div class="dashboard-buttons">
-    <a class="primary-btn" href="{{ url_for('upload_page') }}">Upload Excel File</a>
-    <a class="ghost-btn" href="{{ url_for('download_template') }}">Download Excel Template</a>
-    <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download My Data</a>
-  </div>
+      <a class="primary-btn" href="{{ url_for('upload_page') }}">Upload Excel File</a>
+      <a class="ghost-btn" href="{{ url_for('download_template') }}">Download Excel Template</a>
+      <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download My Data</a>
+    </div>
 
-  <section class="stats-grid">
-    <article class="stat-card">
-      <span>Total rows</span>
-      <strong id="totalRows">-</strong>
-    </article>
-    <article class="stat-card">
-      <span>Mapped</span>
-      <strong id="mappedRows">-</strong>
-    </article>
-    <article class="stat-card">
-      <span>Unmapped</span>
-      <strong id="unmappedRows">-</strong>
-    </article>
-    <article class="stat-card">
-      <span>Scope</span>
-      <strong>{{ 'All users' if current_user.is_admin else 'My data only' }}</strong>
-    </article>
-  </section>
+    <section class="stats-grid">
+      <article class="stat-card">
+        <span>Total rows</span>
+        <strong id="totalRows">-</strong>
+      </article>
+      <article class="stat-card">
+        <span>Mapped</span>
+        <strong id="mappedRows">-</strong>
+      </article>
+      <article class="stat-card">
+        <span>Unmapped</span>
+        <strong id="unmappedRows">-</strong>
+      </article>
+      <article class="stat-card">
+        <span>Scope</span>
+        <strong>{{ 'All users' if current_user.is_admin else 'My data only' }}</strong>
+      </article>
+    </section>
 
-  <section class="dashboard-grid">
-    <article class="panel">
-      <div class="panel-head">
-        <div>
-          <h2>Filters</h2>
-          <p class="muted">View your map and record list faster.</p>
+    <section class="dashboard-grid">
+      <article class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>Filters</h2>
+            <p class="muted">View your map and record list faster.</p>
+          </div>
         </div>
-      </div>
 
-      <div class="filters">
-        <label>
-          Town / city
-          <input id="townFilter" type="search" placeholder="Search town">
-        </label>
+        <div class="filters">
+          <label>
+            Town / city
+            <input id="townFilter" type="search" placeholder="Search town">
+          </label>
 
-        <label>
-          Province
-          <select id="provinceFilter">
-            <option value="">All provinces</option>
-            {% for province in provinces %}
-            <option value="{{ province }}">{{ province }}</option>
-            {% endfor %}
-          </select>
-        </label>
+          <label>
+            Province
+            <select id="provinceFilter">
+              <option value="">All provinces</option>
+              {% for province in provinces %}
+              <option value="{{ province }}">{{ province }}</option>
+              {% endfor %}
+            </select>
+          </label>
 
-        <label>
-          View mode
-          <select id="mapMode">
-            <option value="clusters">Clusters</option>
-            <option value="pins">Pins</option>
-            <option value="heatmap">Heatmap</option>
-          </select>
-        </label>
-      </div>
-    </article>
-  </section>
+          <label>
+            View mode
+            <select id="mapMode">
+              <option value="clusters">Clusters</option>
+              <option value="pins">Pins</option>
+              <option value="heatmap">Heatmap</option>
+            </select>
+          </label>
+        </div>
+      </article>
+    </section>
   </section>
 
   <section class="dashboard-scroll-content">
-  <section class="map-layout">
-    <article class="panel map-panel">
+    <section class="map-layout">
+      <article class="panel map-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Client addresses map</h2>
+            <p class="muted">Choose how you want to view your data.</p>
+          </div>
+        </div>
+
+        <div class="map-toggle">
+          <button type="button" onclick="showMarkers()">Markers</button>
+          <button type="button" onclick="showClusters()">Clusters</button>
+          <button type="button" onclick="showHeat()">Heatmap</button>
+        </div>
+
+        <div class="filters">
+          <label>
+            Heat radius
+            <input id="heatRadius" type="range" min="10" max="50" value="25">
+          </label>
+
+          <label>
+            Pin size
+            <input id="pinRadius" type="range" min="3" max="12" value="6">
+          </label>
+
+          <div></div>
+        </div>
+
+        <div id="map"></div>
+      </article>
+
+      <article class="panel editor-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Record editor</h2>
+            <p class="muted">Add, update, or delete records on your own data only.</p>
+          </div>
+          <button id="clearFormBtn" class="ghost-btn" type="button">Clear form</button>
+        </div>
+
+        <form id="recordForm" class="editor-grid">
+          <input type="hidden" id="recordId">
+          <input id="latitude" type="hidden">
+          <input id="longitude" type="hidden">
+          <input id="weight" type="hidden" value="1">
+          <input id="fullAddress" type="hidden">
+
+          <label>
+            MF File
+            <input id="mfFile" required>
+          </label>
+
+          <label>
+            DOD
+            <input id="dod" type="date">
+          </label>
+
+          <label>
+            Deceased name
+            <input id="deceasedName">
+          </label>
+
+          <label>
+            Deceased surname
+            <input id="deceasedSurname">
+          </label>
+
+          <label>
+            Street address
+            <input id="address" name="address" type="text" placeholder="Enter South African street address" autocomplete="off">
+          </label>
+
+          <label>
+            Town / city
+            <input id="city" autocomplete="address-level2">
+          </label>
+
+          <label>
+            Province
+            <select id="province" autocomplete="address-level1">
+              <option value="">Choose province</option>
+              {% for province in provinces %}
+              <option value="{{ province }}">{{ province }}</option>
+              {% endfor %}
+            </select>
+          </label>
+
+          <label>
+            Postal code
+            <input id="postalCode" autocomplete="postal-code">
+          </label>
+
+          <label>
+            Country
+            <input id="country" value="South Africa" autocomplete="country-name">
+          </label>
+
+          <label>
+            Next of kin name
+            <input id="nextOfKinName">
+          </label>
+
+          <label>
+            Next of kin surname
+            <input id="nextOfKinSurname">
+          </label>
+
+          <label>
+            Relationship
+            <input id="relationship">
+          </label>
+
+          <label>
+            Contact number
+            <input id="contactNumber">
+          </label>
+
+          <div class="form-actions full-span">
+            <button class="primary-btn" type="submit">Save record</button>
+          </div>
+        </form>
+
+        <div id="formStatus" class="info-box hidden"></div>
+        <p id="addressHelp" class="address-help muted hidden"></p>
+      </article>
+    </section>
+
+    <section class="panel">
       <div class="panel-head">
         <div>
-          <h2>Client addresses map</h2>
-          <p class="muted">Choose how you want to view your data.</p>
+          <h2>My records</h2>
+          <p class="muted">Edit or delete records directly from your dashboard.</p>
         </div>
       </div>
 
-      <div class="map-toggle">
-        <button type="button" onclick="showMarkers()">Markers</button>
-        <button type="button" onclick="showClusters()">Clusters</button>
-        <button type="button" onclick="showHeat()">Heatmap</button>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>MF File</th>
+              <th>Name</th>
+              <th>Town</th>
+              <th>Province</th>
+              <th>Address</th>
+              <th>Contact</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTable"></tbody>
+        </table>
       </div>
-
-      <div class="filters">
-        <label>
-          Heat radius
-          <input id="heatRadius" type="range" min="10" max="50" value="25">
-        </label>
-
-        <label>
-          Pin size
-          <input id="pinRadius" type="range" min="3" max="12" value="6">
-        </label>
-
-        <div></div>
-      </div>
-
-      <div id="map"></div>
-    </article>
-
-    <article class="panel editor-panel">
-      <div class="panel-head">
-        <div>
-          <h2>Record editor</h2>
-          <p class="muted">Add, update, or delete records on your own data only.</p>
-        </div>
-        <button id="clearFormBtn" class="ghost-btn" type="button">Clear form</button>
-      </div>
-
-      <form id="recordForm" class="editor-grid">
-        <input type="hidden" id="recordId">
-        <input id="latitude" type="hidden">
-        <input id="longitude" type="hidden">
-        <input id="weight" type="hidden" value="1">
-        <input id="fullAddress" type="hidden">
-
-        <label>
-          MF File
-          <input id="mfFile" required>
-        </label>
-
-        <label>
-          DOD
-          <input id="dod" type="date">
-        </label>
-
-        <label>
-          Deceased name
-          <input id="deceasedName">
-        </label>
-
-        <label>
-          Deceased surname
-          <input id="deceasedSurname">
-        </label>
-
-        <label>
-          Street address
-          <input id="address" name="address" type="text" placeholder="Enter address" autocomplete="off">
-        </label>
-
-        <label>
-          Town / city
-          <input id="city">
-        </label>
-
-        <label>
-          Province
-          <select id="province">
-            <option value="">Choose province</option>
-            {% for province in provinces %}
-            <option value="{{ province }}">{{ province }}</option>
-            {% endfor %}
-          </select>
-        </label>
-
-        <label>
-          Country
-          <input id="country" value="South Africa">
-        </label>
-
-        <label>
-          Next of kin name
-          <input id="nextOfKinName">
-        </label>
-
-        <label>
-          Next of kin surname
-          <input id="nextOfKinSurname">
-        </label>
-
-        <label>
-          Relationship
-          <input id="relationship">
-        </label>
-
-        <label>
-          Contact number
-          <input id="contactNumber">
-        </label>
-
-        <div class="form-actions full-span">
-          <button class="primary-btn" type="submit">Save record</button>
-        </div>
-      </form>
-
-      <div id="formStatus" class="info-box hidden"></div>
-    </article>
-  </section>
-
-  <section class="panel">
-    <div class="panel-head">
-      <div>
-        <h2>My records</h2>
-        <p class="muted">Edit or delete records directly from your dashboard.</p>
-      </div>
-    </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>MF File</th>
-            <th>Name</th>
-            <th>Town</th>
-            <th>Province</th>
-            <th>Address</th>
-            <th>Contact</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody id="recordsTable"></tbody>
-      </table>
-    </div>
-  </section>
+    </section>
   </section>
 </section>
 {% endblock %}
@@ -231,6 +237,128 @@
 </script>
 {% if google_maps_api_key %}
 <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
+<script>
+  (function () {
+    const provinceMap = {
+      'eastern cape': 'Eastern Cape',
+      'free state': 'Free State',
+      'gauteng': 'Gauteng',
+      'kwazulu-natal': 'KwaZulu-Natal',
+      'kwa-zulu natal': 'KwaZulu-Natal',
+      'limpopo': 'Limpopo',
+      'mpumalanga': 'Mpumalanga',
+      'north west': 'North West',
+      'northern cape': 'Northern Cape',
+      'western cape': 'Western Cape'
+    };
+
+    function byId(id) {
+      return document.getElementById(id);
+    }
+
+    function setValue(id, value) {
+      const el = byId(id);
+      if (el && value) el.value = value;
+    }
+
+    function getComponent(place, type) {
+      return (place.address_components || []).find((component) =>
+        component.types && component.types.includes(type)
+      );
+    }
+
+    function normalizeProvince(value) {
+      if (!value) return '';
+      const key = value.trim().toLowerCase();
+      return provinceMap[key] || value;
+    }
+
+    function showHelp(message, isError) {
+      const help = byId('addressHelp');
+      if (!help) return;
+      help.textContent = message || '';
+      help.classList.toggle('hidden', !message);
+      help.classList.toggle('error-text', !!isError);
+    }
+
+    function fillAddressFields(place) {
+      if (!place || !place.address_components) {
+        showHelp('Select an address from the South Africa suggestions list.', true);
+        return;
+      }
+
+      const country = getComponent(place, 'country');
+      const countryCode = country && country.short_name ? country.short_name.toUpperCase() : '';
+      if (countryCode && countryCode !== 'ZA') {
+        showHelp('Please choose an address in South Africa.', true);
+        setValue('country', 'South Africa');
+        return;
+      }
+
+      const streetNumber = getComponent(place, 'street_number');
+      const route = getComponent(place, 'route');
+      const suburb = getComponent(place, 'sublocality_level_1') || getComponent(place, 'sublocality');
+      const locality = getComponent(place, 'locality') || getComponent(place, 'postal_town') || getComponent(place, 'administrative_area_level_2');
+      const province = getComponent(place, 'administrative_area_level_1');
+      const postalCode = getComponent(place, 'postal_code');
+
+      const streetParts = [streetNumber && streetNumber.long_name, route && route.long_name].filter(Boolean);
+      const streetValue = streetParts.join(' ') || (place.name || '');
+
+      setValue('address', streetValue);
+      setValue('city', locality && locality.long_name ? locality.long_name : '');
+      setValue('province', normalizeProvince(province && province.long_name ? province.long_name : ''));
+      setValue('postalCode', postalCode && postalCode.long_name ? postalCode.long_name : '');
+      setValue('country', 'South Africa');
+      setValue('fullAddress', place.formatted_address || '');
+
+      if (place.geometry && place.geometry.location) {
+        setValue('latitude', String(place.geometry.location.lat()));
+        setValue('longitude', String(place.geometry.location.lng()));
+      }
+
+      showHelp(suburb && suburb.long_name ? `Suburb: ${suburb.long_name}` : 'South Africa address selected.');
+    }
+
+    function initAddressAutocomplete() {
+      const addressInput = byId('address');
+      if (!addressInput || !window.google || !google.maps || !google.maps.places) {
+        return;
+      }
+
+      const autocomplete = new google.maps.places.Autocomplete(addressInput, {
+        types: ['address'],
+        fields: ['address_components', 'formatted_address', 'geometry', 'name'],
+        componentRestrictions: { country: 'za' }
+      });
+
+      autocomplete.addListener('place_changed', function () {
+        fillAddressFields(autocomplete.getPlace());
+      });
+
+      addressInput.addEventListener('input', function () {
+        setValue('country', 'South Africa');
+        showHelp('Suggestions limited to South Africa.');
+      });
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initAddressAutocomplete);
+    } else {
+      initAddressAutocomplete();
+    }
+  })();
+</script>
+{% else %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const help = document.getElementById('addressHelp');
+    if (!help) return;
+    help.textContent = 'Google Places API key is missing, so address autocomplete is disabled.';
+    help.classList.remove('hidden');
+    help.classList.add('error-text');
+  });
+</script>
 {% endif %}
-<script src="{{ url_for('static', filename='js/dashboard.js', v='20260313-3') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js', v='20260313-4') }}"></script>
 {% endblock %}

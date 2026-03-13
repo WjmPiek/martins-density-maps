@@ -621,3 +621,17 @@ td {
     border-radius: 16px;
   }
 }
+
+
+#country[readonly] {
+  background: #f7f4fd;
+}
+
+.address-help {
+  margin-top: 10px;
+  font-size: 13px;
+}
+
+.error-text {
+  color: var(--danger);
+}

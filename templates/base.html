@@ -23,16 +23,13 @@
 
   <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
   <link rel="preload" href="{{ url_for('static', filename='img/martins-logo.png') }}" as="image">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260313-3') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260313-4') }}">
 
   {% if current_user.is_authenticated %}
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet"
         href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-
-  <script src="https://unpkg.com/leaflet.heat/dist/leaflet-heat.js"></script>
-  <script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places"></script>
   {% endif %}
 
   {% block head %}{% endblock %}
@@ -46,7 +43,7 @@
   </div>
   {% endif %}
 
-    <div class="app-layout">
+  <div class="app-layout">
     {% if current_user.is_authenticated %}
     <aside class="sidebar">
       <div class="sidebar-brand">
@@ -87,37 +84,31 @@
   {% block scripts %}{% endblock %}
 
   <script>
-    let deferredPrompt;
+    let deferredPrompt = null;
 
-    <script>
-  let deferredPrompt;
+    window.addEventListener('beforeinstallprompt', (e) => {
+      e.preventDefault();
+      deferredPrompt = e;
 
-  window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
+      const installBtn = document.getElementById('installApp');
+      if (!installBtn) return;
 
-    const installBtn = document.getElementById("installApp");
-    if (!installBtn) return;
-
-    installBtn.style.display = "block";
-
-    installBtn.addEventListener("click", () => {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(() => {
+      installBtn.style.display = 'block';
+      installBtn.onclick = async () => {
+        if (!deferredPrompt) return;
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
         deferredPrompt = null;
-      });
+      };
     });
-  });
-</script>
 
-  <script>
-    window.addEventListener("load", function () {
-      const splash = document.getElementById("splash-screen");
+    window.addEventListener('load', function () {
+      const splash = document.getElementById('splash-screen');
       if (!splash) return;
 
       setTimeout(() => {
-        splash.style.opacity = "0";
-        splash.style.transition = "opacity 0.5s ease";
+        splash.style.opacity = '0';
+        splash.style.transition = 'opacity 0.5s ease';
         setTimeout(() => splash.remove(), 500);
       }, 1200);
     });

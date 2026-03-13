@@ -107,6 +107,23 @@ function initAddressAutocomplete() {
     types: ['address'],
   });
 
+  <input id="address" type="text" placeholder="Street address"></input>
+
+  function initAutocomplete() {
+    const input = document.getElementById("address");
+
+    const autocomplete = new google.maps.places.Autocomplete(input, {
+        types: ["address"]
+    });
+
+    autocomplete.addListener("place_changed", function () {
+        const place = autocomplete.getPlace();
+        console.log(place);
+    });
+}
+
+google.maps.event.addDomListener(window, "load", initAutocomplete);
+
   autocomplete.addListener('place_changed', () => {
     const place = autocomplete.getPlace();
     if (!place) return;

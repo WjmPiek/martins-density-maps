@@ -573,83 +573,91 @@ def api_upload():
 @login_required
 def upload_excel():
     file = request.files.get("file")
-    if not file:
+    if not file or not file.filename:
         flash("Please choose a file.", "warning")
         return redirect(url_for("dashboard"))
 
     filename = file.filename.lower()
 
-    if filename.endswith(".csv"):
-        df = pd.read_csv(file)
-    else:
-        df = pd.read_excel(file)
+    try:
+        if filename.endswith(".csv"):
+            df = pd.read_csv(file)
+        else:
+            df = pd.read_excel(file)
+    except Exception:
+        flash("Could not read the uploaded file. Please use the Martins template.", "danger")
+        return redirect(url_for("dashboard"))
 
-    required_cols = [
-        "MF File",
-        "Deceased Name",
-        "Deceased Surname",
-        "DOD",
-        "Address",
-        "City",
-        "Province",
-        "Country",
-        "Full Address",
-        "Latitude",
-        "Longitude",
-        "Weight",
-        "Next of Kin Name",
-        "Next of Kin Surname",
-        "Relationship",
-        "Contact Number",
-    ]
+    df.columns = [normalize_text(col) for col in df.columns]
 
-    for col in required_cols:
-        if col not in df.columns:
-            flash(f"Missing required column: {col}", "danger")
-            return redirect(url_for("dashboard"))
-
-    Record.query.filter_by(user_id=current_user.id).delete()
+    missing_cols = [col for col in EXPECTED_COLUMNS if col not in df.columns]
+    if missing_cols:
+        flash(f"Missing required columns: {', '.join(missing_cols)}", "danger")
+        return redirect(url_for("dashboard"))
 
     geolocator = Nominatim(user_agent="martins_density_map")
 
-    for _, row in df.iterrows():
-        lat = row.get("Latitude")
-        lng = row.get("Longitude")
-        full_address = row.get("Full Address")
+    try:
+        Record.query.filter_by(user_id=current_user.id).delete()
 
-        if (pd.isna(lat) or pd.isna(lng)) and pd.notna(full_address):
-            try:
-                location = geolocator.geocode(str(full_address), timeout=10)
-                if location:
-                    lat = location.latitude
-                    lng = location.longitude
-            except Exception:
-                lat = None
-                lng = None
+        for _, row in df.iterrows():
+            raw = {col: row.get(col) for col in EXPECTED_COLUMNS}
 
-        record = Record(
-            user_id=current_user.id,
-            mf_file=row.get("MF File"),
-            deceased_name=row.get("Deceased Name"),
-            deceased_surname=row.get("Deceased Surname"),
-            dod=row.get("DOD"),
-            address=row.get("Address"),
-            city=row.get("City"),
-            province=row.get("Province"),
-            country=row.get("Country"),
-            full_address=full_address,
-            latitude=lat,
-            longitude=lng,
-            weight=row.get("Weight") or 1,
-            next_of_kin_name=row.get("Next of Kin Name"),
-            next_of_kin_surname=row.get("Next of Kin Surname"),
-            relationship=row.get("Relationship"),
-            contact_number=row.get("Contact Number"),
-        )
-        db.session.add(record)
+            if not any(normalize_text(value) for value in raw.values()):
+                continue
 
-    db.session.commit()
-    flash("File uploaded successfully.", "success")
+            mf_file = normalize_text(raw.get("MF File"))
+            if not mf_file:
+                continue
+
+            address = normalize_text(raw.get("Address"))
+            city = normalize_text(raw.get("City"))
+            province = normalize_text(raw.get("Province"))
+            country = normalize_text(raw.get("Country"))
+            full_address = normalize_text(raw.get("Full Address")) or ", ".join(
+                part for part in [address, city, province, country] if part
+            )
+
+            lat = normalize_float(raw.get("Latitude"))
+            lng = normalize_float(raw.get("Longitude"))
+            weight = normalize_float(raw.get("Weight"))
+
+            if (lat is None or lng is None) and full_address:
+                try:
+                    location = geolocator.geocode(full_address, timeout=10)
+                    if location:
+                        lat = location.latitude
+                        lng = location.longitude
+                except Exception:
+                    pass
+
+            record = Record(
+                user_id=current_user.id,
+                mf_file=mf_file,
+                deceased_name=normalize_text(raw.get("Deceased Name")),
+                deceased_surname=normalize_text(raw.get("Deceased Surname")),
+                dod=normalize_text(raw.get("DOD")),
+                address=address,
+                city=city,
+                province=province,
+                country=country,
+                full_address=full_address,
+                latitude=lat,
+                longitude=lng,
+                weight=weight if weight is not None else 1.0,
+                next_of_kin_name=normalize_text(raw.get("Next of Kin Name")),
+                next_of_kin_surname=normalize_text(raw.get("Next of Kin Surname")),
+                relationship=normalize_text(raw.get("Relationship")),
+                contact_number=normalize_text(raw.get("Contact Number")),
+            )
+            db.session.add(record)
+
+        db.session.commit()
+        flash("File uploaded successfully.", "success")
+    except Exception:
+        db.session.rollback()
+        flash("Upload failed. Please verify the template columns and data types.", "danger")
+
     return redirect(url_for("dashboard"))
 
 

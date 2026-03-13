@@ -231,26 +231,46 @@ label {
 
 .sidebar-brand {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 16px;
-  width: 180px;     /* adjust if needed */
-  height: auto;     /* keeps the logo proportion */
-  display: block;
-  margin-bottom: 8px;
+  text-align: center;
+  gap: 12px;
+  margin-bottom: 22px;
 }
 
 .sidebar-logo {
-  width: 120px;
-  max-width: none;
+  width: 200px;
+  max-width: 100%;
   height: auto;
-  flex-shrink: 0;
+  display: block;
+  object-fit: contain;
+  margin: 0 auto;
+}
+
+.sidebar-brand-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.sidebar-brand .eyebrow {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: 0.04em;
+  text-transform: none;
+  color: #6f55c7;
 }
 
 .sidebar-brand strong {
   display: block;
-  font-size: 34px;
-  line-height: 1.05;
+  margin: 0;
+  font-size: 20px;
+  line-height: 1.1;
   font-weight: 800;
+  color: #2d2440;
 }
 
 .sidebar-brand .muted,
@@ -811,10 +831,18 @@ td {
 }
 
 @media (max-width: 1080px) {
-  .sidebar-brand {
-    gap: 8px;
-    margin-bottom: 18px;
+  .sidebar-logo {
+    width: 150px;
   }
+
+  .sidebar-brand .eyebrow {
+    font-size: 12px;
+  }
+
+  .sidebar-brand strong {
+    font-size: 17px;
+  }
+}
 
   .sidebar-logo {
     width: 110px;

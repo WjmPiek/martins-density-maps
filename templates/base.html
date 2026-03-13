@@ -50,12 +50,13 @@
     {% if current_user.is_authenticated %}
     <aside class="sidebar">
       <div class="sidebar-brand">
-        <img src="{{ url_for('static', filename='img/martins-logo.png') }}" class="sidebar-logo" alt="Martins logo">
-        <div>
-          <div class="eyebrow">Martin's Franchising</div>
-          <strong>Client addresses</strong>
-        </div>
+      <img src="{{ url_for('static', filename='img/martins-logo.png') }}" class="sidebar-logo" alt="Martins logo">
+
+      <div class="sidebar-brand-text">
+      <div class="eyebrow">Martin's Franchising</div>
+        <strong>Client addresses</strong>
       </div>
+  </div>
 
       <div class="sidebar-actions">
         <a class="primary-btn" href="{{ url_for('upload_page') }}">Upload Excel File</a>

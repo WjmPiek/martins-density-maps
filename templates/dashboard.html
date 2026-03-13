@@ -148,7 +148,9 @@
                   type="text"
                   placeholder="Enter South African street address"
                   autocomplete="new-password"
-                  spellcheck="false">
+                  spellcheck="false"
+                  autocorrect="off"
+                  autocapitalize="off">
 
               </label>
 
@@ -245,59 +247,20 @@
     googleMapsApiKey: {{ google_maps_api_key|tojson if google_maps_api_key else '""' }}
   };
 </script>
-
 {% if google_maps_api_key %}
-<script src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&loading=async"></script>
-
 <script>
-function initAddressAutocomplete(){
-
-  const input = document.getElementById("address");
-
-  if(!input || !window.google) return;
-
-  const autocomplete = new google.maps.places.Autocomplete(input,{
-    types:["address"],
-    componentRestrictions:{country:"za"},
-    fields:["address_components","geometry","formatted_address"]
+  window.APP_CONTEXT.googleMapsApiKey = {{ google_maps_api_key|tojson }};
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&loading=async&callback=initGoogleAddress"></script>
+{% else %}
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const help = document.getElementById('addressHelp');
+    if (!help) return;
+    help.textContent = 'Google Places API key is missing, so address autocomplete is disabled.';
+    help.classList.remove('hidden');
+    help.classList.add('error-text');
   });
-
-  autocomplete.addListener("place_changed", function(){
-
-    const place = autocomplete.getPlace();
-    if(!place.geometry) return;
-
-    const lat = place.geometry.location.lat();
-    const lng = place.geometry.location.lng();
-
-    document.getElementById("latitude").value = lat;
-    document.getElementById("longitude").value = lng;
-
-    const components = place.address_components;
-
-    components.forEach(c=>{
-      if(c.types.includes("locality")){
-        document.getElementById("city").value = c.long_name;
-      }
-
-      if(c.types.includes("administrative_area_level_1")){
-        document.getElementById("province").value = c.long_name;
-      }
-
-      if(c.types.includes("postal_code")){
-        document.getElementById("postalCode").value = c.long_name;
-      }
-
-      if(c.types.includes("country")){
-        document.getElementById("country").value = c.long_name;
-      }
-    });
-
-  });
-
-}
-
-document.addEventListener("DOMContentLoaded", initAddressAutocomplete);
 </script>
 {% endif %}
 

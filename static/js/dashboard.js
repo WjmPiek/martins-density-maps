@@ -22,6 +22,7 @@ const els = {
   address: document.getElementById('address'),
   city: document.getElementById('city'),
   province: document.getElementById('province'),
+  postalCode: document.getElementById('postalCode'),
   country: document.getElementById('country'),
   fullAddress: document.getElementById('fullAddress'),
   latitude: document.getElementById('latitude'),
@@ -98,22 +99,10 @@ function focusSavedRecordOnMap(record) {
   map.setView([lat, lng], 16, { animate: true });
 }
 
-function initAddressAutocomplete() {
-  const streetInput = document.getElementById('address');
-  const help = document.getElementById('addressHelp');
+function normalizeProvinceName(value) {
+  if (!value) return '';
 
-  if (!streetInput) return;
-
-  if (!window.google || !google.maps || !google.maps.places) {
-    if (help && window.APP_CONTEXT && !window.APP_CONTEXT.googleMapsApiKey) {
-      help.textContent = 'Google Places API key is missing, so address autocomplete is disabled.';
-      help.classList.remove('hidden');
-      help.classList.add('error-text');
-    }
-    return;
-  }
-
-  const provinceMap = {
+  const map = {
     'eastern cape': 'Eastern Cape',
     'free state': 'Free State',
     'gauteng': 'Gauteng',
@@ -123,29 +112,25 @@ function initAddressAutocomplete() {
     'mpumalanga': 'Mpumalanga',
     'north west': 'North West',
     'northern cape': 'Northern Cape',
-    'western cape': 'Western Cape',
+    'western cape': 'Western Cape'
   };
 
-  const normalizeProvince = (value) => {
-    const key = String(value || '').trim().toLowerCase();
-    return provinceMap[key] || value || '';
-  };
+  const key = String(value).trim().toLowerCase();
+  return map[key] || value;
+}
 
-  const getComponent = (place, type) => (place.address_components || []).find((component) =>
-    component.types && component.types.includes(type)
-  );
+function getAddressComponent(components, type) {
+  return (components || []).find((component) => component.types && component.types.includes(type));
+}
 
-  const setHelp = (message, isError = false) => {
-    if (!help) return;
-    help.textContent = message || '';
-    help.classList.toggle('hidden', !message);
-    help.classList.toggle('error-text', !!isError);
-  };
+function initAddressAutocomplete() {
+  const streetInput = document.getElementById('address');
+  if (!streetInput || !window.google || !google.maps || !google.maps.places) return;
 
   const autocomplete = new google.maps.places.Autocomplete(streetInput, {
-    fields: ['address_components', 'formatted_address', 'geometry', 'name'],
+    fields: ['formatted_address', 'geometry', 'address_components', 'name'],
     types: ['address'],
-    componentRestrictions: { country: 'za' },
+    componentRestrictions: { country: 'za' }
   });
 
   streetInput.addEventListener('keydown', (event) => {
@@ -153,62 +138,68 @@ function initAddressAutocomplete() {
   });
 
   streetInput.addEventListener('input', () => {
-    if (els.latitude) els.latitude.value = '';
-    if (els.longitude) els.longitude.value = '';
-    if (els.fullAddress) els.fullAddress.value = '';
-    if (els.city) els.city.value = '';
-    if (els.province) els.province.value = '';
-    const postal = document.getElementById('postalCode');
-    if (postal) postal.value = '';
-    if (els.country) els.country.value = 'South Africa';
-    setHelp('Choose an address from the South Africa suggestions list.');
+    els.latitude.value = '';
+    els.longitude.value = '';
+    els.fullAddress.value = '';
+    if (els.country && !els.country.value) els.country.value = 'South Africa';
   });
 
   autocomplete.addListener('place_changed', () => {
     const place = autocomplete.getPlace();
-    if (!place || !place.address_components) {
-      setHelp('Select a valid address from the suggestions list.', true);
-      return;
+    if (!place || !place.address_components) return;
+
+    const components = place.address_components || [];
+    const streetNumber = getAddressComponent(components, 'street_number');
+    const route = getAddressComponent(components, 'route');
+    const locality = getAddressComponent(components, 'locality')
+      || getAddressComponent(components, 'postal_town')
+      || getAddressComponent(components, 'administrative_area_level_2')
+      || getAddressComponent(components, 'sublocality_level_1')
+      || getAddressComponent(components, 'sublocality');
+    const province = getAddressComponent(components, 'administrative_area_level_1');
+    const postalCode = getAddressComponent(components, 'postal_code');
+    const country = getAddressComponent(components, 'country');
+
+    const streetValue = [streetNumber && streetNumber.long_name, route && route.long_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim() || place.name || streetInput.value || '';
+
+    els.address.value = streetValue;
+    els.city.value = locality && locality.long_name ? locality.long_name : '';
+    if (els.province) {
+      els.province.value = normalizeProvinceName(province && province.long_name ? province.long_name : '');
     }
-
-    const country = getComponent(place, 'country');
-    const countryCode = country && country.short_name ? country.short_name.toUpperCase() : '';
-    if (countryCode && countryCode !== 'ZA') {
-      if (els.country) els.country.value = 'South Africa';
-      setHelp('Please choose an address in South Africa.', true);
-      return;
+    if (els.postalCode) {
+      els.postalCode.value = postalCode && postalCode.long_name ? postalCode.long_name : '';
     }
-
-    const streetNumber = getComponent(place, 'street_number');
-    const route = getComponent(place, 'route');
-    const suburb = getComponent(place, 'sublocality_level_1') || getComponent(place, 'sublocality');
-    const locality = getComponent(place, 'locality') || getComponent(place, 'postal_town') || getComponent(place, 'administrative_area_level_2');
-    const province = getComponent(place, 'administrative_area_level_1');
-    const postalCode = getComponent(place, 'postal_code');
-
-    const streetAddress = [streetNumber && streetNumber.long_name, route && route.long_name].filter(Boolean).join(' ').trim() || (place.name || streetInput.value || '');
-
-    if (els.address) els.address.value = streetAddress;
-    if (els.fullAddress) els.fullAddress.value = place.formatted_address || '';
-    if (els.city) els.city.value = locality && locality.long_name ? locality.long_name : '';
-    if (els.province) els.province.value = normalizeProvince(province && province.long_name ? province.long_name : '');
-    if (els.country) els.country.value = 'South Africa';
-    const postal = document.getElementById('postalCode');
-    if (postal) postal.value = postalCode && postalCode.long_name ? postalCode.long_name : '';
+    els.country.value = country && country.long_name ? country.long_name : 'South Africa';
+    els.fullAddress.value = place.formatted_address || '';
 
     if (place.geometry && place.geometry.location) {
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
-      if (els.latitude) els.latitude.value = String(lat);
-      if (els.longitude) els.longitude.value = String(lng);
-      if (map) map.setView([lat, lng], 15, { animate: true });
-    }
+      els.latitude.value = lat;
+      els.longitude.value = lng;
 
-    setHelp(suburb && suburb.long_name ? `Suburb: ${suburb.long_name}` : 'South Africa address selected.');
+      if (map) {
+        map.setView([lat, lng], 15, { animate: true });
+      }
+    }
   });
 }
 
-window.initAddressAutocomplete = initAddressAutocomplete;
+window.initGoogleAddress = function initGoogleAddress() {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAddressAutocomplete, { once: true });
+  } else {
+    if (!window.google || !google.maps || !google.maps.places) {
+    // Google callback will run initGoogleAddress later.
+  } else {
+    initAddressAutocomplete();
+  }
+  }
+};
 
 function initMap() {
   const mapEl = document.getElementById('map');
@@ -482,6 +473,11 @@ window.showHeat = showHeat;
 
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
+  if (!window.google || !google.maps || !google.maps.places) {
+    // Google callback will run initGoogleAddress later.
+  } else {
+    initAddressAutocomplete();
+  }
   clearForm();
   loadData();
 

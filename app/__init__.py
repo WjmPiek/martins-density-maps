@@ -3,7 +3,10 @@ from flask import Flask
 from .extensions import db, login_manager
 
 def create_app():
-    app = Flask(__name__)
+    app = Flask(
+        __name__,
+        template_folder=os.path.join("..", "templates")
+    )
 
     database_url = os.getenv("DATABASE_URL")
     if database_url and database_url.startswith("postgres://"):

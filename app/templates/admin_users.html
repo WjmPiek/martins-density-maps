@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}Registered Users · Martins Density Map{% endblock %}
+
+{% block content %}
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>Registered Users</h2>
+      <p class="muted">Admin-only view of all users registered on the system.</p>
+    </div>
+  </div>
+
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Email</th>
+          <th>Role</th>
+          <th>Uploads</th>
+          <th>Records</th>
+          <th>Joined</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for user in users %}
+        <tr>
+          <td>{{ user.name }}</td>
+          <td>{{ user.email }}</td>
+          <td>{{ 'Admin' if user.is_admin else 'User' }}</td>
+          <td>{{ user.uploads|length }}</td>
+          <td>{{ user.records|length }}</td>
+          <td>{{ user.created_at.strftime('%Y-%m-%d') if user.created_at else '' }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6">No registered users found.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

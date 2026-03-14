@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, send_file
-from flask_login import login_required
+from flask import Blueprint, abort, render_template, send_file
+from flask_login import current_user, login_required
 
 from ..models import Record, Upload, User
 from ..services.export import build_workbook
@@ -24,6 +24,16 @@ def admin():
         upload_count=upload_count,
         latest_uploads=latest_uploads,
     )
+
+
+@admin_bp.route("/admin/users")
+@login_required
+def users():
+    if not current_user.is_admin:
+        abort(403)
+
+    users = User.query.order_by(User.name.asc(), User.email.asc()).all()
+    return render_template("admin_users.html", users=users)
 
 
 @admin_bp.route("/admin/download/central.xlsx")

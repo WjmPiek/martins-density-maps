@@ -2,6 +2,7 @@ const state = {
   records: [],
   filtered: [],
   currentMapView: 'markers',
+  branches: [],
 };
 
 const els = {
@@ -10,6 +11,7 @@ const els = {
   unmappedRows: document.getElementById('unmappedRows'),
   townFilter: document.getElementById('townFilter'),
   provinceFilter: document.getElementById('provinceFilter'),
+  branchFilter: document.getElementById('branchFilter'),
   formStatus: document.getElementById('formStatus'),
   addressHelp: document.getElementById('addressHelp'),
   recordForm: document.getElementById('recordForm'),
@@ -96,6 +98,7 @@ function popupHtml(record) {
       <div><b>Address:</b> ${escapeHtml(record.fullAddress || record.address || '-')}</div>
       <div><b>Town:</b> ${escapeHtml(record.city || '-')}</div>
       <div><b>Province:</b> ${escapeHtml(record.province || '-')}</div>
+      ${record.owner ? `<div><b>Branch:</b> ${escapeHtml(record.owner)}</div>` : ''}
       <div><b>Contact:</b> ${escapeHtml(record.contactNumber || '-')}</div>
       ${googleMapsHref ? `<div><a href="${googleMapsHref}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div>` : ''}
     </div>
@@ -297,7 +300,10 @@ function renderMap() {
   if (!map || !hasGoogleMaps()) return;
   clearMapLayers();
 
-  const mapped = state.filtered.filter((r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude)));
+  const mapped = state.filtered.filter(
+    (r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude))
+  );
+
   if (!mapped.length) {
     map.setCenter(SOUTH_AFRICA_CENTER);
     map.setZoom(5.5);
@@ -306,22 +312,28 @@ function renderMap() {
 
   const heatRadius = parseInt(els.heatRadius?.value || '25', 10);
   const pinRadius = parseInt(els.pinRadius?.value || '6', 10);
-  const bounds = new google.maps.LatLngBounds();
   const popup = ensureInfoWindow();
+  const bounds = new google.maps.LatLngBounds();
 
   googleMarkers = mapped.map((record) => {
-    const position = { lat: Number(record.latitude), lng: Number(record.longitude) };
+    const position = {
+      lat: Number(record.latitude),
+      lng: Number(record.longitude),
+    };
+
     bounds.extend(position);
+
     const marker = new google.maps.Marker({
       position,
       title: `${record.deceasedName || ''} ${record.deceasedSurname || ''}`.trim() || (record.mfFile || 'Record'),
       icon: buildMarkerIcon(pinRadius),
     });
-    
+
     marker.addListener('click', () => {
       popup.setContent(popupHtml(record));
       popup.open({ map, anchor: marker });
     });
+
     return marker;
   });
 
@@ -346,7 +358,7 @@ function renderMap() {
 
   if (mapped.length === 1) {
     map.setCenter(bounds.getCenter());
-    map.setZoom(11);
+    map.setZoom(15);
   } else {
     map.fitBounds(bounds, 48);
   }
@@ -387,12 +399,16 @@ function updateSummary() {
 function renderTable() {
   if (!els.recordsTable) return;
   if (!state.filtered.length) {
-    els.recordsTable.innerHTML = '<tr><td colspan="7">No records found.</td></tr>';
+    const colspan = window.APP_CONTEXT?.isAdmin === 'true' ? 8 : 7;
+    els.recordsTable.innerHTML = `<tr><td colspan="${colspan}">No records found.</td></tr>`;
     return;
   }
 
+  const isAdmin = window.APP_CONTEXT?.isAdmin === 'true';
+
   els.recordsTable.innerHTML = state.filtered.map((record) => `
     <tr class="${(!record.latitude || !record.longitude) ? 'warning-row' : ''}">
+      ${isAdmin ? `<td>${escapeHtml(record.owner || record.ownerEmail || '')}</td>` : ''}
       <td>${escapeHtml(record.mfFile || '')}</td>
       <td>${escapeHtml(record.deceasedName || '')} ${escapeHtml(record.deceasedSurname || '')}</td>
       <td>${escapeHtml(record.city || '')}</td>
@@ -405,6 +421,20 @@ function renderTable() {
       </td>
     </tr>
   `).join('');
+}
+
+function populateBranchFilter(owners) {
+  if (!els.branchFilter || window.APP_CONTEXT?.isAdmin !== 'true') return;
+
+  const currentValue = els.branchFilter.value || '';
+  const options = [{ id: '', name: 'All branches' }, ...(owners || [])];
+
+  els.branchFilter.innerHTML = options.map((owner) => {
+    const value = owner.id === '' ? '' : String(owner.id);
+    const label = owner.id === '' ? owner.name : `${owner.name || owner.email} (${owner.email})`;
+    const selected = value === currentValue ? ' selected' : '';
+    return `<option value="${escapeHtml(value)}"${selected}>${escapeHtml(label)}</option>`;
+  }).join('');
 }
 
 function applyFilters() {
@@ -474,9 +504,15 @@ function setFieldState(field, triedSubmit) {
 }
 
 async function loadData() {
-  const res = await fetch('/api/records');
+  const branch = els.branchFilter && window.APP_CONTEXT?.isAdmin === 'true'
+    ? (els.branchFilter.value || '')
+    : '';
+  const url = branch ? `/api/records?branch=${encodeURIComponent(branch)}` : '/api/records';
+  const res = await fetch(url);
   const data = await res.json();
   state.records = data.records || [];
+  state.branches = (data.summary && data.summary.owners) || [];
+  populateBranchFilter(state.branches);
   autoMapMode();
   applyFilters();
   queueMissingGeocodes();
@@ -500,20 +536,7 @@ async function geocodeAddress(fullAddress) {
     });
   }
 
-  const url = new URL('https://nominatim.openstreetmap.org/search');
-  url.searchParams.set('q', address);
-  url.searchParams.set('format', 'jsonv2');
-  url.searchParams.set('limit', '1');
-  url.searchParams.set('countrycodes', 'za');
-  const response = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } });
-  if (!response.ok) return null;
-  const results = await response.json();
-  if (!Array.isArray(results) || !results.length) return null;
-  return {
-    lat: Number(results[0].lat),
-    lng: Number(results[0].lon),
-    source: 'osm',
-  };
+  return null;
 }
 
 function autoMapMode() {
@@ -629,7 +652,11 @@ async function loadAnalytics() {
   const monthlyCanvas = document.getElementById('monthlyChart');
   if (!provinceCanvas || !cityCanvas || !monthlyCanvas || typeof Chart === 'undefined') return;
 
-  const res = await fetch('/api/analytics');
+  const branch = els.branchFilter && window.APP_CONTEXT?.isAdmin === 'true'
+    ? (els.branchFilter.value || '')
+    : '';
+  const url = branch ? `/api/analytics?branch=${encodeURIComponent(branch)}` : '/api/analytics';
+  const res = await fetch(url);
   if (!res.ok) return;
   const data = await res.json();
 
@@ -766,6 +793,11 @@ function bootstrapDashboard() {
   els.clearFormBtn?.addEventListener('click', clearForm);
   els.townFilter?.addEventListener('input', applyFilters);
   els.provinceFilter?.addEventListener('change', applyFilters);
+  els.branchFilter?.addEventListener('change', async () => {
+    await loadData();
+    await loadAnalytics();
+  });
+
   [els.address, els.city, els.province, els.postalCode, els.country].forEach((field) => {
     field?.addEventListener('input', () => {
       if (els.fullAddress) els.fullAddress.value = getFullAddressFromForm();

@@ -6,6 +6,9 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from .extensions import db
 
 
+ADMIN_EMAIL = "wjm@martinsdirect.com"
+
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
@@ -25,7 +28,7 @@ class User(UserMixin, db.Model):
 
     @property
     def is_admin(self) -> bool:
-        return self.role == "admin"
+        return self.role == "admin" or (self.email or "").strip().lower() == ADMIN_EMAIL
 
 
 class Upload(db.Model):
@@ -87,7 +90,8 @@ class Record(db.Model):
             "nextOfKinSurname": self.next_of_kin_surname or "",
             "relationship": self.relationship or "",
             "contactNumber": self.contact_number or "",
-            "owner": self.user.name,
-            "ownerEmail": self.user.email,
+            "owner": self.user.name if self.user else "",
+            "ownerEmail": self.user.email if self.user else "",
+            "ownerId": self.user.id if self.user else None,
             "updatedAt": self.updated_at.isoformat(),
         }

@@ -21,12 +21,6 @@
   <link rel="preload" href="{{ url_for('static', filename='img/martins-logo.png') }}" as="image">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260314-1') }}">
 
-  {% if current_user.is_authenticated %}
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
-  {% endif %}
-
   {% block head %}{% endblock %}
 </head>
 <body>
@@ -58,6 +52,7 @@
         <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
         {% if current_user.is_admin %}
         <a href="{{ url_for('admin.admin') }}">Admin</a>
+        <a href="{{ url_for('admin.users') }}">Registered Users</a>
         {% endif %}
         <a href="{{ url_for('auth.logout') }}">Logout</a>
       </nav>

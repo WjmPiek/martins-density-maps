@@ -6,7 +6,6 @@ from ..utils.helpers import build_full_address, normalize_float, normalize_text
 from .geocoding import geocode_address
 
 
-
 def upsert_record(user_id, payload):
     payload = payload or {}
     record_id = payload.get("id")
@@ -37,8 +36,8 @@ def upsert_record(user_id, payload):
     )
 
     record.weight = normalize_float(payload.get("weight")) or 1.0
-    record.next_of_kin_name = normalize_text(payload.get("nextOfKinName"))
-    record.next_of_kin_surname = normalize_text(payload.get("nextOfKinSurname"))
+    record.next_of_kin_name = normalize_text(payload.get("NextOfKinName") or payload.get("nextOfKinName"))
+    record.next_of_kin_surname = normalize_text(payload.get("NextOfKinSurname") or payload.get("nextOfKinSurname"))
     record.relationship = normalize_text(payload.get("relationship"))
     record.contact_number = normalize_text(payload.get("contactNumber"))
 
@@ -65,15 +64,32 @@ def upsert_record(user_id, payload):
     return record
 
 
-def dataset_for_user(user):
-    query = Record.query
-    if not user.is_admin:
-        query = query.filter_by(user_id=user.id)
+def dataset_for_user(user, branch=None):
+    query = Record.query.options(joinedload(Record.user))
 
-    records = query.options(joinedload(Record.user)).order_by(Record.city.asc(), Record.mf_file.asc()).all()
+    if not user.is_admin:
+        query = query.filter(Record.user_id == user.id)
+    elif branch:
+        query = query.filter(Record.user_id == branch)
+
+    records = query.order_by(Record.city.asc(), Record.mf_file.asc()).all()
     mapped = sum(1 for r in records if r.latitude is not None and r.longitude is not None)
     provinces = sorted({r.province for r in records if r.province})
-    owners = sorted({r.user.name for r in records})
+    owners = []
+    seen = set()
+    for record in records:
+        if not record.user:
+            continue
+        if record.user_id in seen:
+            continue
+        seen.add(record.user_id)
+        owners.append({
+            "id": record.user_id,
+            "name": record.user.name,
+            "email": record.user.email,
+        })
+
+    owners.sort(key=lambda item: ((item.get("name") or "").lower(), (item.get("email") or "").lower()))
 
     return {
         "records": [r.to_dict() for r in records],

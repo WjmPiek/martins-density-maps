@@ -33,6 +33,15 @@
         </div>
 
         <div class="filters">
+          {% if current_user.is_admin %}
+          <label>
+            Branch
+            <select id="branchFilter">
+              <option value="">All branches</option>
+            </select>
+          </label>
+          {% endif %}
+
           <label>
             Town / city
             <input id="townFilter" type="search" placeholder="Search town">
@@ -223,7 +232,7 @@
     <section class="panel">
       <div class="panel-head">
         <div>
-          <h2>My records</h2>
+          <h2>{{ 'Records' if current_user.is_admin else 'My records' }}</h2>
           <p class="muted">Edit or delete records directly from your dashboard.</p>
         </div>
       </div>
@@ -232,6 +241,9 @@
         <table>
           <thead>
             <tr>
+              {% if current_user.is_admin %}
+              <th>Branch</th>
+              {% endif %}
               <th>MF File</th>
               <th>Name</th>
               <th>Town</th>

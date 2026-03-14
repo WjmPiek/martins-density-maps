@@ -19,7 +19,15 @@ api_bp = Blueprint("api", __name__)
 @api_bp.route("/api/records")
 @login_required
 def api_records():
-    return jsonify(dataset_for_user(current_user))
+    branch = request.args.get("branch", "").strip() or None
+    if current_user.is_admin and branch:
+        try:
+            branch = int(branch)
+        except ValueError:
+            branch = None
+    else:
+        branch = None if not current_user.is_admin else branch
+    return jsonify(dataset_for_user(current_user, branch=branch))
 
 
 @api_bp.route("/api/records", methods=["POST"])
@@ -30,6 +38,7 @@ def api_save_record():
         record = upsert_record(current_user.id, payload)
         db.session.commit()
         write_records_to_disk(current_user, f"{current_user.name}.xlsx")
+        return jsonify({"message": "Record saved.", "record": record.to_dict()})
     except ValueError as exc:
         db.session.rollback()
         return jsonify({"error": str(exc)}), 400
@@ -37,7 +46,6 @@ def api_save_record():
         current_app.logger.exception("Could not save record: %s", exc)
         db.session.rollback()
         return jsonify({"error": "Could not save record."}), 500
-    return jsonify({"message": "Record saved.", "record": record.to_dict()})
 
 
 @api_bp.route("/api/records/<int:record_id>", methods=["DELETE"])
@@ -46,6 +54,7 @@ def api_delete_record(record_id):
     record = Record.query.get_or_404(record_id)
     if not current_user.is_admin and record.user_id != current_user.id:
         return jsonify({"error": "Not allowed."}), 403
+
     db.session.delete(record)
     db.session.commit()
     write_records_to_disk(current_user, f"{current_user.name}.xlsx")
@@ -95,9 +104,17 @@ def api_upload():
 @api_bp.route("/api/analytics")
 @login_required
 def api_analytics():
+    branch = request.args.get("branch", "").strip() or None
+
     query = Record.query
     if not current_user.is_admin:
         query = query.filter_by(user_id=current_user.id)
+    elif branch:
+        try:
+            query = query.filter_by(user_id=int(branch))
+        except ValueError:
+            pass
+
     records = query.all()
 
     province = Counter(r.province for r in records if r.province)

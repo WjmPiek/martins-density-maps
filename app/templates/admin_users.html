@@ -13,9 +13,8 @@
     <div class="panel-head">
       <div>
         <h2>All registered users</h2>
-        <p class="muted">Activate, deactivate, or delete users when needed.</p>
+        <p class="muted">Deactivate access when needed. Deactivated users cannot sign in.</p>
       </div>
-      <a class="ghost-btn" href="{{ url_for('admin.user_dashboard_preview') }}">Open user dashboard preview</a>
     </div>
 
     <div class="table-wrap">
@@ -27,7 +26,7 @@
             <th>Role</th>
             <th>Registered</th>
             <th>Status</th>
-            <th>Actions</th>
+            <th>Action</th>
           </tr>
         </thead>
         <tbody>
@@ -42,20 +41,11 @@
               {% if user.id == current_user.id %}
                 <span class="muted">Current user</span>
               {% else %}
-              <div class="action-group">
-                {% if user.is_active %}
-                <form method="post" action="{{ url_for('admin.deactivate_user', user_id=user.id) }}">
-                  <button class="small-btn" type="submit">Deactivate</button>
-                </form>
-                {% else %}
-                <form method="post" action="{{ url_for('admin.activate_user', user_id=user.id) }}">
-                  <button class="small-btn" type="submit">Activate</button>
-                </form>
-                {% endif %}
-                <form method="post" action="{{ url_for('admin.delete_user', user_id=user.id) }}" onsubmit="return confirm('Delete {{ user.name|escape }} and all of this user\'s records?');">
-                  <button class="small-btn danger-btn" type="submit">Delete</button>
-                </form>
-              </div>
+              <form method="post" action="{{ url_for('admin.toggle_user_active', user_id=user.id) }}">
+                <button class="{{ 'ghost-btn' if not user.is_active else 'small-btn danger-btn' }}" type="submit">
+                  {{ 'Reactivate' if not user.is_active else 'Deactivate' }}
+                </button>
+              </form>
               {% endif %}
             </td>
           </tr>

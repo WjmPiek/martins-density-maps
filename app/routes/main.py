@@ -27,12 +27,6 @@ def dashboard():
         "dashboard.html",
         provinces=PROVINCES,
         google_maps_api_key=current_app.config.get("GOOGLE_MAPS_API_KEY", ""),
-        preview_mode=False,
-        dashboard_read_only=current_user.is_admin,
-        show_editor=not current_user.is_admin,
-        show_owner_column=current_user.is_admin,
-        show_province_chart=current_user.is_admin,
-        selected_user_id="",
     )
 
 

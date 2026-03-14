@@ -24,11 +24,11 @@
 
       <div id="uploadProgressWrap" class="hidden" style="margin: 12px 0 6px;">
         <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px;">
-          <strong>Import progress</strong>
+          <strong>Importing workbook...</strong>
           <span id="uploadPercent">0%</span>
         </div>
         <div style="width:100%;height:14px;background:#ece7f7;border-radius:999px;overflow:hidden;border:1px solid #ddd6ee;">
-          <div id="uploadProgressBar" class="progress-bar" style="width:0%;height:100%;background:#8d6fd1;transition:width .2s ease;"></div>
+          <div id="uploadProgressBar" style="width:0%;height:100%;background:#8d6fd1;transition:width .2s ease;"></div>
         </div>
         <p id="uploadStatus" class="muted" style="margin:8px 0 0;">Please keep this page open while your file uploads.</p>
       </div>
@@ -55,17 +55,6 @@
 
     if (!form) return;
 
-    function setBusyImportState() {
-      progressBar.classList.add('busy');
-      progressBar.style.width = '100%';
-      progressPercent.textContent = '100%';
-      statusText.textContent = 'Upload complete. Importing workbook now...';
-    }
-
-    function resetBusyImportState() {
-      progressBar.classList.remove('busy');
-    }
-
     form.addEventListener('submit', function (event) {
       event.preventDefault();
 
@@ -82,8 +71,7 @@
       submitBtn.textContent = 'Importing...';
       progressBar.style.width = '0%';
       progressPercent.textContent = '0%';
-      statusText.textContent = 'Uploading your file and preparing the import.';
-      resetBusyImportState();
+      statusText.textContent = 'Uploading your file and importing records.';
 
       xhr.open('POST', form.action, true);
       xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
@@ -93,15 +81,6 @@
         const percent = Math.round((e.loaded / e.total) * 100);
         progressBar.style.width = percent + '%';
         progressPercent.textContent = percent + '%';
-        if (percent >= 100) {
-          setBusyImportState();
-        } else {
-          statusText.textContent = 'Uploading your file and preparing the import.';
-        }
-      });
-
-      xhr.upload.addEventListener('load', function () {
-        setBusyImportState();
       });
 
       xhr.addEventListener('load', function () {
@@ -111,7 +90,6 @@
         } catch (err) {}
 
         if (xhr.status >= 200 && xhr.status < 300) {
-          progressBar.classList.remove('busy');
           progressBar.style.width = '100%';
           progressPercent.textContent = '100%';
           statusText.textContent = payload.message || 'Import completed successfully.';
@@ -119,7 +97,6 @@
           return;
         }
 
-        resetBusyImportState();
         submitBtn.disabled = false;
         submitBtn.textContent = 'Upload Excel file';
         statusText.textContent = payload.error || 'Upload failed.';
@@ -127,7 +104,6 @@
       });
 
       xhr.addEventListener('error', function () {
-        resetBusyImportState();
         submitBtn.disabled = false;
         submitBtn.textContent = 'Upload Excel file';
         statusText.textContent = 'Upload failed.';

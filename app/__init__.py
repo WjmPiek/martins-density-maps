@@ -3,7 +3,6 @@ from flask import Flask
 def create_app():
     app = Flask(__name__)
 
-    # import and register blueprints here
     from app.routes.api import api_bp
     from app.routes.main import main_bp
     from app.routes.auth import auth_bp

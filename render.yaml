@@ -3,17 +3,24 @@ services:
     name: martins-density-map
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
-    
+    startCommand: gunicorn --bind 0.0.0.0:$PORT wsgi:app
+
     envVars:
       - key: SECRET_KEY
         generateValue: true
+
       - key: ADMIN_EMAIL
         sync: false
+
       - key: ADMIN_PASSWORD
         sync: false
+
       - key: ADMIN_NAME
         value: Martins Admin
+
+      - key: GOOGLE_MAPS_API_KEY
+        sync: false
+
       - key: DATABASE_URL
         fromDatabase:
           name: martins-density-db
@@ -22,6 +29,3 @@ services:
 databases:
   - name: martins-density-db
     plan: basic-256mb
-
-GOOGLE_MAPS_API_KEY=your_real_google_key
-

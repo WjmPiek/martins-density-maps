@@ -10,10 +10,10 @@ from ..models import Record, Upload
 from ..services.excel import parse_upload
 from ..services.export import write_records_to_disk
 
-web_upload_bp = Blueprint("web_upload", __name__)
+upload_bp = Blueprint("upload", __name__)
 
 
-@web_upload_bp.route("/upload", methods=["POST"])
+@upload_bp.route("/upload", methods=["POST"])
 @login_required
 def upload_excel():
     file = request.files.get("file")

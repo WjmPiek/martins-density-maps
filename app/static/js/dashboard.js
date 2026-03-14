@@ -1,13 +1,19 @@
+const appContext = window.APP_CONTEXT || {};
+
 const state = {
   records: [],
   filtered: [],
   currentMapView: 'markers',
+  availableUsers: [],
+  selectedUserId: String(appContext.selectedUserId || ''),
 };
 
 const els = {
   totalRows: document.getElementById('totalRows'),
   mappedRows: document.getElementById('mappedRows'),
   unmappedRows: document.getElementById('unmappedRows'),
+  scopeValue: document.getElementById('scopeValue'),
+  userFilter: document.getElementById('userFilter'),
   townFilter: document.getElementById('townFilter'),
   provinceFilter: document.getElementById('provinceFilter'),
   formStatus: document.getElementById('formStatus'),
@@ -137,7 +143,7 @@ function initAddressAutocomplete() {
   const autocomplete = new google.maps.places.Autocomplete(streetInput, {
     fields: ['formatted_address', 'geometry', 'address_components', 'name'],
     types: ['address'],
-    componentRestrictions: { country: 'none' },
+    componentRestrictions: { country: 'za' },
   });
 
   streetInput.addEventListener('keydown', (event) => {
@@ -283,9 +289,11 @@ function initMap() {
   map = L.map('map', {
     preferCanvas: true,
     zoomControl: true,
+    scrollWheelZoom: true,
     maxBounds: southAfricaBounds,
     maxBoundsViscosity: 1.0,
   });
+  map.scrollWheelZoom.enable();
 
   map.fitBounds(southAfricaBounds);
   baseLayer = buildTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
@@ -404,17 +412,55 @@ function focusSavedRecordOnMap(record) {
   map.setView([lat, lng], 16, { animate: true });
 }
 
+function getSelectedUserName() {
+  if (!state.selectedUserId) return '';
+  const selected = state.availableUsers.find((user) => String(user.id) === String(state.selectedUserId));
+  return selected ? selected.name : '';
+}
+
+function populateUserFilter(users) {
+  if (!els.userFilter) return;
+  state.availableUsers = Array.isArray(users) ? users : [];
+  const defaultLabel = appContext.previewMode ? 'Choose user' : 'All users combined';
+  const options = [`<option value="">${defaultLabel}</option>`].concat(
+    state.availableUsers.map((user) => `
+      <option value="${escapeHtml(user.id)}">${escapeHtml(user.name)} (${escapeHtml(user.email)})</option>
+    `)
+  );
+  els.userFilter.innerHTML = options.join('');
+
+  const selectedExists = state.availableUsers.some((user) => String(user.id) === String(state.selectedUserId));
+  if (state.selectedUserId && !selectedExists) state.selectedUserId = '';
+
+  if (appContext.previewMode && !state.selectedUserId && state.availableUsers.length) {
+    state.selectedUserId = String(state.availableUsers[0].id);
+  }
+
+  els.userFilter.value = state.selectedUserId || '';
+}
+
 function updateSummary() {
   const mapped = state.filtered.filter((r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude))).length;
   if (els.totalRows) els.totalRows.textContent = state.filtered.length;
   if (els.mappedRows) els.mappedRows.textContent = mapped;
   if (els.unmappedRows) els.unmappedRows.textContent = state.filtered.length - mapped;
+
+  if (els.scopeValue) {
+    if (appContext.previewMode) {
+      els.scopeValue.textContent = getSelectedUserName() || 'Choose user';
+    } else if (appContext.isAdmin) {
+      els.scopeValue.textContent = getSelectedUserName() || 'All users combined';
+    } else {
+      els.scopeValue.textContent = 'My data only';
+    }
+  }
 }
 
 function renderTable() {
   if (!els.recordsTable) return;
+  const columnCount = (appContext.showOwnerColumn ? 1 : 0) + (appContext.readOnly ? 6 : 7);
   if (!state.filtered.length) {
-    els.recordsTable.innerHTML = '<tr><td colspan="7">No records found.</td></tr>';
+    els.recordsTable.innerHTML = `<tr><td colspan="${columnCount}">No records found.</td></tr>`;
     return;
   }
 
@@ -422,14 +468,16 @@ function renderTable() {
     <tr class="${(!record.latitude || !record.longitude) ? 'warning-row' : ''}">
       <td>${escapeHtml(record.mfFile || '')}</td>
       <td>${escapeHtml(record.deceasedName || '')} ${escapeHtml(record.deceasedSurname || '')}</td>
+      ${appContext.showOwnerColumn ? `<td>${escapeHtml(record.owner || '')}</td>` : ''}
       <td>${escapeHtml(record.city || '')}</td>
       <td>${escapeHtml(record.province || '')}</td>
       <td>${escapeHtml(record.fullAddress || record.address || '')}</td>
       <td>${escapeHtml(record.contactNumber || '')}</td>
+      ${appContext.readOnly ? '' : `
       <td class="action-cell">
         <button class="small-btn" data-action="edit" data-id="${record.id}">Edit</button>
         <button class="small-btn danger-btn" data-action="delete" data-id="${record.id}">Delete</button>
-      </td>
+      </td>`}
     </tr>
   `).join('');
 }
@@ -501,12 +549,16 @@ function setFieldState(field, triedSubmit) {
 }
 
 async function loadData() {
-  const res = await fetch('/api/records');
+  const url = state.selectedUserId
+    ? `/api/records?user_id=${encodeURIComponent(state.selectedUserId)}`
+    : '/api/records';
+  const res = await fetch(url);
   const data = await res.json();
   state.records = data.records || [];
+  populateUserFilter(data.summary?.availableUsers || []);
   autoMapMode();
   applyFilters();
-  queueMissingGeocodes();
+  if (!appContext.readOnly) queueMissingGeocodes();
 }
 
 async function geocodePayloadIfNeeded(payload) {
@@ -617,7 +669,7 @@ async function loadAnalytics() {
   const monthlyCanvas = document.getElementById('monthlyChart');
   if (!cityCanvas || !monthlyCanvas || typeof Chart === 'undefined') return;
 
-  const selectedUserId = els.userFilter ? els.userFilter.value : '';
+  const selectedUserId = state.selectedUserId || (els.userFilter ? els.userFilter.value : '');
   const url = selectedUserId ? `/api/analytics?user_id=${encodeURIComponent(selectedUserId)}` : '/api/analytics';
   const res = await fetch(url);
   if (!res.ok) return;
@@ -763,6 +815,10 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   els.recordForm?.addEventListener('submit', async (event) => {
+    if (appContext.readOnly) {
+      event.preventDefault();
+      return;
+    }
     triedSubmit = true;
     let firstInvalid = null;
     fields.forEach((field) => {
@@ -782,6 +838,11 @@ document.addEventListener('DOMContentLoaded', () => {
   els.clearFormBtn?.addEventListener('click', clearForm);
   els.townFilter?.addEventListener('input', applyFilters);
   els.provinceFilter?.addEventListener('change', applyFilters);
+  els.userFilter?.addEventListener('change', async () => {
+    state.selectedUserId = els.userFilter.value || '';
+    await loadData();
+    await loadAnalytics();
+  });
   [els.address, els.city, els.province, els.postalCode, els.country].forEach((field) => {
     field?.addEventListener('input', () => {
       if (els.fullAddress) els.fullAddress.value = getFullAddressFromForm();
@@ -792,6 +853,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   els.recordsTable?.addEventListener('click', (event) => {
+    if (appContext.readOnly) return;
     const btn = event.target.closest('button[data-action]');
     if (!btn) return;
     const id = Number(btn.dataset.id);

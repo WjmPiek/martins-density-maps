@@ -1,7 +1,7 @@
 from sqlalchemy.orm import joinedload
 
 from ..extensions import db
-from ..models import Record
+from ..models import Record, User
 from ..utils.helpers import build_full_address, normalize_float, normalize_text
 from .geocoding import geocode_address
 
@@ -64,32 +64,27 @@ def upsert_record(user_id, payload):
     return record
 
 
-def dataset_for_user(user, branch=None):
+def dataset_for_user(user, selected_user_id=None):
     query = Record.query.options(joinedload(Record.user))
 
     if not user.is_admin:
         query = query.filter(Record.user_id == user.id)
-    elif branch:
-        query = query.filter(Record.user_id == branch)
+    elif selected_user_id:
+        try:
+            query = query.filter(Record.user_id == int(selected_user_id))
+        except ValueError:
+            pass
 
     records = query.order_by(Record.city.asc(), Record.mf_file.asc()).all()
     mapped = sum(1 for r in records if r.latitude is not None and r.longitude is not None)
     provinces = sorted({r.province for r in records if r.province})
-    owners = []
-    seen = set()
-    for record in records:
-        if not record.user:
-            continue
-        if record.user_id in seen:
-            continue
-        seen.add(record.user_id)
-        owners.append({
-            "id": record.user_id,
-            "name": record.user.name,
-            "email": record.user.email,
-        })
-
-    owners.sort(key=lambda item: ((item.get("name") or "").lower(), (item.get("email") or "").lower()))
+    owners = sorted({r.user.name for r in records if r.user and r.user.name})
+    available_users = []
+    if user.is_admin:
+        available_users = [
+            {"id": u.id, "name": u.name, "email": u.email}
+            for u in User.query.order_by(User.name.asc(), User.email.asc()).all()
+        ]
 
     return {
         "records": [r.to_dict() for r in records],
@@ -99,5 +94,6 @@ def dataset_for_user(user, branch=None):
             "unmapped": len(records) - mapped,
             "provinces": provinces,
             "owners": owners,
+            "availableUsers": available_users,
         },
     }

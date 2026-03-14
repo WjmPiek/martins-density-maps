@@ -19,7 +19,7 @@
       </article>
       <article class="stat-card">
         <span>Scope</span>
-        <strong>{{ 'All users' if current_user.is_admin else 'My data only' }}</strong>
+        <strong id="scopeLabel">{{ 'All users' if current_user.is_admin else 'My data only' }}</strong>
       </article>
     </section>
 
@@ -33,15 +33,6 @@
         </div>
 
         <div class="filters">
-          {% if current_user.is_admin %}
-          <label>
-            Branch
-            <select id="branchFilter">
-              <option value="">All branches</option>
-            </select>
-          </label>
-          {% endif %}
-
           <label>
             Town / city
             <input id="townFilter" type="search" placeholder="Search town">
@@ -56,6 +47,15 @@
               {% endfor %}
             </select>
           </label>
+
+          {% if current_user.is_admin %}
+          <label>
+            User view
+            <select id="userFilter">
+              <option value="">All users</option>
+            </select>
+          </label>
+          {% endif %}
 
           <label>
             View mode
@@ -76,7 +76,7 @@
         <div class="panel-head">
           <div>
             <h2>Client addresses map</h2>
-            <p class="muted">Choose how you want to view your data.</p>
+            <p class="muted" id="mapSubtitle">Choose how you want to view your data.</p>
           </div>
         </div>
 
@@ -232,7 +232,7 @@
     <section class="panel">
       <div class="panel-head">
         <div>
-          <h2>{{ 'Records' if current_user.is_admin else 'My records' }}</h2>
+          <h2>My records</h2>
           <p class="muted">Edit or delete records directly from your dashboard.</p>
         </div>
       </div>
@@ -241,9 +241,6 @@
         <table>
           <thead>
             <tr>
-              {% if current_user.is_admin %}
-              <th>Branch</th>
-              {% endif %}
               <th>MF File</th>
               <th>Name</th>
               <th>Town</th>
@@ -273,5 +270,5 @@
 {% if google_maps_api_key %}
 <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places,visualization&loading=async&callback=initGoogleAddress"></script>
 {% endif %}
-<script src="{{ url_for('static', filename='js/dashboard.js', v='20260314-googlemaps-1') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js', v='20260314-googlemaps-2') }}"></script>
 {% endblock %}

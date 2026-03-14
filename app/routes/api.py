@@ -19,15 +19,10 @@ api_bp = Blueprint("api", __name__)
 @api_bp.route("/api/records")
 @login_required
 def api_records():
-    branch = request.args.get("branch", "").strip() or None
-    if current_user.is_admin and branch:
-        try:
-            branch = int(branch)
-        except ValueError:
-            branch = None
-    else:
-        branch = None if not current_user.is_admin else branch
-    return jsonify(dataset_for_user(current_user, branch=branch))
+    selected_user_id = request.args.get("user_id", "").strip() or None
+    if not current_user.is_admin:
+        selected_user_id = None
+    return jsonify(dataset_for_user(current_user, selected_user_id=selected_user_id))
 
 
 @api_bp.route("/api/records", methods=["POST"])
@@ -104,14 +99,14 @@ def api_upload():
 @api_bp.route("/api/analytics")
 @login_required
 def api_analytics():
-    branch = request.args.get("branch", "").strip() or None
+    selected_user_id = request.args.get("user_id", "").strip() or None
 
     query = Record.query
     if not current_user.is_admin:
         query = query.filter_by(user_id=current_user.id)
-    elif branch:
+    elif selected_user_id:
         try:
-            query = query.filter_by(user_id=int(branch))
+            query = query.filter_by(user_id=int(selected_user_id))
         except ValueError:
             pass
 

@@ -245,29 +245,38 @@
       {% endif %}
     </section>
 
-    <section class="panel">
-      <div class="panel-head">
-        <div>
-          <h2>Analytics</h2>
-          <p class="muted">
-            {% if preview_mode %}
-            User dashboard analytics preview.
-            {% elif current_user.is_admin %}
-            Combined dashboard analytics with per-user switching.
-            {% else %}
-            City and monthly trends.
-            {% endif %}
-          </p>
-        </div>
-      </div>
-      <div class="analytics-grid {% if not show_province_chart %}analytics-grid-two{% endif %}">
-        {% if show_province_chart %}
-        <canvas id="provinceChart"></canvas>
+    <section class="panel analytics-panel {% if show_editor %}analytics-panel-map-width{% endif %}">
+  <div class="panel-head">
+    <div>
+      <h2>Analytics</h2>
+      <p class="muted">
+        {% if preview_mode %}
+        User dashboard analytics preview.
+        {% elif current_user.is_admin %}
+        Combined dashboard analytics with per-user switching.
+        {% else %}
+        City and monthly trends.
         {% endif %}
-        <canvas id="cityChart"></canvas>
-        <canvas id="monthlyChart"></canvas>
-      </div>
-    </section>
+      </p>
+    </div>
+  </div>
+
+  <div class="charts-container">
+    {% if show_province_chart %}
+    <div class="chart-block">
+      <canvas id="provinceChart"></canvas>
+    </div>
+    {% endif %}
+
+    <div class="chart-block">
+      <canvas id="cityChart"></canvas>
+    </div>
+
+    <div class="chart-block">
+      <canvas id="monthlyChart"></canvas>
+    </div>
+  </div>
+</section>
 
     <section class="panel">
       <div class="panel-head">

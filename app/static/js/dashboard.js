@@ -679,6 +679,60 @@ async function loadAnalytics() {
   destroyChart(cityChartInstance);
   destroyChart(monthlyChartInstance);
 
+  const sharedChartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    animation: {
+      duration: 900,
+      easing: 'easeOutQuart',
+    },
+    interaction: {
+      mode: 'index',
+      intersect: false,
+    },
+    plugins: {
+      legend: {
+        labels: {
+          color: '#5b4a7d',
+          usePointStyle: true,
+          boxWidth: 10,
+          padding: 16,
+        },
+      },
+      tooltip: {
+        backgroundColor: '#ffffff',
+        titleColor: '#5b4a7d',
+        bodyColor: '#6f6288',
+        borderColor: '#eadff3',
+        borderWidth: 1,
+        cornerRadius: 12,
+        displayColors: true,
+      },
+    },
+    scales: {
+      x: {
+        ticks: {
+          color: '#7a6b95',
+          maxRotation: 0,
+          autoSkip: true,
+        },
+        grid: {
+          display: false,
+        },
+      },
+      y: {
+        beginAtZero: true,
+        ticks: {
+          color: '#7a6b95',
+          precision: 0,
+        },
+        grid: {
+          color: 'rgba(91, 74, 125, 0.08)',
+        },
+      },
+    },
+  };
+
   if (provinceCanvas) {
     provinceChartInstance = new Chart(provinceCanvas, {
       type: 'bar',
@@ -690,8 +744,12 @@ async function loadAnalytics() {
           backgroundColor: '#c8a2c8',
           borderColor: '#c8a2c8',
           borderWidth: 1,
+          borderRadius: 10,
+          barThickness: 34,
+          maxBarThickness: 42,
         }],
       },
+      options: sharedChartOptions,
     });
   }
 
@@ -705,8 +763,12 @@ async function loadAnalytics() {
         backgroundColor: '#c8a2c8',
         borderColor: '#c8a2c8',
         borderWidth: 1,
+        borderRadius: 10,
+        barThickness: 34,
+        maxBarThickness: 42,
       }],
     },
+    options: sharedChartOptions,
   });
 
   monthlyChartInstance = new Chart(monthlyCanvas, {
@@ -717,13 +779,16 @@ async function loadAnalytics() {
         label: 'Monthly Trend',
         data: Object.values(data.months || {}),
         borderColor: '#c8a2c8',
-        backgroundColor: 'rgba(200, 162, 200, 0.25)',
+        backgroundColor: 'rgba(200, 162, 200, 0.18)',
         pointBackgroundColor: '#c8a2c8',
         pointBorderColor: '#c8a2c8',
+        pointRadius: 4,
+        pointHoverRadius: 6,
         fill: true,
-        tension: 0.25,
+        tension: 0.35,
       }],
     },
+    options: sharedChartOptions,
   });
 }
 

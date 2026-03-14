@@ -277,43 +277,6 @@
     </div>
   </div>
 </section>
-
-    <section class="panel">
-      <div class="panel-head">
-        <div>
-          <h2>{% if current_user.is_admin and not preview_mode %}Registered user records{% elif preview_mode %}User records preview{% else %}My records{% endif %}</h2>
-          <p class="muted">
-            {% if current_user.is_admin and not preview_mode %}
-            Select a user above to focus on one dashboard, or leave it on all users combined.
-            {% elif preview_mode %}
-            Read-only preview of what the selected user can view.
-            {% else %}
-            Edit or delete records directly from your dashboard.
-            {% endif %}
-          </p>
-        </div>
-      </div>
-
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>MF File</th>
-              <th>Name</th>
-              {% if show_owner_column %}<th>Owner</th>{% endif %}
-              <th>Town</th>
-              <th>Province</th>
-              <th>Address</th>
-              <th>Contact</th>
-              {% if not dashboard_read_only %}<th>Actions</th>{% endif %}
-            </tr>
-          </thead>
-          <tbody id="recordsTable"></tbody>
-        </table>
-      </div>
-    </section>
-  </section>
-</section>
 {% endblock %}
 
 {% block scripts %}

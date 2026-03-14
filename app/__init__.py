@@ -12,6 +12,8 @@ def create_app():
     app.config.from_object(Config)
     app.config["SQLALCHEMY_DATABASE_URI"] = Config.normalize_database_uri()
 
+    print("DB URI:", app.config.get("SQLALCHEMY_DATABASE_URI"))
+
     os.makedirs(app.config["UPLOAD_DIR"], exist_ok=True)
     os.makedirs(app.config["INSTANCE_DIR"], exist_ok=True)
     os.makedirs(app.config["DATA_DIR"], exist_ok=True)

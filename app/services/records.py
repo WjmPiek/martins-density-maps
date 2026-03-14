@@ -6,6 +6,7 @@ from ..utils.helpers import build_full_address, normalize_float, normalize_text
 from .geocoding import geocode_address
 
 
+
 def upsert_record(user_id, payload):
     payload = payload or {}
     record_id = payload.get("id")

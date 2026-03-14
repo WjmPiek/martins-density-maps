@@ -53,7 +53,7 @@ def upload_excel():
         flash(success, "success")
     except ValueError as exc:
         db.session.rollback()
-        flash(str(exc), "danger")
+        flash("Upload failed. Please check the file or contact admin.", "danger")
     except Exception as exc:
         db.session.rollback()
         flash(f"Upload failed: {exc}", "danger")

@@ -1,7 +1,7 @@
 from openpyxl import load_workbook
 
 from ..constants import EXPORT_COLUMNS, UPLOAD_COLUMNS
-from ..utils.helpers import build_full_address, normalize_coordinates, normalize_float, normalize_text
+from ..utils.helpers import build_full_address, normalize_float, normalize_text
 from .geocoding import geocode_address
 
 
@@ -42,14 +42,16 @@ def parse_upload(file_storage):
         country = normalize_text(data.get("Country")) or "South Africa"
         full_address = normalize_text(data.get("Full Address")) or build_full_address(address, city, province, country)
 
-        latitude, longitude = normalize_coordinates(data.get("Latitude"), data.get("Longitude"))
+        latitude = normalize_float(data.get("Latitude"))
+        longitude = normalize_float(data.get("Longitude"))
         place_id = normalize_text(data.get("Place ID"))
         formatted_address = normalize_text(data.get("Formatted Address")) or full_address
         geocode_status = normalize_text(data.get("Geocode Status")) or "SKIPPED"
 
         if latitude is None or longitude is None:
             geo = geocode_address(full_address)
-            latitude, longitude = normalize_coordinates(geo.get("latitude"), geo.get("longitude"))
+            latitude = normalize_float(geo.get("latitude"))
+            longitude = normalize_float(geo.get("longitude"))
             place_id = normalize_text(geo.get("place_id"))
             formatted_address = normalize_text(geo.get("formatted_address")) or full_address
             geocode_status = normalize_text(geo.get("geocode_status")) or "ERROR"

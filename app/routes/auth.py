@@ -61,6 +61,29 @@ def login():
     return render_template("login.html")
 
 
+@auth_bp.route("/reset-password", methods=["GET", "POST"])
+def reset_password():
+    if request.method == "POST":
+        email = normalize_text(request.form.get("email")).lower()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm_password", "")
+        user = User.query.filter(func.lower(User.email) == email).first()
+
+        if not email or not password:
+            flash("Email and new password are required.", "danger")
+        elif password != confirm:
+            flash("Passwords do not match.", "danger")
+        elif not user:
+            flash("No account was found for that email address.", "warning")
+        else:
+            user.set_password(password)
+            db.session.commit()
+            flash("Password reset successfully. You can log in now.", "success")
+            return redirect(url_for("auth.login"))
+
+    return render_template("reset_password.html")
+
+
 @auth_bp.route("/logout")
 @login_required
 def logout():

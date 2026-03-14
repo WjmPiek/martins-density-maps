@@ -2,7 +2,7 @@ from sqlalchemy.orm import joinedload
 
 from ..extensions import db
 from ..models import Record, User
-from ..utils.helpers import build_full_address, normalize_coordinates, normalize_float, normalize_text
+from ..utils.helpers import build_full_address, normalize_float, normalize_text
 from .geocoding import geocode_address
 
 
@@ -41,7 +41,8 @@ def upsert_record(user_id, payload):
     record.relationship = normalize_text(payload.get("relationship"))
     record.contact_number = normalize_text(payload.get("contactNumber"))
 
-    incoming_lat, incoming_lng = normalize_coordinates(payload.get("latitude"), payload.get("longitude"))
+    incoming_lat = normalize_float(payload.get("latitude"))
+    incoming_lng = normalize_float(payload.get("longitude"))
     incoming_place_id = normalize_text(payload.get("placeId"))
     incoming_formatted_address = normalize_text(payload.get("formattedAddress"))
     incoming_geocode_status = normalize_text(payload.get("geocodeStatus"))

@@ -19,7 +19,7 @@
       <a class="ghost-btn" href="{{ url_for('main.download_my_data') }}">Download my Excel</a>
     </div>
 
-    <form class="stack-form" method="post" action="{{ url_for('web_upload.upload_excel') }}" enctype="multipart/form-data">
+    <form class="stack-form" method="post" action="{{ url_for('upload.upload_excel') }}" enctype="multipart/form-data">
       <input type="file" name="file" accept=".xlsx,.xls,.xlsm,.csv" required>
 
       <div class="form-actions">

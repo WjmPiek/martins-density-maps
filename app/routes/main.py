@@ -1,5 +1,7 @@
 from io import BytesIO
 
+import os
+
 from flask import Blueprint, current_app, redirect, render_template, send_file, url_for
 from flask_login import current_user, login_required
 from openpyxl import Workbook
@@ -37,6 +39,15 @@ def upload_page():
 @main_bp.route("/download-template")
 @login_required
 def download_template():
+    template_path = current_app.config.get("TEMPLATE_DOWNLOAD_PATH")
+    if template_path and os.path.exists(template_path):
+        return send_file(
+            template_path,
+            as_attachment=True,
+            download_name="martins_density_map_template.xlsx",
+            mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+
     wb = Workbook()
     ws = wb.active
     ws.title = "Template"

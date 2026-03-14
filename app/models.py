@@ -3,7 +3,7 @@ from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from .extensions import db, login_manager
+from .extensions import db
 
 
 class User(UserMixin, db.Model):
@@ -85,8 +85,3 @@ class Record(db.Model):
             "ownerEmail": self.user.email,
             "updatedAt": self.updated_at.isoformat(),
         }
-
-
-@login_manager.user_loader
-def load_user(user_id):
-    return db.session.get(User, int(user_id))

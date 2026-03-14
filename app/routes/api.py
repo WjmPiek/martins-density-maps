@@ -4,12 +4,14 @@ from datetime import datetime
 
 from flask import Blueprint, current_app, jsonify, request
 from flask_login import current_user, login_required
+from werkzeug.utils import secure_filename
 
 from ..extensions import db
 from ..models import Record, Upload
 from ..services.excel import parse_upload
 from ..services.export import write_records_to_disk
 from ..services.records import dataset_for_user, upsert_record
+
 
 api_bp = Blueprint("api", __name__)
 
@@ -31,7 +33,8 @@ def api_save_record():
     except ValueError as exc:
         db.session.rollback()
         return jsonify({"error": str(exc)}), 400
-    except Exception:
+    except Exception as exc:
+        current_app.logger.exception("Could not save record: %s", exc)
         db.session.rollback()
         return jsonify({"error": "Could not save record."}), 500
     return jsonify({"message": "Record saved.", "record": record.to_dict()})
@@ -56,7 +59,7 @@ def api_upload():
     if not file or not file.filename:
         return jsonify({"error": "Select an Excel file to upload."}), 400
 
-    filename = os.path.basename(file.filename)
+    filename = secure_filename(os.path.basename(file.filename))
     try:
         imported_rows, warnings = parse_upload(file)
         Record.query.filter_by(user_id=current_user.id).delete()
@@ -83,7 +86,8 @@ def api_upload():
     except ValueError as exc:
         db.session.rollback()
         return jsonify({"error": str(exc)}), 400
-    except Exception:
+    except Exception as exc:
+        current_app.logger.exception("Upload failed: %s", exc)
         db.session.rollback()
         return jsonify({"error": "Upload failed."}), 500
 
@@ -116,27 +120,3 @@ def api_analytics():
     top_cities = dict(cities.most_common(10))
     ordered_months = dict(sorted(months.items()))
     return jsonify({"province": dict(province), "cities": top_cities, "months": ordered_months})
-
-# app/routes/api.py
-
-from flask import Blueprint, jsonify
-from app.models import Record
-
-api_bp = Blueprint("api", __name__)
-
-@api_bp.route("/api/records")
-def get_records():
-    records = Record.query.all()
-
-    result = []
-
-    for r in records:
-        result.append({
-            "id": r.id,
-            "name": r.name,
-            "address": r.address,
-            "lat": r.latitude,
-            "lng": r.longitude
-        })
-
-    return jsonify(result)

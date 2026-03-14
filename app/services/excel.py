@@ -68,24 +68,3 @@ def parse_upload(file_storage):
         )
 
     return records, warnings
-
-# app/services/excel.py
-
-import pandas as pd
-from app.models import Record
-from app.extensions import db
-
-def import_excel(file):
-    df = pd.read_excel(file)
-
-    for row in df.itertuples():
-        record = Record(
-            name=row.name,
-            address=row.address,
-            latitude=None,
-            longitude=None
-        )
-
-        db.session.add(record)
-
-    db.session.commit()

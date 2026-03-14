@@ -7,15 +7,22 @@ from .geocoding import geocode_address
 
 
 def upsert_record(user_id, payload):
+    payload = payload or {}
+    record_id = payload.get("id")
     mf_file = normalize_text(payload.get("mfFile"))
     if not mf_file:
         raise ValueError("MF File is required.")
 
-    record = Record.query.filter_by(user_id=user_id, mf_file=mf_file).first()
+    record = None
+    if record_id:
+        record = Record.query.filter_by(id=record_id, user_id=user_id).first()
+    if record is None:
+        record = Record.query.filter_by(user_id=user_id, mf_file=mf_file).first()
     if record is None:
         record = Record(user_id=user_id, mf_file=mf_file)
         db.session.add(record)
 
+    record.mf_file = mf_file
     record.deceased_name = normalize_text(payload.get("deceasedName"))
     record.deceased_surname = normalize_text(payload.get("deceasedSurname"))
     record.dod = normalize_text(payload.get("dod"))
@@ -31,8 +38,8 @@ def upsert_record(user_id, payload):
     if record.latitude is None or record.longitude is None:
         record.latitude, record.longitude = geocode_address(record.full_address)
     record.weight = normalize_float(payload.get("weight")) or 1.0
-    record.next_of_kin_name = normalize_text(payload.get("NextOfKinName") or payload.get("nextOfKinName"))
-    record.next_of_kin_surname = normalize_text(payload.get("NextOfKinSurname") or payload.get("nextOfKinSurname"))
+    record.next_of_kin_name = normalize_text(payload.get("nextOfKinName"))
+    record.next_of_kin_surname = normalize_text(payload.get("nextOfKinSurname"))
     record.relationship = normalize_text(payload.get("relationship"))
     record.contact_number = normalize_text(payload.get("contactNumber"))
     return record
@@ -58,23 +65,3 @@ def dataset_for_user(user):
             "owners": owners,
         },
     }
-
-# app/services/records.py
-
-from app.models import Record
-from app.extensions import db
-from app.services.geocoding import geocode_address
-
-def geocode_missing_records():
-    records = Record.query.filter(
-        (Record.latitude == None) | (Record.longitude == None)
-    ).all()
-
-    for record in records:
-        lat, lng = geocode_address(record.address)
-
-        if lat:
-            record.latitude = lat
-            record.longitude = lng
-
-    db.session.commit()

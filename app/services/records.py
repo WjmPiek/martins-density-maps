@@ -29,19 +29,38 @@ def upsert_record(user_id, payload):
     record.address = normalize_text(payload.get("address"))
     record.city = normalize_text(payload.get("city"))
     record.province = normalize_text(payload.get("province"))
-    record.country = normalize_text(payload.get("country"))
+    record.country = normalize_text(payload.get("country")) or "South Africa"
+
     record.full_address = normalize_text(payload.get("fullAddress")) or build_full_address(
         record.address, record.city, record.province, record.country
     )
-    record.latitude = normalize_float(payload.get("latitude"))
-    record.longitude = normalize_float(payload.get("longitude"))
-    if record.latitude is None or record.longitude is None:
-        record.latitude, record.longitude = geocode_address(record.full_address)
+
     record.weight = normalize_float(payload.get("weight")) or 1.0
     record.next_of_kin_name = normalize_text(payload.get("nextOfKinName"))
     record.next_of_kin_surname = normalize_text(payload.get("nextOfKinSurname"))
     record.relationship = normalize_text(payload.get("relationship"))
     record.contact_number = normalize_text(payload.get("contactNumber"))
+
+    incoming_lat = normalize_float(payload.get("latitude"))
+    incoming_lng = normalize_float(payload.get("longitude"))
+    incoming_place_id = normalize_text(payload.get("placeId"))
+    incoming_formatted_address = normalize_text(payload.get("formattedAddress"))
+    incoming_geocode_status = normalize_text(payload.get("geocodeStatus"))
+
+    if incoming_lat is not None and incoming_lng is not None:
+        record.latitude = incoming_lat
+        record.longitude = incoming_lng
+        record.place_id = incoming_place_id
+        record.formatted_address = incoming_formatted_address or record.full_address
+        record.geocode_status = incoming_geocode_status or "OK"
+    else:
+        geo = geocode_address(record.full_address)
+        record.place_id = geo.get("place_id", "")
+        record.formatted_address = geo.get("formatted_address", record.full_address)
+        record.latitude = normalize_float(geo.get("latitude"))
+        record.longitude = normalize_float(geo.get("longitude"))
+        record.geocode_status = geo.get("geocode_status", "UNKNOWN")
+
     return record
 
 

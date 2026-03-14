@@ -1,24 +1,68 @@
-import json
-from urllib.parse import urlencode
-from urllib.request import urlopen
-
-from flask import current_app
+import os
+import requests
 
 
-def geocode_address(full_address):
-    api_key = current_app.config.get("GOOGLE_MAPS_API_KEY", "")
-    if not full_address or not api_key:
-        return None, None
+def geocode_address(address: str) -> dict:
+    address = (address or "").strip()
+    if not address:
+        return {
+            "place_id": "",
+            "formatted_address": "",
+            "latitude": None,
+            "longitude": None,
+            "geocode_status": "EMPTY_ADDRESS",
+        }
+
+    api_key = os.getenv("GOOGLE_MAPS_API_KEY", "").strip()
+    if not api_key:
+        return {
+            "place_id": "",
+            "formatted_address": address,
+            "latitude": None,
+            "longitude": None,
+            "geocode_status": "NO_API_KEY",
+        }
 
     try:
-        params = urlencode({"address": full_address, "key": api_key})
-        url = f"https://maps.googleapis.com/maps/api/geocode/json?{params}"
-        with urlopen(url, timeout=8) as response:
-            data = json.load(response)
-        if data.get("status") == "OK" and data.get("results"):
-            location = data["results"][0]["geometry"]["location"]
-            return location.get("lat"), location.get("lng")
-    except Exception as exc:
-        current_app.logger.warning("Geocode error for %s: %s", full_address, exc)
+        response = requests.get(
+            "https://maps.googleapis.com/maps/api/geocode/json",
+            params={
+                "address": address,
+                "key": api_key,
+                "components": "country:ZA",
+            },
+            timeout=20,
+        )
+        response.raise_for_status()
+        data = response.json()
 
-    return None, None
+        status = data.get("status", "ERROR")
+        results = data.get("results", [])
+
+        if status == "OK" and results:
+            result = results[0]
+            location = result.get("geometry", {}).get("location", {})
+            return {
+                "place_id": result.get("place_id", ""),
+                "formatted_address": result.get("formatted_address", address),
+                "latitude": location.get("lat"),
+                "longitude": location.get("lng"),
+                "geocode_status": "OK",
+            }
+
+        return {
+            "place_id": "",
+            "formatted_address": address,
+            "latitude": None,
+            "longitude": None,
+            "geocode_status": status,
+        }
+
+    except Exception:
+        return {
+            "place_id": "",
+            "formatted_address": address,
+            "latitude": None,
+            "longitude": None,
+            "geocode_status": "ERROR",
+        }

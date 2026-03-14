@@ -50,6 +50,9 @@ class Record(db.Model):
     province = db.Column(db.String(120), index=True)
     country = db.Column(db.String(120))
     full_address = db.Column(db.String(512))
+    place_id = db.Column(db.String(255))
+    formatted_address = db.Column(db.String(500))
+    geocode_status = db.Column(db.String(50))
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     weight = db.Column(db.Float, default=1.0)
@@ -74,6 +77,9 @@ class Record(db.Model):
             "province": self.province or "",
             "country": self.country or "",
             "fullAddress": self.full_address or "",
+            "placeId": self.place_id,
+            "formattedAddress": self.formatted_address,
+            "geocodeStatus": self.geocode_status,
             "latitude": self.latitude,
             "longitude": self.longitude,
             "weight": self.weight if self.weight is not None else 1,

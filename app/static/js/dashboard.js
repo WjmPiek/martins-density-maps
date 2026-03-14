@@ -322,6 +322,8 @@ function initMap() {
   els.pinRadius?.addEventListener('input', renderMap);
 
   window.addEventListener('load', () => setTimeout(refreshMapSize, 300));
+  window.addEventListener('resize', () => setTimeout(refreshMapSize, 150));
+  window.addEventListener('orientationchange', () => setTimeout(refreshMapSize, 300));
   setTimeout(refreshMapSize, 300);
 }
 

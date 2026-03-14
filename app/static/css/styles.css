@@ -1629,3 +1629,280 @@ textarea:focus {
     height: 280px !important;
   }
 }
+
+
+/* Final mobile responsiveness fixes */
+@media (max-width: 1080px) {
+  .app-layout {
+    display: block;
+  }
+
+  .sidebar {
+    position: static !important;
+    width: 100% !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    border-right: none !important;
+    border-bottom: 1px solid var(--line) !important;
+    padding: 14px 12px !important;
+    gap: 14px !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 12px !important;
+  }
+
+  .shell {
+    max-width: 100% !important;
+  }
+
+  .dashboard-top-fixed {
+    position: static !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 12px !important;
+  }
+
+  .sidebar-actions {
+    display: grid !important;
+    gap: 10px !important;
+  }
+
+  .sidebar-nav,
+  .button-row,
+  .action-group,
+  .map-toggle,
+  .top-actions,
+  .form-actions,
+  .dashboard-buttons {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .sidebar-nav a,
+  .sidebar-actions .primary-btn,
+  .sidebar-actions .ghost-btn,
+  .button-row .primary-btn,
+  .button-row .ghost-btn,
+  .map-toggle button,
+  .top-actions .primary-btn,
+  .top-actions .ghost-btn,
+  .form-actions .primary-btn,
+  .form-actions .ghost-btn,
+  .small-btn {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  .stats-grid,
+  .filters,
+  .filters-admin,
+  .editor-grid,
+  .map-layout,
+  .analytics-grid,
+  .analytics-grid-two {
+    grid-template-columns: 1fr !important;
+  }
+
+  .analytics-panel-map-width .charts-container,
+  .analytics-panel .charts-container,
+  .charts-container {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .panel {
+    padding: 16px !important;
+    border-radius: 18px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .panel-head,
+  .page-header,
+  .dashboard-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+  }
+
+  .page-header h1,
+  .dashboard-title h1,
+  .dashboard-header h1 {
+    font-size: 30px !important;
+    line-height: 1.1 !important;
+  }
+
+  #map {
+    width: 100% !important;
+    height: 360px !important;
+    border-radius: 18px !important;
+  }
+
+  .chart-block,
+  .analytics-panel .chart-block {
+    padding: 14px !important;
+    border-radius: 18px !important;
+  }
+
+  .chart-block canvas,
+  .analytics-panel .chart-block canvas {
+    height: 280px !important;
+  }
+
+  .table-wrap {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  table {
+    min-width: 720px;
+  }
+}
+
+@media (max-width: 720px) {
+  html,
+  body {
+    font-size: 15px;
+  }
+
+  .auth-wrap {
+    padding: 12px !important;
+  }
+
+  .auth-card,
+  .auth-card-wide {
+    width: 100% !important;
+    padding: 22px 16px !important;
+    border-radius: 18px !important;
+  }
+
+  .login-logo {
+    max-width: 220px !important;
+    height: auto !important;
+  }
+
+  .sidebar-brand {
+    margin-bottom: 8px !important;
+  }
+
+  .sidebar-logo,
+  .page-logo,
+  .dashboard-logo,
+  .nav-logo {
+    width: auto !important;
+    height: 58px !important;
+  }
+
+  .sidebar-brand strong {
+    font-size: 18px !important;
+  }
+
+  .sidebar-nav a {
+    font-size: 18px !important;
+    min-height: 46px !important;
+    padding: 12px 14px !important;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .stat-card {
+    padding: 14px 16px !important;
+  }
+
+  .stat-card strong {
+    font-size: 24px !important;
+  }
+
+  .filters,
+  .filters-admin,
+  .editor-grid {
+    gap: 10px !important;
+  }
+
+  label {
+    font-size: 13px !important;
+  }
+
+  input,
+  select,
+  button,
+  textarea {
+    padding: 11px 12px !important;
+    font-size: 15px !important;
+  }
+
+  #map {
+    height: 300px !important;
+  }
+
+  .map-toggle {
+    gap: 8px !important;
+  }
+
+  .chart-block canvas,
+  .analytics-panel .chart-block canvas {
+    height: 240px !important;
+  }
+
+  table {
+    min-width: 640px;
+  }
+
+  table thead th,
+  table tbody td,
+  th,
+  td {
+    padding: 10px 10px !important;
+    font-size: 13px !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .main-content {
+    padding: 10px !important;
+  }
+
+  .panel {
+    padding: 12px !important;
+    border-radius: 16px !important;
+  }
+
+  .page-header h1,
+  .dashboard-title h1,
+  .dashboard-header h1 {
+    font-size: 26px !important;
+  }
+
+  .sidebar-actions {
+    gap: 8px !important;
+  }
+
+  .sidebar-nav a,
+  .sidebar-actions .primary-btn,
+  .sidebar-actions .ghost-btn,
+  .map-toggle button,
+  .form-actions .primary-btn,
+  .form-actions .ghost-btn,
+  .small-btn {
+    padding: 10px 12px !important;
+    font-size: 14px !important;
+  }
+
+  #map {
+    height: 260px !important;
+    border-radius: 16px !important;
+  }
+
+  .chart-block canvas,
+  .analytics-panel .chart-block canvas {
+    height: 220px !important;
+  }
+
+  table {
+    min-width: 560px;
+  }
+}

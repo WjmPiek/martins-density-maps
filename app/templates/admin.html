@@ -1,80 +1,58 @@
 {% extends 'base.html' %}
-{% block title %}Admin Dashboard · Martins Density Map{% endblock %}
-
+{% block title %}Admin · Martin's Client Map{% endblock %}
 {% block content %}
-<section class="dashboard-wrap">
-  <section class="stats-grid">
-    <article class="stat-card">
-      <span>Registered users</span>
-      <strong>{{ user_count }}</strong>
-    </article>
-    <article class="stat-card">
-      <span>Total records</span>
-      <strong>{{ record_count }}</strong>
-    </article>
-    <article class="stat-card">
-      <span>Total uploads</span>
-      <strong>{{ upload_count }}</strong>
-    </article>
-    <article class="stat-card">
-      <span>Admin tools</span>
-      <strong>Ready</strong>
-    </article>
-  </section>
+<section class="stats-grid">
+  <article class="stat-card"><span>Users</span><strong>{{ user_count }}</strong></article>
+  <article class="stat-card"><span>Active Users</span><strong>{{ active_user_count }}</strong></article>
+  <article class="stat-card"><span>Records</span><strong>{{ record_count }}</strong></article>
+  <article class="stat-card"><span>Uploads</span><strong>{{ upload_count }}</strong></article>
+</section>
 
-  <section class="dashboard-grid">
-    <article class="panel">
-      <div class="panel-head">
-        <div>
-          <h2>Admin tabs</h2>
-          <p class="muted">Open the exact live views that users see.</p>
-        </div>
-      </div>
-
-      <div class="sidebar-actions" style="display:flex;gap:12px;flex-wrap:wrap;">
-        <a class="primary-btn" href="{{ url_for('admin.admin_map') }}">All Users Map</a>
-        <a class="ghost-btn" href="{{ url_for('admin.users') }}">Registered Users</a>
-        <a class="ghost-btn" href="{{ url_for('admin.download_central') }}">Download Central Excel</a>
-      </div>
-    </article>
-  </section>
-
-  <section class="panel">
+<section class="dashboard-grid" style="margin-bottom: 12px;">
+  <article class="panel">
     <div class="panel-head">
       <div>
-        <h2>Latest uploads</h2>
-        <p class="muted">Most recent user imports.</p>
+        <h2>Admin tools</h2>
+        <p class="muted">Manage users and exports.</p>
       </div>
     </div>
-
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Original file</th>
-            <th>Rows</th>
-            <th>Status</th>
-            <th>Created</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for upload in latest_uploads %}
-          <tr>
-            <td>{{ upload.user.name }}<br><span class="muted">{{ upload.user.email }}</span></td>
-            <td>{{ upload.original_filename }}</td>
-            <td>{{ upload.imported_rows }}</td>
-            <td>{{ upload.status }}</td>
-            <td>{{ upload.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
-          </tr>
-          {% else %}
-          <tr>
-            <td colspan="5">No uploads yet.</td>
-          </tr>
-          {% endfor %}
-        </tbody>
-      </table>
+    <div class="dashboard-buttons" style="display:flex;">
+      <a class="primary-link" href="{{ url_for('admin.users') }}">Registered Users</a>
+      <a class="ghost-btn" href="{{ url_for('admin.download_central') }}">Download central Excel</a>
     </div>
-  </section>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-head">
+    <div>
+      <h2>Latest uploads</h2>
+      <p class="muted">Recent user workbook imports.</p>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>File</th>
+          <th>Rows</th>
+          <th>Status</th>
+          <th>Imported at</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for upload in latest_uploads %}
+        <tr>
+          <td>{{ upload.user.name }}</td>
+          <td>{{ upload.original_filename }}</td>
+          <td>{{ upload.imported_rows }}</td>
+          <td>{{ upload.status }}</td>
+          <td>{{ upload.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
 </section>
 {% endblock %}

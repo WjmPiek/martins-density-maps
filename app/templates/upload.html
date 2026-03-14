@@ -19,14 +19,99 @@
       <a class="ghost-btn" href="{{ url_for('main.download_my_data') }}">Download my Excel</a>
     </div>
 
-    <form class="stack-form" method="post" action="{{ url_for('upload.upload_excel') }}" enctype="multipart/form-data">
-      <input type="file" name="file" accept=".xlsx,.xls,.xlsm,.csv" required>
+    <form id="uploadForm" class="stack-form" method="post" action="{{ url_for('api.api_upload') }}" enctype="multipart/form-data">
+      <input id="uploadFile" type="file" name="file" accept=".xlsx,.xls,.xlsm,.csv" required>
+
+      <div id="uploadProgressWrap" class="hidden" style="margin: 12px 0 6px;">
+        <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:8px;">
+          <strong>Importing workbook...</strong>
+          <span id="uploadPercent">0%</span>
+        </div>
+        <div style="width:100%;height:14px;background:#ece7f7;border-radius:999px;overflow:hidden;border:1px solid #ddd6ee;">
+          <div id="uploadProgressBar" style="width:0%;height:100%;background:#8d6fd1;transition:width .2s ease;"></div>
+        </div>
+        <p id="uploadStatus" class="muted" style="margin:8px 0 0;">Please keep this page open while your file uploads.</p>
+      </div>
 
       <div class="form-actions">
-        <button class="primary-btn" type="submit">Upload Excel file</button>
+        <button id="uploadSubmitBtn" class="primary-btn" type="submit">Upload Excel file</button>
         <a class="ghost-btn" href="{{ url_for('main.dashboard') }}">Back to Dashboard</a>
       </div>
     </form>
   </article>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  (function () {
+    const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('uploadFile');
+    const submitBtn = document.getElementById('uploadSubmitBtn');
+    const progressWrap = document.getElementById('uploadProgressWrap');
+    const progressBar = document.getElementById('uploadProgressBar');
+    const progressPercent = document.getElementById('uploadPercent');
+    const statusText = document.getElementById('uploadStatus');
+
+    if (!form) return;
+
+    form.addEventListener('submit', function (event) {
+      event.preventDefault();
+
+      if (!fileInput.files.length) {
+        alert('Please choose an Excel file.');
+        return;
+      }
+
+      const formData = new FormData(form);
+      const xhr = new XMLHttpRequest();
+
+      progressWrap.classList.remove('hidden');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Importing...';
+      progressBar.style.width = '0%';
+      progressPercent.textContent = '0%';
+      statusText.textContent = 'Uploading your file and importing records.';
+
+      xhr.open('POST', form.action, true);
+      xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+
+      xhr.upload.addEventListener('progress', function (e) {
+        if (!e.lengthComputable) return;
+        const percent = Math.round((e.loaded / e.total) * 100);
+        progressBar.style.width = percent + '%';
+        progressPercent.textContent = percent + '%';
+      });
+
+      xhr.addEventListener('load', function () {
+        let payload = {};
+        try {
+          payload = JSON.parse(xhr.responseText || '{}');
+        } catch (err) {}
+
+        if (xhr.status >= 200 && xhr.status < 300) {
+          progressBar.style.width = '100%';
+          progressPercent.textContent = '100%';
+          statusText.textContent = payload.message || 'Import completed successfully.';
+          window.location.href = "{{ url_for('main.dashboard') }}";
+          return;
+        }
+
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload Excel file';
+        statusText.textContent = payload.error || 'Upload failed.';
+        alert(payload.error || 'Upload failed.');
+      });
+
+      xhr.addEventListener('error', function () {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Upload Excel file';
+        statusText.textContent = 'Upload failed.';
+        alert('Upload failed.');
+      });
+
+      xhr.send(formData);
+    });
+  })();
+</script>
 {% endblock %}

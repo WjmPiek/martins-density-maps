@@ -48,13 +48,15 @@ def login():
         password = request.form.get("password", "")
         user = User.query.filter(func.lower(User.email) == email).first()
 
-        if user and user.check_password(password):
+        if user and not user.is_active:
+            flash("Your account has been deactivated. Please contact the administrator.", "danger")
+        elif user and user.check_password(password):
             login_user(user, remember=True)
             flash("Signed in successfully.", "success")
             next_url = request.args.get("next")
             return redirect(next_url or url_for("main.dashboard"))
-
-        flash("Invalid email or password.", "danger")
+        else:
+            flash("Invalid email or password.", "danger")
 
     return render_template("login.html")
 

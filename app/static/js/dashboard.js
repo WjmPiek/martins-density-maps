@@ -657,7 +657,7 @@ async function loadAnalytics() {
   const provinceCanvas = document.getElementById('provinceChart');
   const cityCanvas = document.getElementById('cityChart');
   const monthlyCanvas = document.getElementById('monthlyChart');
-  if (!provinceCanvas || !cityCanvas || !monthlyCanvas || typeof Chart === 'undefined') return;
+  if (!cityCanvas || !monthlyCanvas || typeof Chart === 'undefined') return;
 
   const selectedUserId = els.userFilter ? els.userFilter.value : '';
   const url = selectedUserId ? `/api/analytics?user_id=${encodeURIComponent(selectedUserId)}` : '/api/analytics';
@@ -669,25 +669,50 @@ async function loadAnalytics() {
   destroyChart(cityChartInstance);
   destroyChart(monthlyChartInstance);
 
-  provinceChartInstance = new Chart(provinceCanvas, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(data.province || {}),
-      datasets: [{ label: 'Deaths per Province', data: Object.values(data.province || {}) }],
-    },
-  });
+  if (provinceCanvas) {
+    provinceChartInstance = new Chart(provinceCanvas, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(data.province || {}),
+        datasets: [{
+          label: 'Deaths per Province',
+          data: Object.values(data.province || {}),
+          backgroundColor: '#c8a2c8',
+          borderColor: '#c8a2c8',
+          borderWidth: 1,
+        }],
+      },
+    });
+  }
+
   cityChartInstance = new Chart(cityCanvas, {
     type: 'bar',
     data: {
       labels: Object.keys(data.cities || {}),
-      datasets: [{ label: 'Top Cities', data: Object.values(data.cities || {}) }],
+      datasets: [{
+        label: 'Top Cities',
+        data: Object.values(data.cities || {}),
+        backgroundColor: '#c8a2c8',
+        borderColor: '#c8a2c8',
+        borderWidth: 1,
+      }],
     },
   });
+
   monthlyChartInstance = new Chart(monthlyCanvas, {
     type: 'line',
     data: {
       labels: Object.keys(data.months || {}),
-      datasets: [{ label: 'Monthly Trend', data: Object.values(data.months || {}) }],
+      datasets: [{
+        label: 'Monthly Trend',
+        data: Object.values(data.months || {}),
+        borderColor: '#c8a2c8',
+        backgroundColor: 'rgba(200, 162, 200, 0.25)',
+        pointBackgroundColor: '#c8a2c8',
+        pointBorderColor: '#c8a2c8',
+        fill: true,
+        tension: 0.25,
+      }],
     },
   });
 }

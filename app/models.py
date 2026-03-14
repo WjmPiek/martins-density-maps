@@ -3,10 +3,7 @@ from datetime import datetime
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from .extensions import db
-
-
-ADMIN_EMAIL = "wjm@martinsdirect.com"
+from .extensions import db, login_manager
 
 
 class User(UserMixin, db.Model):
@@ -28,7 +25,11 @@ class User(UserMixin, db.Model):
 
     @property
     def is_admin(self) -> bool:
-        return self.role == "admin" or (self.email or "").strip().lower() == ADMIN_EMAIL
+        return self.role == "admin"
+
+    @property
+    def is_active(self) -> bool:
+        return self.role != "inactive"
 
 
 class Upload(db.Model):
@@ -53,9 +54,6 @@ class Record(db.Model):
     province = db.Column(db.String(120), index=True)
     country = db.Column(db.String(120))
     full_address = db.Column(db.String(512))
-    place_id = db.Column(db.String(255))
-    formatted_address = db.Column(db.String(500))
-    geocode_status = db.Column(db.String(50))
     latitude = db.Column(db.Float)
     longitude = db.Column(db.Float)
     weight = db.Column(db.Float, default=1.0)
@@ -80,9 +78,6 @@ class Record(db.Model):
             "province": self.province or "",
             "country": self.country or "",
             "fullAddress": self.full_address or "",
-            "placeId": self.place_id,
-            "formattedAddress": self.formatted_address,
-            "geocodeStatus": self.geocode_status,
             "latitude": self.latitude,
             "longitude": self.longitude,
             "weight": self.weight if self.weight is not None else 1,
@@ -90,8 +85,12 @@ class Record(db.Model):
             "nextOfKinSurname": self.next_of_kin_surname or "",
             "relationship": self.relationship or "",
             "contactNumber": self.contact_number or "",
-            "owner": self.user.name if self.user else "",
-            "ownerEmail": self.user.email if self.user else "",
-            "ownerId": self.user.id if self.user else None,
+            "owner": self.user.name,
+            "ownerEmail": self.user.email,
             "updatedAt": self.updated_at.isoformat(),
         }
+
+
+@login_manager.user_loader
+def load_user(user_id):
+    return db.session.get(User, int(user_id))

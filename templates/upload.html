@@ -16,15 +16,15 @@
         <h2>Upload workbook</h2>
         <p class="muted">Uploading replaces only your own dataset.</p>
       </div>
-      <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download my Excel</a>
+      <a class="ghost-btn" href="{{ url_for('main.download_my_data') }}">Download my Excel</a>
     </div>
 
-    <form class="stack-form" method="post" action="{{ url_for('upload_excel') }}" enctype="multipart/form-data">
+    <form class="stack-form" method="post" action="{{ url_for('web_upload.upload_excel') }}" enctype="multipart/form-data">
       <input type="file" name="file" accept=".xlsx,.xls,.xlsm,.csv" required>
 
       <div class="form-actions">
         <button class="primary-btn" type="submit">Upload Excel file</button>
-        <a class="ghost-btn" href="{{ url_for('dashboard') }}">Back to Dashboard</a>
+        <a class="ghost-btn" href="{{ url_for('main.dashboard') }}">Back to Dashboard</a>
       </div>
     </form>
   </article>

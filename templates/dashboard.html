@@ -51,8 +51,8 @@
           <label>
             View mode
             <select id="mapMode">
-              <option value="clusters">Clusters</option>
               <option value="pins">Pins</option>
+              <option value="clusters">Clusters</option>
               <option value="heatmap">Heatmap</option>
             </select>
           </label>
@@ -105,10 +105,10 @@
 
         <form id="recordForm" class="editor-grid" novalidate>
           <input type="hidden" id="recordId">
-          <input id="latitude" type="hidden">
-          <input id="longitude" type="hidden">
-          <input id="weight" type="hidden" value="1">
-          <input id="fullAddress" type="hidden">
+          <input type="hidden" id="latitude">
+          <input type="hidden" id="longitude">
+          <input type="hidden" id="weight" value="1">
+          <input type="hidden" id="fullAddress">
 
           <div class="form-section-card full-span">
             <h3>Deceased Details</h3>
@@ -140,15 +140,7 @@
             <div class="editor-grid">
               <label>
                 Street address
-                <input
-                  id="address"
-                  name="address"
-                  type="text"
-                  placeholder="Enter South African street address"
-                  autocomplete="new-password"
-                  spellcheck="false"
-                  autocorrect="off"
-                  autocapitalize="off">
+                <input id="address" name="address" type="text" placeholder="Enter South African street address" autocomplete="new-password" spellcheck="false" autocorrect="off" autocapitalize="off">
               </label>
 
               <label>
@@ -198,11 +190,7 @@
 
               <label>
                 Contact number
-                <input id="contactNumber"
-                inputmode="numeric"
-                maxlength="12"
-                placeholder="082 123 4567"
-                required>
+                <input id="contactNumber" inputmode="tel" maxlength="12" placeholder="082 123 4567" pattern="^0\d{2}\s?\d{3}\s?\d{4}$" required>
               </label>
             </div>
           </div>
@@ -216,6 +204,20 @@
         <div id="formStatus" class="info-box hidden"></div>
         <p id="addressHelp" class="address-help muted hidden"></p>
       </article>
+    </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Analytics</h2>
+          <p class="muted">Province, city, and monthly trends.</p>
+        </div>
+      </div>
+      <div class="analytics-grid">
+        <canvas id="provinceChart"></canvas>
+        <canvas id="cityChart"></canvas>
+        <canvas id="monthlyChart"></canvas>
+      </div>
     </section>
 
     <section class="panel">
@@ -248,194 +250,18 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <script>
   window.APP_CONTEXT = {
     isAdmin: {{ 'true' if current_user.is_admin else 'false' }},
     googleMapsApiKey: {{ google_maps_api_key|tojson if google_maps_api_key else '""' }}
   };
 </script>
-
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% if google_maps_api_key %}
-<script>
-  window.APP_CONTEXT.googleMapsApiKey = {{ google_maps_api_key|tojson }};
-</script>
-<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&loading=async&callback=initGoogleAddress"></script>
-{% else %}
-
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('recordForm');
-    if (!form) return;
-
-    const fields = Array.from(form.querySelectorAll('input, select, textarea')).filter(function (field) {
-      return field.type !== 'hidden';
-    });
-
-    let triedSubmit = false;
-
-    function setFieldState(field) {
-      const label = field.closest('label');
-      if (!label) return;
-
-      const isRequired = field.hasAttribute('required');
-      const value = (field.value || '').trim();
-      const emptyRequired = isRequired && !value;
-      const invalidValue = value !== '' && !field.checkValidity();
-
-      label.classList.remove('field-error', 'field-valid');
-
-      if (!triedSubmit) return;
-
-      if (emptyRequired || invalidValue) {
-        label.classList.add('field-error');
-      } else if (isRequired && value !== '' && field.checkValidity()) {
-        label.classList.add('field-valid');
-      }
-    }
-
-    fields.forEach(function (field) {
-      ['input', 'change', 'blur'].forEach(function (eventName) {
-        field.addEventListener(eventName, function () {
-          setFieldState(field);
-        });
-      });
-    });
-
-    form.addEventListener('submit', function (event) {
-      let firstInvalid = null;
-      triedSubmit = true;
-
-      fields.forEach(function (field) {
-        setFieldState(field);
-
-        const isRequired = field.hasAttribute('required');
-        const value = (field.value || '').trim();
-        const hasError = (isRequired && !value) || (value !== '' && !field.checkValidity());
-
-        if (hasError && !firstInvalid) {
-          firstInvalid = field;
-        }
-      });
-
-      if (firstInvalid) {
-        event.preventDefault();
-        firstInvalid.focus();
-      }
-    });
-  });
-</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places,geocoding&loading=async&callback=initGoogleAddress"></script>
 {% endif %}
-
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const form = document.getElementById('recordForm');
-    if (!form) return;
-
-    const fields = Array.from(form.querySelectorAll('input, select, textarea')).filter(function (field) {
-      return field.type !== 'hidden';
-    });
-
-    
-    function setFieldState(field) {
-      const label = field.closest('label');
-      if (!label) return;
-
-      const isRequired = field.hasAttribute('required');
-      const value = (field.value || '').trim();
-      const emptyRequired = isRequired && !value;
-      const invalidValue = value !== '' && !field.checkValidity();
-
-      label.classList.toggle('field-required', isRequired);
-      label.classList.toggle('field-error', emptyRequired || invalidValue);
-      label.classList.toggle('field-valid', isRequired && value !== '' && field.checkValidity());
-    }
-
-    fields.forEach(function (field) {
-       setFieldState(field);
-
-      ['input', 'change', 'blur'].forEach(function (eventName) {
-        field.addEventListener(eventName, function () {
-          setFieldState(field);
-        });
-      });
-    });
-
-    form.addEventListener('submit', function (event) {
-      let firstInvalid = null;
-
-      fields.forEach(function (field) {
-        setFieldState(field);
-        const isRequired = field.hasAttribute('required');
-        const value = (field.value || '').trim();
-        const hasError = (isRequired && !value) || (value !== '' && !field.checkValidity());
-
-        if (hasError && !firstInvalid) {
-          firstInvalid = field;
-        }
-      });
-
-      if (firstInvalid) {
-        event.preventDefault();
-        firstInvalid.focus();
-      }
-    });
-  });
-</script>
-
-<script>
-  document.addEventListener('DOMContentLoaded', function () {
-    const contactField = document.getElementById('contactNumber');
-    if (!contactField) return;
-
-    function formatSAPhoneNumber(value) {
-      const digits = value.replace(/\D/g, '').slice(0, 10);
-
-      if (digits.length <= 3) return digits;
-      if (digits.length <= 6) return digits.slice(0, 3) + ' ' + digits.slice(3);
-      return digits.slice(0, 3) + ' ' + digits.slice(3, 6) + ' ' + digits.slice(6, 10);
-    }
-
-    contactField.addEventListener('input', function () {
-      const start = this.selectionStart;
-      const beforeLength = this.value.length;
-      this.value = formatSAPhoneNumber(this.value);
-      const afterLength = this.value.length;
-      const diff = afterLength - beforeLength;
-
-      try {
-        this.setSelectionRange(start + diff, start + diff);
-      } catch (e) {
-        // ignore caret issues on unsupported browsers
-      }
-    });
-
-    contactField.addEventListener('blur', function () {
-      const digits = this.value.replace(/\D/g, '');
-      if (digits.length > 0 && digits.length !== 10) {
-        this.setCustomValidity('Enter a valid South African phone number with 10 digits.');
-      } else {
-        this.setCustomValidity('');
-      }
-    });
-
-    contactField.addEventListener('focus', function () {
-      this.setCustomValidity('');
-    });
-  });
-</script>
-
-<div class="analytics-grid">
-
-<canvas id="provinceChart"></canvas>
-<canvas id="cityChart"></canvas>
-<canvas id="monthlyChart"></canvas>
-
-</div>
-
-<script src="{{ url_for('static', filename='js/dashboard.js', v='20260313-4') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js', v='20260314-1') }}"></script>
 {% endblock %}

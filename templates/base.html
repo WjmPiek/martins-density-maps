@@ -3,19 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <title>{% block title %}Martins Density Map{% endblock %}</title>
 
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#6b2fa3">
 
-  <link rel="apple-touch-icon" sizes="180x180"
-        href="{{ url_for('static', filename='apple-touch-icon.png') }}">
-  <link rel="icon" type="image/png" sizes="192x192"
-        href="{{ url_for('static', filename='android-chrome-192.png') }}">
-  <link rel="icon" type="image/png" sizes="512x512"
-        href="{{ url_for('static', filename='android-chrome-512.png') }}">
+  <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
+  <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='android-chrome-192.png') }}">
+  <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='android-chrome-512.png') }}">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,21 +19,16 @@
 
   <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
   <link rel="preload" href="{{ url_for('static', filename='img/martins-logo.png') }}" as="image">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260313-4') }}">
-
-  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='favicon.ico') }}">
-  <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260314-1') }}">
 
   {% if current_user.is_authenticated %}
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css">
   {% endif %}
 
   {% block head %}{% endblock %}
 </head>
-
 <body>
   {% if current_user.is_authenticated %}
   <div id="splash-screen">
@@ -50,24 +41,25 @@
     {% if current_user.is_authenticated %}
     <aside class="sidebar">
       <div class="sidebar-brand">
-      <img src="{{ url_for('static', filename='img/martins-logo.png') }}" class="sidebar-logo" alt="Martins logo">
-
-      <div class="sidebar-brand-text">
-      <div class="eyebrow">Martin's Franchising</div>
-        <strong>Client addresses</strong>
+        <img src="{{ url_for('static', filename='img/martins-logo.png') }}" class="sidebar-logo" alt="Martins logo">
+        <div class="sidebar-brand-text">
+          <div class="eyebrow">Martin's Franchising</div>
+          <strong>Client addresses</strong>
+        </div>
       </div>
-  </div>
 
       <div class="sidebar-actions">
-        <a class="primary-btn" href="{{ url_for('upload_page') }}">Upload Excel File</a>
-        <a class="ghost-btn" href="{{ url_for('download_template') }}">Download Excel Template</a>
-        <a class="ghost-btn" href="{{ url_for('download_my_data') }}">Download My Data</a>
+        <a class="primary-btn" href="{{ url_for('main.upload_page') }}">Upload Excel File</a>
+        <a class="ghost-btn" href="{{ url_for('main.download_template') }}">Download Excel Template</a>
+        <a class="ghost-btn" href="{{ url_for('main.download_my_data') }}">Download My Data</a>
       </div>
 
       <nav class="sidebar-nav">
-        <a href="{{ url_for('dashboard') }}">Dashboard</a>
-        <a href="{{ url_for('admin') }}">Admin</a>
-        <a href="{{ url_for('logout') }}">Logout</a>
+        <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('admin.admin') }}">Admin</a>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}">Logout</a>
       </nav>
     </aside>
     {% endif %}
@@ -93,14 +85,11 @@
 
   <script>
     let deferredPrompt = null;
-
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-
       const installBtn = document.getElementById('installApp');
       if (!installBtn) return;
-
       installBtn.style.display = 'block';
       installBtn.onclick = async () => {
         if (!deferredPrompt) return;
@@ -113,7 +102,6 @@
     window.addEventListener('load', function () {
       const splash = document.getElementById('splash-screen');
       if (!splash) return;
-
       setTimeout(() => {
         splash.style.opacity = '0';
         splash.style.transition = 'opacity 0.5s ease';

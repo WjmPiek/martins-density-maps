@@ -11,6 +11,7 @@ const els = {
   townFilter: document.getElementById('townFilter'),
   provinceFilter: document.getElementById('provinceFilter'),
   formStatus: document.getElementById('formStatus'),
+  addressHelp: document.getElementById('addressHelp'),
   recordForm: document.getElementById('recordForm'),
   clearFormBtn: document.getElementById('clearFormBtn'),
   recordsTable: document.getElementById('recordsTable'),
@@ -45,6 +46,7 @@ let clusterLayer = null;
 let provinceChartInstance = null;
 let cityChartInstance = null;
 let monthlyChartInstance = null;
+let geocodeQueueActive = false;
 
 function setBox(el, message, isError = false) {
   if (!el) return;
@@ -60,50 +62,77 @@ function clearBox(el) {
   el.classList.remove('error');
 }
 
+function escapeHtml(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (char) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+  }[char]));
+}
+
 function popupHtml(record) {
+  const lat = Number(record.latitude);
+  const lng = Number(record.longitude);
+  const googleMapsHref = Number.isFinite(lat) && Number.isFinite(lng)
+    ? `https://www.google.com/maps?q=${lat},${lng}`
+    : '';
+
   return `
     <div class="popup-grid">
-      <strong>${record.deceasedName || ''} ${record.deceasedSurname || ''}</strong>
-      <div><b>MF File:</b> ${record.mfFile || '-'}</div>
-      <div><b>DOD:</b> ${record.dod || '-'}</div>
-      <div><b>Address:</b> ${record.fullAddress || record.address || '-'}</div>
-      <div><b>Town:</b> ${record.city || '-'}</div>
-      <div><b>Province:</b> ${record.province || '-'}</div>
-      <div><b>Contact:</b> ${record.contactNumber || '-'}</div>
-      <div><a href="https://www.google.com/maps?q=${record.latitude},${record.longitude}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div>
+      <strong>${escapeHtml(record.deceasedName || '')} ${escapeHtml(record.deceasedSurname || '')}</strong>
+      <div><b>MF File:</b> ${escapeHtml(record.mfFile || '-')}</div>
+      <div><b>DOD:</b> ${escapeHtml(record.dod || '-')}</div>
+      <div><b>Address:</b> ${escapeHtml(record.fullAddress || record.address || '-')}</div>
+      <div><b>Town:</b> ${escapeHtml(record.city || '-')}</div>
+      <div><b>Province:</b> ${escapeHtml(record.province || '-')}</div>
+      <div><b>Contact:</b> ${escapeHtml(record.contactNumber || '-')}</div>
+      ${googleMapsHref ? `<div><a href="${googleMapsHref}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div>` : ''}
     </div>
   `;
 }
 
 function normalizeProvinceName(value) {
   if (!value) return '';
-
   const provinceMap = {
     'eastern cape': 'Eastern Cape',
     'free state': 'Free State',
-    gauteng: 'Gauteng',
+    'gauteng': 'Gauteng',
     'kwazulu-natal': 'KwaZulu-Natal',
     'kwa-zulu natal': 'KwaZulu-Natal',
-    limpopo: 'Limpopo',
-    mpumalanga: 'Mpumalanga',
+    'limpopo': 'Limpopo',
+    'mpumalanga': 'Mpumalanga',
     'north west': 'North West',
+    'northwest': 'North West',
     'northern cape': 'Northern Cape',
     'western cape': 'Western Cape',
   };
-
   const key = String(value).trim().toLowerCase();
   return provinceMap[key] || value;
 }
 
 function getAddressComponent(components, type) {
-  return (components || []).find(
-    (component) => component.types && component.types.includes(type)
-  );
+  return (components || []).find((component) => component.types && component.types.includes(type));
+}
+
+function getFullAddressFromForm() {
+  const parts = [
+    els.address?.value,
+    els.city?.value,
+    els.province?.value,
+    els.postalCode?.value,
+    els.country?.value || 'South Africa',
+  ].map((item) => String(item || '').trim()).filter(Boolean);
+
+  return parts.join(', ');
 }
 
 function initAddressAutocomplete() {
-  const streetInput = document.getElementById('address');
+  const streetInput = els.address;
   if (!streetInput || !window.google || !google.maps || !google.maps.places) return;
+  if (streetInput.dataset.autocompleteReady === '1') return;
+  streetInput.dataset.autocompleteReady = '1';
 
   const autocomplete = new google.maps.places.Autocomplete(streetInput, {
     fields: ['formatted_address', 'geometry', 'address_components', 'name'],
@@ -118,7 +147,7 @@ function initAddressAutocomplete() {
   streetInput.addEventListener('input', () => {
     if (els.latitude) els.latitude.value = '';
     if (els.longitude) els.longitude.value = '';
-    if (els.fullAddress) els.fullAddress.value = '';
+    if (els.fullAddress) els.fullAddress.value = getFullAddressFromForm();
     if (els.country && !els.country.value) els.country.value = 'South Africa';
   });
 
@@ -150,28 +179,18 @@ function initAddressAutocomplete() {
 
     if (els.address) els.address.value = streetValue;
     if (els.city) els.city.value = locality && locality.long_name ? locality.long_name : '';
-    if (els.province) {
-      els.province.value = normalizeProvinceName(
-        province && province.long_name ? province.long_name : ''
-      );
-    }
-    if (els.postalCode) {
-      els.postalCode.value = postalCode && postalCode.long_name ? postalCode.long_name : '';
-    }
-    if (els.country) {
-      els.country.value = country && country.long_name ? country.long_name : 'South Africa';
-    }
-    if (els.fullAddress) els.fullAddress.value = place.formatted_address || '';
+    if (els.province) els.province.value = normalizeProvinceName(province && province.long_name ? province.long_name : '');
+    if (els.postalCode) els.postalCode.value = postalCode && postalCode.long_name ? postalCode.long_name : '';
+    if (els.country) els.country.value = country && country.long_name ? country.long_name : 'South Africa';
+    if (els.fullAddress) els.fullAddress.value = place.formatted_address || getFullAddressFromForm();
 
     if (place.geometry && place.geometry.location) {
       const lat = place.geometry.location.lat();
       const lng = place.geometry.location.lng();
       if (els.latitude) els.latitude.value = lat;
       if (els.longitude) els.longitude.value = lng;
-
-      if (map) {
-        map.setView([lat, lng], 15, { animate: true });
-      }
+      if (map) map.setView([lat, lng], 15, { animate: true });
+      clearBox(els.addressHelp);
     }
   });
 }
@@ -179,10 +198,46 @@ function initAddressAutocomplete() {
 window.initGoogleAddress = function initGoogleAddress() {
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', initAddressAutocomplete, { once: true });
-  } else if (window.google && google.maps && google.maps.places) {
+  } else {
     initAddressAutocomplete();
   }
 };
+
+async function geocodeAddress(fullAddress) {
+  const address = String(fullAddress || '').trim();
+  if (!address) return null;
+
+  if (window.google && google.maps && google.maps.Geocoder) {
+    const geocoder = new google.maps.Geocoder();
+    return new Promise((resolve) => {
+      geocoder.geocode({ address, componentRestrictions: { country: 'ZA' } }, (results, status) => {
+        if (status === 'OK' && results && results[0] && results[0].geometry && results[0].geometry.location) {
+          const loc = results[0].geometry.location;
+          resolve({ lat: loc.lat(), lng: loc.lng(), source: 'google' });
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  const url = new URL('https://nominatim.openstreetmap.org/search');
+  url.searchParams.set('q', address);
+  url.searchParams.set('format', 'jsonv2');
+  url.searchParams.set('limit', '1');
+  url.searchParams.set('countrycodes', 'za');
+  const response = await fetch(url.toString(), {
+    headers: { 'Accept': 'application/json' },
+  });
+  if (!response.ok) return null;
+  const results = await response.json();
+  if (!Array.isArray(results) || !results.length) return null;
+  return {
+    lat: Number(results[0].lat),
+    lng: Number(results[0].lon),
+    source: 'osm',
+  };
+}
 
 function autoMapMode() {
   state.currentMapView = 'markers';
@@ -199,24 +254,15 @@ function buildTileLayer(url, options = {}) {
 
 function attachTileFallbacks() {
   if (!baseLayer || !map) return;
-
   let fallbackUsed = false;
   baseLayer.on('tileerror', () => {
     if (fallbackUsed || !map) return;
     fallbackUsed = true;
-
-    if (map.hasLayer(baseLayer)) {
-      map.removeLayer(baseLayer);
-    }
-
-    baseLayer = buildTileLayer(
-      'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',
-      {
-        subdomains: 'abcd',
-        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-      }
-    );
-
+    if (map.hasLayer(baseLayer)) map.removeLayer(baseLayer);
+    baseLayer = buildTileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+      subdomains: 'abcd',
+      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+    });
     baseLayer.addTo(map);
   });
 }
@@ -242,7 +288,6 @@ function initMap() {
   });
 
   map.fitBounds(southAfricaBounds);
-
   baseLayer = buildTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
   baseLayer.addTo(map);
   attachTileFallbacks();
@@ -256,7 +301,6 @@ function initMap() {
   });
 
   if (els.mapMode) {
-    els.mapMode.value = 'pins';
     els.mapMode.addEventListener('change', () => {
       const value = els.mapMode.value;
       if (value === 'heatmap') state.currentMapView = 'heat';
@@ -275,11 +319,9 @@ function initMap() {
 
 function clearMapLayers() {
   if (!map) return;
-
   if (heatLayer && map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
   if (markerLayer && map.hasLayer(markerLayer)) map.removeLayer(markerLayer);
   if (clusterLayer && map.hasLayer(clusterLayer)) map.removeLayer(clusterLayer);
-
   heatLayer = null;
   markerLayer?.clearLayers();
   clusterLayer?.clearLayers();
@@ -287,20 +329,15 @@ function clearMapLayers() {
 
 function renderMap() {
   if (!map || !markerLayer || !clusterLayer) return;
-
   clearMapLayers();
 
-  const mapped = state.filtered.filter(
-    (r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude))
-  );
-
+  const mapped = state.filtered.filter((r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude)));
   if (!mapped.length) {
-    map.setView([-28.5, 24.5], 5);
+    map.fitBounds([[-35.5, 16.0], [-22.0, 33.5]]);
     return;
   }
 
   refreshMapSize();
-
   const heatRadius = parseInt(els.heatRadius?.value || '25', 10);
   const pinRadius = parseInt(els.pinRadius?.value || '6', 10);
   const heatData = [];
@@ -309,23 +346,16 @@ function renderMap() {
   mapped.forEach((record) => {
     const lat = Number(record.latitude);
     const lng = Number(record.longitude);
-
     heatData.push([lat, lng, Number(record.weight || 1)]);
     bounds.push([lat, lng]);
-
     const popup = popupHtml(record);
-
-    const circle = L.circleMarker([lat, lng], {
+    markerLayer.addLayer(L.circleMarker([lat, lng], {
       radius: pinRadius,
       weight: 1,
       opacity: 0.95,
       fillOpacity: 0.85,
-    }).bindPopup(popup);
-
-    const clusterMarker = L.marker([lat, lng]).bindPopup(popup);
-
-    markerLayer.addLayer(circle);
-    clusterLayer.addLayer(clusterMarker);
+    }).bindPopup(popup));
+    clusterLayer.addLayer(L.marker([lat, lng]).bindPopup(popup));
   });
 
   if (state.currentMapView === 'heat' && mapped.length > 20) {
@@ -348,23 +378,18 @@ function renderMap() {
     markerLayer.addTo(map);
   }
 
-  if (bounds.length === 1) {
-    map.setView(bounds[0], 8);
-  } else {
-    map.fitBounds(bounds, { padding: [24, 24] });
-  }
+  if (bounds.length === 1) map.setView(bounds[0], 10);
+  else map.fitBounds(bounds, { padding: [24, 24] });
 }
 
 function focusSavedRecordOnMap(record) {
-  if (!map || !record) return;
-
+  if (!map || !record || !markerLayer || !clusterLayer) return;
   const lat = Number(record.latitude);
   const lng = Number(record.longitude);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
   const popup = popupHtml(record);
   clearMapLayers();
-
   const pinRadius = parseInt(els.pinRadius?.value || '6', 10);
   const circle = L.circleMarker([lat, lng], {
     radius: pinRadius,
@@ -372,21 +397,15 @@ function focusSavedRecordOnMap(record) {
     opacity: 0.95,
     fillOpacity: 0.85,
   }).bindPopup(popup);
-
-  const clusterMarker = L.marker([lat, lng]).bindPopup(popup);
   markerLayer.addLayer(circle);
-  clusterLayer.addLayer(clusterMarker);
-
+  clusterLayer.addLayer(L.marker([lat, lng]).bindPopup(popup));
   markerLayer.addTo(map);
   circle.openPopup();
   map.setView([lat, lng], 16, { animate: true });
 }
 
 function updateSummary() {
-  const mapped = state.filtered.filter(
-    (r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude))
-  ).length;
-
+  const mapped = state.filtered.filter((r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude))).length;
   if (els.totalRows) els.totalRows.textContent = state.filtered.length;
   if (els.mappedRows) els.mappedRows.textContent = mapped;
   if (els.unmappedRows) els.unmappedRows.textContent = state.filtered.length - mapped;
@@ -394,42 +413,35 @@ function updateSummary() {
 
 function renderTable() {
   if (!els.recordsTable) return;
-
   if (!state.filtered.length) {
     els.recordsTable.innerHTML = '<tr><td colspan="7">No records found.</td></tr>';
     return;
   }
 
-  els.recordsTable.innerHTML = state.filtered
-    .map(
-      (record) => `
-      <tr class="${(!record.latitude || !record.longitude) ? 'warning-row' : ''}">
-        <td>${record.mfFile || ''}</td>
-        <td>${record.deceasedName || ''} ${record.deceasedSurname || ''}</td>
-        <td>${record.city || ''}</td>
-        <td>${record.province || ''}</td>
-        <td>${record.fullAddress || record.address || ''}</td>
-        <td>${record.contactNumber || ''}</td>
-        <td class="action-cell">
-          <button class="small-btn" data-action="edit" data-id="${record.id}">Edit</button>
-          <button class="small-btn danger-btn" data-action="delete" data-id="${record.id}">Delete</button>
-        </td>
-      </tr>
-    `
-    )
-    .join('');
+  els.recordsTable.innerHTML = state.filtered.map((record) => `
+    <tr class="${(!record.latitude || !record.longitude) ? 'warning-row' : ''}">
+      <td>${escapeHtml(record.mfFile || '')}</td>
+      <td>${escapeHtml(record.deceasedName || '')} ${escapeHtml(record.deceasedSurname || '')}</td>
+      <td>${escapeHtml(record.city || '')}</td>
+      <td>${escapeHtml(record.province || '')}</td>
+      <td>${escapeHtml(record.fullAddress || record.address || '')}</td>
+      <td>${escapeHtml(record.contactNumber || '')}</td>
+      <td class="action-cell">
+        <button class="small-btn" data-action="edit" data-id="${record.id}">Edit</button>
+        <button class="small-btn danger-btn" data-action="delete" data-id="${record.id}">Delete</button>
+      </td>
+    </tr>
+  `).join('');
 }
 
 function applyFilters() {
   const q = (els.townFilter?.value || '').trim().toLowerCase();
   const province = els.provinceFilter?.value || '';
-
-  state.filtered = state.records.filter((r) => {
-    const townMatch = !q || (r.city || '').toLowerCase().includes(q);
-    const provinceMatch = !province || r.province === province;
+  state.filtered = state.records.filter((record) => {
+    const townMatch = !q || (record.city || '').toLowerCase().includes(q);
+    const provinceMatch = !province || record.province === province;
     return townMatch && provinceMatch;
   });
-
   updateSummary();
   renderTable();
   renderMap();
@@ -456,6 +468,13 @@ function fillForm(record) {
   if (els.contactNumber) els.contactNumber.value = record.contactNumber || '';
 }
 
+function clearFormValidation() {
+  if (!els.recordForm) return;
+  els.recordForm.querySelectorAll('label').forEach((label) => {
+    label.classList.remove('field-error', 'field-valid', 'field-required');
+  });
+}
+
 function clearForm() {
   els.recordForm?.reset();
   if (els.country) els.country.value = 'South Africa';
@@ -464,7 +483,21 @@ function clearForm() {
   if (els.latitude) els.latitude.value = '';
   if (els.longitude) els.longitude.value = '';
   if (els.fullAddress) els.fullAddress.value = '';
+  if (els.contactNumber) els.contactNumber.setCustomValidity('');
+  clearFormValidation();
   clearBox(els.formStatus);
+  clearBox(els.addressHelp);
+}
+
+function setFieldState(field, triedSubmit) {
+  const label = field.closest('label');
+  if (!label) return;
+  const isRequired = field.hasAttribute('required');
+  const value = (field.value || '').trim();
+  const hasError = (isRequired && !value) || (value !== '' && !field.checkValidity());
+  label.classList.toggle('field-required', isRequired);
+  label.classList.toggle('field-error', triedSubmit && hasError);
+  label.classList.toggle('field-valid', triedSubmit && !hasError && value !== '');
 }
 
 async function loadData() {
@@ -473,32 +506,56 @@ async function loadData() {
   state.records = data.records || [];
   autoMapMode();
   applyFilters();
+  queueMissingGeocodes();
+}
+
+async function geocodePayloadIfNeeded(payload) {
+  if (payload.latitude && payload.longitude) return payload;
+  const fullAddress = String(payload.fullAddress || getFullAddressFromForm()).trim();
+  if (!fullAddress) return payload;
+
+  const point = await geocodeAddress(fullAddress);
+  if (!point) {
+    setBox(els.addressHelp, 'Could not geocode this address. Check the street, town, and province.', true);
+    return payload;
+  }
+
+  payload.fullAddress = fullAddress;
+  payload.latitude = point.lat;
+  payload.longitude = point.lng;
+  clearBox(els.addressHelp);
+  return payload;
 }
 
 async function saveRecord(event) {
   event.preventDefault();
   clearBox(els.formStatus);
+  clearBox(els.addressHelp);
 
   const payload = {
     id: els.recordId?.value,
-    mfFile: els.mfFile?.value,
+    mfFile: els.mfFile?.value?.trim(),
     dod: els.dod?.value,
-    deceasedName: els.deceasedName?.value,
-    deceasedSurname: els.deceasedSurname?.value,
-    address: els.address?.value,
-    city: els.city?.value,
+    deceasedName: els.deceasedName?.value?.trim(),
+    deceasedSurname: els.deceasedSurname?.value?.trim(),
+    address: els.address?.value?.trim(),
+    city: els.city?.value?.trim(),
     province: els.province?.value,
-    postalCode: els.postalCode?.value,
-    country: els.country?.value,
-    fullAddress: els.fullAddress?.value,
+    postalCode: els.postalCode?.value?.trim(),
+    country: els.country?.value?.trim() || 'South Africa',
+    fullAddress: (els.fullAddress?.value || getFullAddressFromForm()).trim(),
     latitude: els.latitude?.value,
     longitude: els.longitude?.value,
-    weight: els.weight?.value,
-    nextOfKinName: els.nextOfKinName?.value,
-    nextOfKinSurname: els.nextOfKinSurname?.value,
-    relationship: els.relationship?.value,
-    contactNumber: els.contactNumber?.value,
+    weight: els.weight?.value || 1,
+    nextOfKinName: els.nextOfKinName?.value?.trim(),
+    nextOfKinSurname: els.nextOfKinSurname?.value?.trim(),
+    relationship: els.relationship?.value?.trim(),
+    contactNumber: els.contactNumber?.value?.trim(),
   };
+
+  payload.province = normalizeProvinceName(payload.province);
+  if (!payload.fullAddress) payload.fullAddress = getFullAddressFromForm();
+  await geocodePayloadIfNeeded(payload);
 
   const res = await fetch('/api/records', {
     method: 'POST',
@@ -514,7 +571,6 @@ async function saveRecord(event) {
 
   setBox(els.formStatus, data.message || 'Record saved.');
   await loadData();
-
   if (data.record) {
     fillForm(data.record);
     focusSavedRecordOnMap(data.record);
@@ -526,12 +582,10 @@ async function saveRecord(event) {
 async function deleteRecord(id) {
   const res = await fetch(`/api/records/${id}`, { method: 'DELETE' });
   const data = await res.json();
-
   if (!res.ok) {
     alert(data.error || 'Could not delete record.');
     return;
   }
-
   await loadData();
 }
 
@@ -554,23 +608,17 @@ function showHeat() {
 }
 
 function destroyChart(instance) {
-  if (instance && typeof instance.destroy === 'function') {
-    instance.destroy();
-  }
+  if (instance && typeof instance.destroy === 'function') instance.destroy();
 }
 
 async function loadAnalytics() {
   const provinceCanvas = document.getElementById('provinceChart');
   const cityCanvas = document.getElementById('cityChart');
   const monthlyCanvas = document.getElementById('monthlyChart');
-
-  if (!provinceCanvas || !cityCanvas || !monthlyCanvas || typeof Chart === 'undefined') {
-    return;
-  }
+  if (!provinceCanvas || !cityCanvas || !monthlyCanvas || typeof Chart === 'undefined') return;
 
   const res = await fetch('/api/analytics');
   if (!res.ok) return;
-
   const data = await res.json();
 
   destroyChart(provinceChartInstance);
@@ -581,34 +629,71 @@ async function loadAnalytics() {
     type: 'bar',
     data: {
       labels: Object.keys(data.province || {}),
-      datasets: [{
-        label: 'Deaths per Province',
-        data: Object.values(data.province || {}),
-      }],
+      datasets: [{ label: 'Deaths per Province', data: Object.values(data.province || {}) }],
     },
   });
-
   cityChartInstance = new Chart(cityCanvas, {
     type: 'bar',
     data: {
       labels: Object.keys(data.cities || {}),
-      datasets: [{
-        label: 'Top Cities',
-        data: Object.values(data.cities || {}),
-      }],
+      datasets: [{ label: 'Top Cities', data: Object.values(data.cities || {}) }],
     },
   });
-
   monthlyChartInstance = new Chart(monthlyCanvas, {
     type: 'line',
     data: {
       labels: Object.keys(data.months || {}),
-      datasets: [{
-        label: 'Monthly Trend',
-        data: Object.values(data.months || {}),
-      }],
+      datasets: [{ label: 'Monthly Trend', data: Object.values(data.months || {}) }],
     },
   });
+}
+
+async function updateRecordGeocode(record, point) {
+  const payload = {
+    ...record,
+    latitude: point.lat,
+    longitude: point.lng,
+    fullAddress: record.fullAddress || [record.address, record.city, record.province, record.country || 'South Africa'].filter(Boolean).join(', '),
+  };
+
+  try {
+    await fetch('/api/records', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    console.warn('Could not persist geocode update', error);
+  }
+}
+
+async function queueMissingGeocodes() {
+  if (geocodeQueueActive) return;
+  const missing = state.records.filter((record) => {
+    const hasLat = Number.isFinite(Number(record.latitude));
+    const hasLng = Number.isFinite(Number(record.longitude));
+    const fullAddress = String(record.fullAddress || record.address || '').trim();
+    return !hasLat && !hasLng && fullAddress;
+  }).slice(0, 10);
+
+  if (!missing.length) return;
+  geocodeQueueActive = true;
+  for (const record of missing) {
+    const fullAddress = String(record.fullAddress || [record.address, record.city, record.province, record.country || 'South Africa'].filter(Boolean).join(', ')).trim();
+    try {
+      const point = await geocodeAddress(fullAddress);
+      if (point) {
+        record.latitude = point.lat;
+        record.longitude = point.lng;
+        await updateRecordGeocode(record, point);
+      }
+    } catch (error) {
+      console.warn('Background geocode failed', error);
+    }
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  geocodeQueueActive = false;
+  applyFilters();
 }
 
 window.showMarkers = showMarkers;
@@ -617,24 +702,71 @@ window.showHeat = showHeat;
 
 document.addEventListener('DOMContentLoaded', () => {
   initMap();
-
-  if (window.google && google.maps && google.maps.places) {
-    initAddressAutocomplete();
-  }
-
+  if (window.google && google.maps && google.maps.places) initAddressAutocomplete();
   clearForm();
   loadData();
   loadAnalytics();
 
-  els.recordForm?.addEventListener('submit', saveRecord);
+  let triedSubmit = false;
+  const fields = Array.from(document.querySelectorAll('#recordForm input, #recordForm select, #recordForm textarea')).filter((field) => field.type !== 'hidden');
+  fields.forEach((field) => {
+    ['input', 'change', 'blur'].forEach((eventName) => {
+      field.addEventListener(eventName, () => setFieldState(field, triedSubmit));
+    });
+  });
+
+  if (els.contactNumber) {
+    els.contactNumber.addEventListener('input', function onInput() {
+      const digits = this.value.replace(/\D/g, '').slice(0, 10);
+      if (digits.length <= 3) this.value = digits;
+      else if (digits.length <= 6) this.value = `${digits.slice(0, 3)} ${digits.slice(3)}`;
+      else this.value = `${digits.slice(0, 3)} ${digits.slice(3, 6)} ${digits.slice(6, 10)}`;
+      this.setCustomValidity('');
+    });
+
+    els.contactNumber.addEventListener('blur', function onBlur() {
+      const digits = this.value.replace(/\D/g, '');
+      if (digits && digits.length !== 10) {
+        this.setCustomValidity('Enter a valid South African phone number with 10 digits.');
+      } else {
+        this.setCustomValidity('');
+      }
+      setFieldState(this, triedSubmit);
+    });
+  }
+
+  els.recordForm?.addEventListener('submit', async (event) => {
+    triedSubmit = true;
+    let firstInvalid = null;
+    fields.forEach((field) => {
+      setFieldState(field, triedSubmit);
+      const value = (field.value || '').trim();
+      const hasError = (field.hasAttribute('required') && !value) || (value !== '' && !field.checkValidity());
+      if (hasError && !firstInvalid) firstInvalid = field;
+    });
+    if (firstInvalid) {
+      event.preventDefault();
+      firstInvalid.focus();
+      return;
+    }
+    await saveRecord(event);
+  });
+
   els.clearFormBtn?.addEventListener('click', clearForm);
   els.townFilter?.addEventListener('input', applyFilters);
   els.provinceFilter?.addEventListener('change', applyFilters);
+  [els.address, els.city, els.province, els.postalCode, els.country].forEach((field) => {
+    field?.addEventListener('input', () => {
+      if (els.fullAddress) els.fullAddress.value = getFullAddressFromForm();
+    });
+    field?.addEventListener('change', () => {
+      if (els.fullAddress) els.fullAddress.value = getFullAddressFromForm();
+    });
+  });
 
   els.recordsTable?.addEventListener('click', (event) => {
     const btn = event.target.closest('button[data-action]');
     if (!btn) return;
-
     const id = Number(btn.dataset.id);
     const record = state.records.find((item) => item.id === id);
     if (!record) return;

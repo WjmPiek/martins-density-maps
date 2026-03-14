@@ -23,7 +23,7 @@ const els = {
   address: document.getElementById('address'),
   city: document.getElementById('city'),
   province: document.getElementById('province'),
-  postalCode: document.getElementById('postalCode'),
+  postalCode: document.getElementById('postalCode'),s
   country: document.getElementById('country'),
   fullAddress: document.getElementById('fullAddress'),
   latitude: document.getElementById('latitude'),
@@ -297,7 +297,10 @@ function renderMap() {
   if (!map || !hasGoogleMaps()) return;
   clearMapLayers();
 
-  const mapped = state.filtered.filter((r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude)));
+  const mapped = state.filtered.filter(
+    (r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude))
+  );
+
   if (!mapped.length) {
     map.setCenter(SOUTH_AFRICA_CENTER);
     map.setZoom(5.5);
@@ -306,35 +309,55 @@ function renderMap() {
 
   const heatRadius = parseInt(els.heatRadius?.value || '25', 10);
   const pinRadius = parseInt(els.pinRadius?.value || '6', 10);
-  const bounds = new google.maps.LatLngBounds();
   const popup = ensureInfoWindow();
+  const bounds = new google.maps.LatLngBounds();
 
   googleMarkers = mapped.map((record) => {
-    const position = { lat: Number(record.latitude), lng: Number(record.longitude) };
+    const position = {
+      lat: Number(record.latitude),
+      lng: Number(record.longitude),
+    };
+
     bounds.extend(position);
+
     const marker = new google.maps.Marker({
       position,
-      title: `${record.deceasedName || ''} ${record.deceasedSurname || ''}`.trim() || (record.mfFile || 'Record'),
+      title:
+        `${record.deceasedName || ''} ${record.deceasedSurname || ''}`.trim() ||
+        (record.mfFile || 'Record'),
       icon: buildMarkerIcon(pinRadius),
     });
+
     marker.addListener('click', () => {
       popup.setContent(popupHtml(record));
       popup.open({ map, anchor: marker });
     });
+
     return marker;
   });
 
-  if (state.currentMapView === 'heat' && mapped.length > 1 && google.maps.visualization) {
+  if (
+    state.currentMapView === 'heat' &&
+    mapped.length > 1 &&
+    google.maps.visualization
+  ) {
     heatmapLayer = new google.maps.visualization.HeatmapLayer({
       data: mapped.map((record) => ({
-        location: new google.maps.LatLng(Number(record.latitude), Number(record.longitude)),
+        location: new google.maps.LatLng(
+          Number(record.latitude),
+          Number(record.longitude)
+        ),
         weight: Number(record.weight || 1),
       })),
       radius: heatRadius,
       opacity: 0.75,
     });
     heatmapLayer.setMap(map);
-  } else if (state.currentMapView === 'clusters' && googleMarkers.length > 1 && window.markerClusterer?.MarkerClusterer) {
+  } else if (
+    state.currentMapView === 'clusters' &&
+    googleMarkers.length > 1 &&
+    window.markerClusterer?.MarkerClusterer
+  ) {
     markerCluster = new markerClusterer.MarkerClusterer({
       map,
       markers: googleMarkers,
@@ -345,7 +368,7 @@ function renderMap() {
 
   if (mapped.length === 1) {
     map.setCenter(bounds.getCenter());
-    map.setZoom(11);
+    map.setZoom(15);
   } else {
     map.fitBounds(bounds, 48);
   }

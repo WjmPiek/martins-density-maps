@@ -5,7 +5,7 @@ from .extensions import db, login_manager
 def create_app():
     app = Flask(
         __name__,
-        template_folder=os.path.join("..", "templates")
+        template_folder="../templates"
     )
 
     database_url = os.getenv("DATABASE_URL")

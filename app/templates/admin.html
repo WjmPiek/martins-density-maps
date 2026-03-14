@@ -3,24 +3,9 @@
 {% block content %}
 <section class="stats-grid">
   <article class="stat-card"><span>Users</span><strong>{{ user_count }}</strong></article>
-  <article class="stat-card"><span>Active Users</span><strong>{{ active_user_count }}</strong></article>
   <article class="stat-card"><span>Records</span><strong>{{ record_count }}</strong></article>
   <article class="stat-card"><span>Uploads</span><strong>{{ upload_count }}</strong></article>
-</section>
-
-<section class="dashboard-grid" style="margin-bottom: 12px;">
-  <article class="panel">
-    <div class="panel-head">
-      <div>
-        <h2>Admin tools</h2>
-        <p class="muted">Manage users and exports.</p>
-      </div>
-    </div>
-    <div class="dashboard-buttons" style="display:flex;">
-      <a class="primary-link" href="{{ url_for('admin.users') }}">Registered Users</a>
-      <a class="ghost-btn" href="{{ url_for('admin.download_central') }}">Download central Excel</a>
-    </div>
-  </article>
+  <article class="stat-card"><span>Export</span><a class="primary-link" href="{{ url_for('admin.download_central') }}">Download central Excel</a></article>
 </section>
 
 <section class="panel">

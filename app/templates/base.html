@@ -58,7 +58,6 @@
         <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
         {% if current_user.is_admin %}
         <a href="{{ url_for('admin.admin') }}">Admin</a>
-        <a href="{{ url_for('admin.users') }}">Registered Users</a>
         {% endif %}
         <a href="{{ url_for('auth.logout') }}">Logout</a>
       </nav>

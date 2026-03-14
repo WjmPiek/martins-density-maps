@@ -19,7 +19,7 @@
       </article>
       <article class="stat-card">
         <span>Scope</span>
-        <strong id="scopeLabel">{{ 'All users' if current_user.is_admin else 'My data only' }}</strong>
+        <strong>{{ 'All users' if current_user.is_admin else 'My data only' }}</strong>
       </article>
     </section>
 
@@ -48,15 +48,6 @@
             </select>
           </label>
 
-          {% if current_user.is_admin %}
-          <label>
-            User view
-            <select id="userFilter">
-              <option value="">All users</option>
-            </select>
-          </label>
-          {% endif %}
-
           <label>
             View mode
             <select id="mapMode">
@@ -76,7 +67,7 @@
         <div class="panel-head">
           <div>
             <h2>Client addresses map</h2>
-            <p class="muted" id="mapSubtitle">Choose how you want to view your data.</p>
+            <p class="muted">Choose how you want to view your data.</p>
           </div>
         </div>
 
@@ -267,10 +258,12 @@
     googleMapsApiKey: {{ google_maps_api_key|tojson if google_maps_api_key else '""' }}
   };
 </script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.heat@0.2.0/dist/leaflet-heat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://unpkg.com/@googlemaps/markerclusterer/dist/index.min.js"></script>
 {% if google_maps_api_key %}
-<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places,visualization&loading=async&callback=initGoogleAddress"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places,geocoding&loading=async&callback=initGoogleAddress"></script>
 {% endif %}
-<script src="{{ url_for('static', filename='js/dashboard.js', v='20260314-googlemaps-3') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js', v='20260314-1') }}"></script>
 {% endblock %}

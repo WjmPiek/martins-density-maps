@@ -22,3 +22,27 @@ def geocode_address(full_address):
         current_app.logger.warning("Geocode error for %s: %s", full_address, exc)
 
     return None, None
+
+# app/services/geocoding.py
+
+import requests
+import os
+
+API_KEY = os.getenv("GOOGLE_MAPS_API_KEY")
+
+def geocode_address(address):
+    url = "https://maps.googleapis.com/maps/api/geocode/json"
+
+    params = {
+        "address": address,
+        "key": API_KEY
+    }
+
+    r = requests.get(url, params=params)
+    data = r.json()
+
+    if data["results"]:
+        loc = data["results"][0]["geometry"]["location"]
+        return loc["lat"], loc["lng"]
+
+    return None, None

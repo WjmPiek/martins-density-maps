@@ -116,3 +116,27 @@ def api_analytics():
     top_cities = dict(cities.most_common(10))
     ordered_months = dict(sorted(months.items()))
     return jsonify({"province": dict(province), "cities": top_cities, "months": ordered_months})
+
+# app/routes/api.py
+
+from flask import Blueprint, jsonify
+from app.models import Record
+
+api_bp = Blueprint("api", __name__)
+
+@api_bp.route("/api/records")
+def get_records():
+    records = Record.query.all()
+
+    result = []
+
+    for r in records:
+        result.append({
+            "id": r.id,
+            "name": r.name,
+            "address": r.address,
+            "lat": r.latitude,
+            "lng": r.longitude
+        })
+
+    return jsonify(result)

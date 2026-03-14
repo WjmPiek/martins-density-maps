@@ -58,3 +58,23 @@ def dataset_for_user(user):
             "owners": owners,
         },
     }
+
+# app/services/records.py
+
+from app.models import Record
+from app.extensions import db
+from app.services.geocoding import geocode_address
+
+def geocode_missing_records():
+    records = Record.query.filter(
+        (Record.latitude == None) | (Record.longitude == None)
+    ).all()
+
+    for record in records:
+        lat, lng = geocode_address(record.address)
+
+        if lat:
+            record.latitude = lat
+            record.longitude = lng
+
+    db.session.commit()

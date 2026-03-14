@@ -137,7 +137,7 @@ function initAddressAutocomplete() {
   const autocomplete = new google.maps.places.Autocomplete(streetInput, {
     fields: ['formatted_address', 'geometry', 'address_components', 'name'],
     types: ['address'],
-    componentRestrictions: { country: 'za' },
+    componentRestrictions: { country: 'none' },
   });
 
   streetInput.addEventListener('keydown', (event) => {

@@ -38,15 +38,24 @@ const els = {
   pinRadius: document.getElementById('pinRadius'),
 };
 
-let map;
-let baseLayer;
-let heatLayer = null;
-let markerLayer = null;
-let clusterLayer = null;
+let map = null;
+let infoWindow = null;
+let heatmapLayer = null;
+let markerCluster = null;
+let googleMarkers = [];
 let provinceChartInstance = null;
 let cityChartInstance = null;
 let monthlyChartInstance = null;
 let geocodeQueueActive = false;
+let dashboardBooted = false;
+
+const SOUTH_AFRICA_CENTER = { lat: -29.0, lng: 24.0 };
+const SOUTH_AFRICA_BOUNDS = {
+  north: -22.0,
+  south: -35.5,
+  west: 16.0,
+  east: 33.5,
+};
 
 function setBox(el, message, isError = false) {
   if (!el) return;
@@ -189,116 +198,86 @@ function initAddressAutocomplete() {
       const lng = place.geometry.location.lng();
       if (els.latitude) els.latitude.value = lat;
       if (els.longitude) els.longitude.value = lng;
-      if (map) map.setView([lat, lng], 15, { animate: true });
+      if (map) {
+        map.panTo({ lat, lng });
+        map.setZoom(15);
+      }
       clearBox(els.addressHelp);
     }
   });
 }
 
-window.initGoogleAddress = function initGoogleAddress() {
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initAddressAutocomplete, { once: true });
-  } else {
-    initAddressAutocomplete();
+function hasGoogleMaps() {
+  return Boolean(window.google && google.maps);
+}
+
+function showMapUnavailableMessage(message) {
+  const mapEl = document.getElementById('map');
+  if (!mapEl) return;
+  mapEl.innerHTML = `<div style="padding:24px;text-align:center;color:#5b6475;">${escapeHtml(message)}</div>`;
+}
+
+function ensureInfoWindow() {
+  if (!hasGoogleMaps()) return null;
+  if (!infoWindow) {
+    infoWindow = new google.maps.InfoWindow();
   }
-};
+  return infoWindow;
+}
 
-async function geocodeAddress(fullAddress) {
-  const address = String(fullAddress || '').trim();
-  if (!address) return null;
-
-  if (window.google && google.maps && google.maps.Geocoder) {
-    const geocoder = new google.maps.Geocoder();
-    return new Promise((resolve) => {
-      geocoder.geocode({ address, componentRestrictions: { country: 'ZA' } }, (results, status) => {
-        if (status === 'OK' && results && results[0] && results[0].geometry && results[0].geometry.location) {
-          const loc = results[0].geometry.location;
-          resolve({ lat: loc.lat(), lng: loc.lng(), source: 'google' });
-        } else {
-          resolve(null);
-        }
-      });
-    });
-  }
-
-  const url = new URL('https://nominatim.openstreetmap.org/search');
-  url.searchParams.set('q', address);
-  url.searchParams.set('format', 'jsonv2');
-  url.searchParams.set('limit', '1');
-  url.searchParams.set('countrycodes', 'za');
-  const response = await fetch(url.toString(), {
-    headers: { 'Accept': 'application/json' },
-  });
-  if (!response.ok) return null;
-  const results = await response.json();
-  if (!Array.isArray(results) || !results.length) return null;
+function buildMarkerIcon(pinRadius) {
+  const scale = Math.max(5, Math.min(14, Number(pinRadius || 6)));
   return {
-    lat: Number(results[0].lat),
-    lng: Number(results[0].lon),
-    source: 'osm',
+    path: google.maps.SymbolPath.CIRCLE,
+    scale,
+    fillColor: '#6b2fa3',
+    fillOpacity: 0.9,
+    strokeColor: '#ffffff',
+    strokeWeight: 1.5,
   };
 }
 
-function autoMapMode() {
-  state.currentMapView = 'markers';
-  if (els.mapMode) els.mapMode.value = 'pins';
-}
+function clearMapLayers() {
+  googleMarkers.forEach((marker) => marker.setMap(null));
+  googleMarkers = [];
 
-function buildTileLayer(url, options = {}) {
-  return L.tileLayer(url, {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors',
-    ...options,
-  });
-}
+  if (markerCluster) {
+    markerCluster.clearMarkers();
+    markerCluster.setMap(null);
+    markerCluster = null;
+  }
 
-function attachTileFallbacks() {
-  if (!baseLayer || !map) return;
-  let fallbackUsed = false;
-  baseLayer.on('tileerror', () => {
-    if (fallbackUsed || !map) return;
-    fallbackUsed = true;
-    if (map.hasLayer(baseLayer)) map.removeLayer(baseLayer);
-    baseLayer = buildTileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-      subdomains: 'abcd',
-      attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
-    });
-    baseLayer.addTo(map);
-  });
-}
-
-function refreshMapSize() {
-  if (map) map.invalidateSize();
+  if (heatmapLayer) {
+    heatmapLayer.setMap(null);
+    heatmapLayer = null;
+  }
 }
 
 function initMap() {
   const mapEl = document.getElementById('map');
-  if (!mapEl || typeof L === 'undefined') return;
+  if (!mapEl) return;
 
-  const southAfricaBounds = [
-    [-35.5, 16.0],
-    [-22.0, 33.5],
-  ];
+  if (!hasGoogleMaps()) {
+    showMapUnavailableMessage('Google Maps could not load. Check GOOGLE_MAPS_API_KEY, billing, referrer restrictions, and enabled APIs.');
+    return;
+  }
 
-  map = L.map('map', {
-    preferCanvas: true,
-    zoomControl: true,
-    maxBounds: southAfricaBounds,
-    maxBoundsViscosity: 1.0,
+  if (map) return;
+
+  map = new google.maps.Map(mapEl, {
+    center: SOUTH_AFRICA_CENTER,
+    zoom: 5.5,
+    mapTypeId: 'roadmap',
+    streetViewControl: false,
+    fullscreenControl: true,
+    mapTypeControl: true,
+    restriction: {
+      latLngBounds: SOUTH_AFRICA_BOUNDS,
+      strictBounds: false,
+    },
   });
 
-  map.fitBounds(southAfricaBounds);
-  baseLayer = buildTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
-  baseLayer.addTo(map);
-  attachTileFallbacks();
-
-  markerLayer = L.layerGroup();
-  clusterLayer = L.markerClusterGroup({
-    chunkedLoading: true,
-    maxClusterRadius: 60,
-    spiderfyOnMaxZoom: true,
-    showCoverageOnHover: false,
-  });
+  ensureInfoWindow();
 
   if (els.mapMode) {
     els.mapMode.addEventListener('change', () => {
@@ -312,96 +291,89 @@ function initMap() {
 
   els.heatRadius?.addEventListener('input', renderMap);
   els.pinRadius?.addEventListener('input', renderMap);
-
-  window.addEventListener('load', () => setTimeout(refreshMapSize, 300));
-  setTimeout(refreshMapSize, 300);
-}
-
-function clearMapLayers() {
-  if (!map) return;
-  if (heatLayer && map.hasLayer(heatLayer)) map.removeLayer(heatLayer);
-  if (markerLayer && map.hasLayer(markerLayer)) map.removeLayer(markerLayer);
-  if (clusterLayer && map.hasLayer(clusterLayer)) map.removeLayer(clusterLayer);
-  heatLayer = null;
-  markerLayer?.clearLayers();
-  clusterLayer?.clearLayers();
 }
 
 function renderMap() {
-  if (!map || !markerLayer || !clusterLayer) return;
+  if (!map || !hasGoogleMaps()) return;
   clearMapLayers();
 
   const mapped = state.filtered.filter((r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude)));
   if (!mapped.length) {
-    map.fitBounds([[-35.5, 16.0], [-22.0, 33.5]]);
+    map.setCenter(SOUTH_AFRICA_CENTER);
+    map.setZoom(5.5);
     return;
   }
 
-  refreshMapSize();
   const heatRadius = parseInt(els.heatRadius?.value || '25', 10);
   const pinRadius = parseInt(els.pinRadius?.value || '6', 10);
-  const heatData = [];
-  const bounds = [];
+  const bounds = new google.maps.LatLngBounds();
+  const popup = ensureInfoWindow();
 
-  mapped.forEach((record) => {
-    const lat = Number(record.latitude);
-    const lng = Number(record.longitude);
-    heatData.push([lat, lng, Number(record.weight || 1)]);
-    bounds.push([lat, lng]);
-    const popup = popupHtml(record);
-    markerLayer.addLayer(L.circleMarker([lat, lng], {
-      radius: pinRadius,
-      weight: 1,
-      opacity: 0.95,
-      fillOpacity: 0.85,
-    }).bindPopup(popup));
-    clusterLayer.addLayer(L.marker([lat, lng]).bindPopup(popup));
+  googleMarkers = mapped.map((record) => {
+    const position = { lat: Number(record.latitude), lng: Number(record.longitude) };
+    bounds.extend(position);
+    const marker = new google.maps.Marker({
+      position,
+      title: `${record.deceasedName || ''} ${record.deceasedSurname || ''}`.trim() || (record.mfFile || 'Record'),
+      icon: buildMarkerIcon(pinRadius),
+    });
+    marker.addListener('click', () => {
+      popup.setContent(popupHtml(record));
+      popup.open({ map, anchor: marker });
+    });
+    return marker;
   });
 
-  if (state.currentMapView === 'heat' && mapped.length > 20) {
-    heatLayer = L.heatLayer(heatData, {
+  if (state.currentMapView === 'heat' && mapped.length > 1 && google.maps.visualization) {
+    heatmapLayer = new google.maps.visualization.HeatmapLayer({
+      data: mapped.map((record) => ({
+        location: new google.maps.LatLng(Number(record.latitude), Number(record.longitude)),
+        weight: Number(record.weight || 1),
+      })),
       radius: heatRadius,
-      blur: 25,
-      maxZoom: 12,
-      max: 1.0,
-      gradient: {
-        0.2: 'blue',
-        0.4: 'lime',
-        0.6: 'yellow',
-        0.8: 'orange',
-        1.0: 'red',
-      },
-    }).addTo(map);
-  } else if (state.currentMapView === 'clusters' && mapped.length > 1) {
-    clusterLayer.addTo(map);
+      opacity: 0.75,
+    });
+    heatmapLayer.setMap(map);
+  } else if (state.currentMapView === 'clusters' && googleMarkers.length > 1 && window.markerClusterer?.MarkerClusterer) {
+    markerCluster = new markerClusterer.MarkerClusterer({
+      map,
+      markers: googleMarkers,
+    });
   } else {
-    markerLayer.addTo(map);
+    googleMarkers.forEach((marker) => marker.setMap(map));
   }
 
-  if (bounds.length === 1) map.setView(bounds[0], 10);
-  else map.fitBounds(bounds, { padding: [24, 24] });
+  if (mapped.length === 1) {
+    map.setCenter(bounds.getCenter());
+    map.setZoom(11);
+  } else {
+    map.fitBounds(bounds, 48);
+  }
 }
 
 function focusSavedRecordOnMap(record) {
-  if (!map || !record || !markerLayer || !clusterLayer) return;
+  if (!map || !record) return;
   const lat = Number(record.latitude);
   const lng = Number(record.longitude);
   if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
 
-  const popup = popupHtml(record);
-  clearMapLayers();
-  const pinRadius = parseInt(els.pinRadius?.value || '6', 10);
-  const circle = L.circleMarker([lat, lng], {
-    radius: pinRadius,
-    weight: 1,
-    opacity: 0.95,
-    fillOpacity: 0.85,
-  }).bindPopup(popup);
-  markerLayer.addLayer(circle);
-  clusterLayer.addLayer(L.marker([lat, lng]).bindPopup(popup));
-  markerLayer.addTo(map);
-  circle.openPopup();
-  map.setView([lat, lng], 16, { animate: true });
+  state.currentMapView = 'markers';
+  if (els.mapMode) els.mapMode.value = 'pins';
+  renderMap();
+
+  const targetMarker = googleMarkers.find((marker) => {
+    const pos = marker.getPosition();
+    return pos && Math.abs(pos.lat() - lat) < 0.000001 && Math.abs(pos.lng() - lng) < 0.000001;
+  });
+
+  map.panTo({ lat, lng });
+  map.setZoom(16);
+
+  if (targetMarker) {
+    const popup = ensureInfoWindow();
+    popup.setContent(popupHtml(record));
+    popup.open({ map, anchor: targetMarker });
+  }
 }
 
 function updateSummary() {
@@ -507,6 +479,45 @@ async function loadData() {
   autoMapMode();
   applyFilters();
   queueMissingGeocodes();
+}
+
+async function geocodeAddress(fullAddress) {
+  const address = String(fullAddress || '').trim();
+  if (!address) return null;
+
+  if (hasGoogleMaps() && google.maps.Geocoder) {
+    const geocoder = new google.maps.Geocoder();
+    return new Promise((resolve) => {
+      geocoder.geocode({ address, componentRestrictions: { country: 'ZA' } }, (results, status) => {
+        if (status === 'OK' && results && results[0] && results[0].geometry && results[0].geometry.location) {
+          const loc = results[0].geometry.location;
+          resolve({ lat: loc.lat(), lng: loc.lng(), source: 'google' });
+        } else {
+          resolve(null);
+        }
+      });
+    });
+  }
+
+  const url = new URL('https://nominatim.openstreetmap.org/search');
+  url.searchParams.set('q', address);
+  url.searchParams.set('format', 'jsonv2');
+  url.searchParams.set('limit', '1');
+  url.searchParams.set('countrycodes', 'za');
+  const response = await fetch(url.toString(), { headers: { 'Accept': 'application/json' } });
+  if (!response.ok) return null;
+  const results = await response.json();
+  if (!Array.isArray(results) || !results.length) return null;
+  return {
+    lat: Number(results[0].lat),
+    lng: Number(results[0].lon),
+    source: 'osm',
+  };
+}
+
+function autoMapMode() {
+  state.currentMapView = 'markers';
+  if (els.mapMode) els.mapMode.value = 'pins';
 }
 
 async function geocodePayloadIfNeeded(payload) {
@@ -696,13 +707,12 @@ async function queueMissingGeocodes() {
   applyFilters();
 }
 
-window.showMarkers = showMarkers;
-window.showClusters = showClusters;
-window.showHeat = showHeat;
+function bootstrapDashboard() {
+  if (dashboardBooted) return;
+  dashboardBooted = true;
 
-document.addEventListener('DOMContentLoaded', () => {
   initMap();
-  if (window.google && google.maps && google.maps.places) initAddressAutocomplete();
+  if (hasGoogleMaps() && google.maps.places) initAddressAutocomplete();
   clearForm();
   loadData();
   loadAnalytics();
@@ -774,10 +784,22 @@ document.addEventListener('DOMContentLoaded', () => {
     if (btn.dataset.action === 'edit') {
       fillForm(record);
       window.scrollTo({ top: 0, behavior: 'smooth' });
+      focusSavedRecordOnMap(record);
     }
 
     if (btn.dataset.action === 'delete' && confirm(`Delete ${record.mfFile}?`)) {
       deleteRecord(id);
     }
   });
-});
+}
+
+window.showMarkers = showMarkers;
+window.showClusters = showClusters;
+window.showHeat = showHeat;
+window.initGoogleAddress = function initGoogleAddress() {
+  initMap();
+  initAddressAutocomplete();
+  renderMap();
+};
+
+document.addEventListener('DOMContentLoaded', bootstrapDashboard);

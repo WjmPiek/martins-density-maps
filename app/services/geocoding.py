@@ -29,7 +29,7 @@ def geocode_address(address: str) -> dict:
             params={
                 "address": address,
                 "key": api_key,
-                "components": "country:ZA",
+                "components": "country: ",
             },
             timeout=20,
         )

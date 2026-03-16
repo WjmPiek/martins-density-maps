@@ -1,0 +1,45 @@
+UPLOAD_COLUMNS = [
+    "MF File",
+    "Deceased Name",
+    "Deceased Surname",
+    "DOD",
+    "Address",
+    "City",
+    "Province",
+    "Country",
+    "Next of Kin Name",
+    "Next of Kin Surname",
+    "Relationship",
+    "Contact Number",
+]
+
+EXPORT_COLUMNS = [
+    "MF File",
+    "Deceased Name",
+    "Deceased Surname",
+    "DOD",
+    "Address",
+    "City",
+    "Province",
+    "Country",
+    "Full Address",
+    "Latitude",
+    "Longitude",
+    "Weight",
+    "Next of Kin Name",
+    "Next of Kin Surname",
+    "Relationship",
+    "Contact Number",
+]
+
+PROVINCES = [
+    "Eastern Cape",
+    "Free State",
+    "Gauteng",
+    "KwaZulu-Natal",
+    "Limpopo",
+    "Mpumalanga",
+    "North West",
+    "Northern Cape",
+    "Western Cape",
+]

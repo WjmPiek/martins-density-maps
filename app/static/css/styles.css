@@ -1954,3 +1954,69 @@ textarea:focus {
 .logout-btn:hover {
   filter: brightness(0.98);
 }
+
+
+/* March 2026 dashboard simplification */
+.dashboard-simple-wrap {
+  gap: 18px;
+}
+
+.dashboard-grid-single {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.dashboard-map-only {
+  width: 100%;
+}
+
+.analytics-panel-full {
+  width: 100%;
+}
+
+.comparison-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.comparison-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  align-items: end;
+}
+
+.comparison-summary {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.comparison-charts-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.full-width-chart {
+  grid-column: 1 / -1;
+}
+
+.full-width-chart canvas {
+  min-height: 320px;
+}
+
+@media (max-width: 900px) {
+  .comparison-controls,
+  .comparison-charts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .comparison-actions {
+    grid-template-columns: 1fr;
+  }
+}

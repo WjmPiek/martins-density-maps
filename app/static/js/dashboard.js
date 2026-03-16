@@ -45,6 +45,12 @@ const els = {
   mapMode: document.getElementById('mapMode'),
   heatRadius: document.getElementById('heatRadius'),
   pinRadius: document.getElementById('pinRadius'),
+  compareFrom: document.getElementById('compareFrom'),
+  compareTo: document.getElementById('compareTo'),
+  applyComparisonBtn: document.getElementById('applyComparisonBtn'),
+  clearComparisonBtn: document.getElementById('clearComparisonBtn'),
+  comparisonSummary: document.getElementById('comparisonSummary'),
+  comparisonChart: document.getElementById('comparisonChart'),
 };
 
 let map;
@@ -56,6 +62,7 @@ let provinceChartInstance = null;
 let cityChartInstance = null;
 let monthlyChartInstance = null;
 let churchChartInstance = null;
+let comparisonChartInstance = null;
 let geocodeQueueActive = false;
 
 function setBox(el, message, isError = false) {
@@ -572,6 +579,7 @@ function applyFilters() {
   updateSummary();
   renderTable();
   renderMap();
+  loadAnalytics();
 }
 
 function fillForm(record) {
@@ -750,6 +758,185 @@ function showChurchCoverage() {
   renderMap();
 }
 
+function parseRecordDate(value) {
+  if (!value) return null;
+  const textValue = String(value).trim();
+  if (!textValue) return null;
+  const direct = new Date(`${textValue}T00:00:00`);
+  if (!Number.isNaN(direct.getTime())) return direct;
+  const parts = textValue.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (!parts) return null;
+  const day = Number(parts[1]);
+  const month = Number(parts[2]) - 1;
+  let year = Number(parts[3]);
+  if (year < 100) year += 2000;
+  const parsed = new Date(year, month, day);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function formatDateKey(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString().slice(0, 10);
+}
+
+function formatDateLabel(date) {
+  return new Intl.DateTimeFormat('en-ZA', { day: '2-digit', month: 'short' }).format(date);
+}
+
+function formatMonthKey(date) {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${date.getFullYear()}-${month}`;
+}
+
+function getDatedFilteredRecords() {
+  return state.filtered
+    .map((record) => ({ ...record, __dodDate: parseRecordDate(record.dod) }))
+    .filter((record) => record.__dodDate instanceof Date && !Number.isNaN(record.__dodDate.getTime()));
+}
+
+function getSelectedComparisonRange() {
+  const from = els.compareFrom?.value ? new Date(`${els.compareFrom.value}T00:00:00`) : null;
+  const to = els.compareTo?.value ? new Date(`${els.compareTo.value}T00:00:00`) : null;
+  if (!from || !to || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from > to) return null;
+  return { from, to };
+}
+
+function isWithinRange(date, range) {
+  return date >= range.from && date <= range.to;
+}
+
+function aggregateCounts(records, getter) {
+  const counts = {};
+  records.forEach((record) => {
+    const key = getter(record);
+    if (!key) return;
+    counts[key] = (counts[key] || 0) + 1;
+  });
+  return counts;
+}
+
+function applyDateRangeToRecords(records) {
+  const range = getSelectedComparisonRange();
+  if (!range) return records;
+  return records.filter((record) => isWithinRange(record.__dodDate, range));
+}
+
+function updateComparisonSummary(message) {
+  if (els.comparisonSummary) els.comparisonSummary.textContent = message;
+}
+
+function renderComparisonChart() {
+  if (!els.comparisonChart || typeof Chart === 'undefined') return;
+  destroyChart(comparisonChartInstance);
+
+  const datedRecords = getDatedFilteredRecords();
+  if (!datedRecords.length) {
+    updateComparisonSummary('No dated records are available for comparison.');
+    return;
+  }
+
+  let range = getSelectedComparisonRange();
+  if (!range) {
+    const sorted = datedRecords.map((record) => record.__dodDate).sort((a, b) => a - b);
+    const latest = sorted[sorted.length - 1];
+    const from = new Date(latest);
+    from.setDate(from.getDate() - 29);
+    range = { from, to: latest };
+    if (els.compareFrom && !els.compareFrom.value) els.compareFrom.value = formatDateKey(from);
+    if (els.compareTo && !els.compareTo.value) els.compareTo.value = formatDateKey(latest);
+  }
+
+  const totalDays = Math.max(1, Math.round((range.to - range.from) / 86400000) + 1);
+  const previousTo = new Date(range.from);
+  previousTo.setDate(previousTo.getDate() - 1);
+  const previousFrom = new Date(previousTo);
+  previousFrom.setDate(previousFrom.getDate() - totalDays + 1);
+
+  const currentMap = new Map();
+  const previousMap = new Map();
+  for (let i = 0; i < totalDays; i += 1) {
+    const currentDate = new Date(range.from);
+    currentDate.setDate(currentDate.getDate() + i);
+    const previousDate = new Date(previousFrom);
+    previousDate.setDate(previousDate.getDate() + i);
+    currentMap.set(formatDateKey(currentDate), 0);
+    previousMap.set(formatDateKey(previousDate), 0);
+  }
+
+  datedRecords.forEach((record) => {
+    const key = formatDateKey(record.__dodDate);
+    if (currentMap.has(key)) currentMap.set(key, currentMap.get(key) + 1);
+    if (previousMap.has(key)) previousMap.set(key, previousMap.get(key) + 1);
+  });
+
+  const labels = [];
+  const currentData = [];
+  const previousData = [];
+  for (let i = 0; i < totalDays; i += 1) {
+    const currentDate = new Date(range.from);
+    currentDate.setDate(currentDate.getDate() + i);
+    const previousDate = new Date(previousFrom);
+    previousDate.setDate(previousDate.getDate() + i);
+    labels.push(totalDays > 31 ? formatMonthKey(currentDate) : formatDateLabel(currentDate));
+    currentData.push(currentMap.get(formatDateKey(currentDate)) || 0);
+    previousData.push(previousMap.get(formatDateKey(previousDate)) || 0);
+  }
+
+  const currentTotal = currentData.reduce((sum, value) => sum + value, 0);
+  const previousTotal = previousData.reduce((sum, value) => sum + value, 0);
+  const difference = currentTotal - previousTotal;
+  const summary = `${currentTotal} records from ${formatDateKey(range.from)} to ${formatDateKey(range.to)} compared with ${previousTotal} in the previous ${totalDays}-day period (${difference >= 0 ? '+' : ''}${difference}).`;
+  updateComparisonSummary(summary);
+
+  comparisonChartInstance = new Chart(els.comparisonChart, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: `Selected period (${formatDateKey(range.from)} to ${formatDateKey(range.to)})`,
+          data: currentData,
+          borderColor: '#8d6fd1',
+          backgroundColor: 'rgba(141, 111, 209, 0.12)',
+          pointBackgroundColor: '#8d6fd1',
+          pointRadius: 3,
+          fill: true,
+          tension: 0.3,
+        },
+        {
+          label: `Previous period (${formatDateKey(previousFrom)} to ${formatDateKey(previousTo)})`,
+          data: previousData,
+          borderColor: '#c04b73',
+          backgroundColor: 'rgba(192, 75, 115, 0.08)',
+          pointBackgroundColor: '#c04b73',
+          pointRadius: 3,
+          fill: true,
+          tension: 0.3,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#5b4a7d', usePointStyle: true, boxWidth: 10, padding: 16 } },
+        tooltip: {
+          backgroundColor: '#ffffff',
+          titleColor: '#5b4a7d',
+          bodyColor: '#6f6288',
+          borderColor: '#eadff3',
+          borderWidth: 1,
+          cornerRadius: 12,
+        },
+      },
+      scales: {
+        x: { ticks: { color: '#7a6b95', maxRotation: 0, autoSkip: true }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { color: '#7a6b95', precision: 0 }, grid: { color: 'rgba(91, 74, 125, 0.08)' } },
+      },
+    },
+  });
+}
+
 function destroyChart(instance) {
   if (instance && typeof instance.destroy === 'function') instance.destroy();
 }
@@ -759,13 +946,23 @@ async function loadAnalytics() {
   const cityCanvas = document.getElementById('cityChart');
   const monthlyCanvas = document.getElementById('monthlyChart');
   const churchCanvas = document.getElementById('churchChart');
-  if (!cityCanvas || !monthlyCanvas || typeof Chart === 'undefined') return;
+  if ((!cityCanvas && !monthlyCanvas && !provinceCanvas && !churchCanvas) || typeof Chart === 'undefined') {
+    renderComparisonChart();
+    return;
+  }
 
-  const selectedUserId = state.selectedUserId || (els.userFilter ? els.userFilter.value : '');
-  const url = selectedUserId ? `/api/analytics?user_id=${encodeURIComponent(selectedUserId)}` : '/api/analytics';
-  const res = await fetch(url);
-  if (!res.ok) return;
-  const data = await res.json();
+  const datedRecords = applyDateRangeToRecords(getDatedFilteredRecords());
+  const provinceCounts = aggregateCounts(datedRecords, (record) => record.province || 'Unknown');
+  const cityCounts = aggregateCounts(datedRecords, (record) => record.city || 'Unknown');
+  const monthCounts = aggregateCounts(datedRecords, (record) => formatMonthKey(record.__dodDate));
+  const churchCounts = aggregateCounts(datedRecords, (record) => record.churchName || 'Unknown church');
+
+  const topEntries = (counts, limit = null) => {
+    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+    return limit ? entries.slice(0, limit) : entries;
+  };
+
+  const sortedMonthEntries = Object.entries(monthCounts).sort((a, b) => a[0].localeCompare(b[0]));
 
   destroyChart(provinceChartInstance);
   destroyChart(cityChartInstance);
@@ -775,23 +972,10 @@ async function loadAnalytics() {
   const sharedChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    animation: {
-      duration: 900,
-      easing: 'easeOutQuart',
-    },
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
+    animation: { duration: 900, easing: 'easeOutQuart' },
+    interaction: { mode: 'index', intersect: false },
     plugins: {
-      legend: {
-        labels: {
-          color: '#5b4a7d',
-          usePointStyle: true,
-          boxWidth: 10,
-          padding: 16,
-        },
-      },
+      legend: { labels: { color: '#5b4a7d', usePointStyle: true, boxWidth: 10, padding: 16 } },
       tooltip: {
         backgroundColor: '#ffffff',
         titleColor: '#5b4a7d',
@@ -803,107 +987,59 @@ async function loadAnalytics() {
       },
     },
     scales: {
-      x: {
-        ticks: {
-          color: '#7a6b95',
-          maxRotation: 0,
-          autoSkip: true,
-        },
-        grid: {
-          display: false,
-        },
-      },
-      y: {
-        beginAtZero: true,
-        ticks: {
-          color: '#7a6b95',
-          precision: 0,
-        },
-        grid: {
-          color: 'rgba(91, 74, 125, 0.08)',
-        },
-      },
+      x: { ticks: { color: '#7a6b95', maxRotation: 0, autoSkip: true }, grid: { display: false } },
+      y: { beginAtZero: true, ticks: { color: '#7a6b95', precision: 0 }, grid: { color: 'rgba(91, 74, 125, 0.08)' } },
     },
   };
 
   if (provinceCanvas) {
+    const entries = topEntries(provinceCounts);
     provinceChartInstance = new Chart(provinceCanvas, {
       type: 'bar',
       data: {
-        labels: Object.keys(data.province || {}),
-        datasets: [{
-          label: 'Deaths per Province',
-          data: Object.values(data.province || {}),
-          backgroundColor: '#c8a2c8',
-          borderColor: '#c8a2c8',
-          borderWidth: 1,
-          borderRadius: 10,
-          barThickness: 34,
-          maxBarThickness: 42,
-        }],
+        labels: entries.map(([label]) => label),
+        datasets: [{ label: 'Deaths per Province', data: entries.map(([, value]) => value), backgroundColor: '#c8a2c8', borderColor: '#c8a2c8', borderWidth: 1, borderRadius: 10, barThickness: 34, maxBarThickness: 42 }],
       },
       options: sharedChartOptions,
     });
   }
 
-  cityChartInstance = new Chart(cityCanvas, {
-    type: 'bar',
-    data: {
-      labels: Object.keys(data.cities || {}),
-      datasets: [{
-        label: 'Top Cities',
-        data: Object.values(data.cities || {}),
-        backgroundColor: '#c8a2c8',
-        borderColor: '#c8a2c8',
-        borderWidth: 1,
-        borderRadius: 10,
-        barThickness: 34,
-        maxBarThickness: 42,
-      }],
-    },
-    options: sharedChartOptions,
-  });
+  if (cityCanvas) {
+    const entries = topEntries(cityCounts, 10);
+    cityChartInstance = new Chart(cityCanvas, {
+      type: 'bar',
+      data: {
+        labels: entries.map(([label]) => label),
+        datasets: [{ label: 'Top Cities', data: entries.map(([, value]) => value), backgroundColor: '#c8a2c8', borderColor: '#c8a2c8', borderWidth: 1, borderRadius: 10, barThickness: 34, maxBarThickness: 42 }],
+      },
+      options: sharedChartOptions,
+    });
+  }
 
-  monthlyChartInstance = new Chart(monthlyCanvas, {
-    type: 'line',
-    data: {
-      labels: Object.keys(data.months || {}),
-      datasets: [{
-        label: 'Monthly Trend',
-        data: Object.values(data.months || {}),
-        borderColor: '#c8a2c8',
-        backgroundColor: 'rgba(200, 162, 200, 0.18)',
-        pointBackgroundColor: '#c8a2c8',
-        pointBorderColor: '#c8a2c8',
-        pointRadius: 4,
-        pointHoverRadius: 6,
-        fill: true,
-        tension: 0.35,
-      }],
-    },
-    options: sharedChartOptions,
-  });
-
+  if (monthlyCanvas) {
+    monthlyChartInstance = new Chart(monthlyCanvas, {
+      type: 'line',
+      data: {
+        labels: sortedMonthEntries.map(([label]) => label),
+        datasets: [{ label: 'Monthly Trend', data: sortedMonthEntries.map(([, value]) => value), borderColor: '#c8a2c8', backgroundColor: 'rgba(200, 162, 200, 0.18)', pointBackgroundColor: '#c8a2c8', pointBorderColor: '#c8a2c8', pointRadius: 4, pointHoverRadius: 6, fill: true, tension: 0.35 }],
+      },
+      options: sharedChartOptions,
+    });
+  }
 
   if (churchCanvas) {
+    const entries = topEntries(churchCounts, 10);
     churchChartInstance = new Chart(churchCanvas, {
       type: 'bar',
       data: {
-        labels: Object.keys(data.churches || {}),
-        datasets: [{
-          label: 'Church Coverage',
-          data: Object.values(data.churches || {}),
-          backgroundColor: '#c8a2c8',
-          borderColor: '#c8a2c8',
-          borderWidth: 1,
-          borderRadius: 10,
-          barThickness: 34,
-          maxBarThickness: 42,
-        }],
+        labels: entries.map(([label]) => label),
+        datasets: [{ label: 'Church Coverage', data: entries.map(([, value]) => value), backgroundColor: '#c8a2c8', borderColor: '#c8a2c8', borderWidth: 1, borderRadius: 10, barThickness: 34, maxBarThickness: 42 }],
       },
       options: sharedChartOptions,
     });
   }
+
+  renderComparisonChart();
 }
 
 async function updateRecordGeocode(record, point) {
@@ -955,18 +1091,7 @@ async function queueMissingGeocodes() {
 }
 
 
-function bindSidebarQuickLinks() {
-  document.querySelectorAll('[data-map-view]').forEach((link) => {
-    link.addEventListener('click', (event) => {
-      const view = link.dataset.mapView;
-      if (view === 'churches') {
-        event.preventDefault();
-        showChurchCoverage();
-        document.getElementById('mapPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-    });
-  });
-}
+function bindSidebarQuickLinks() {}
 
 window.showMarkers = showMarkers;
 window.showClusters = showClusters;
@@ -1036,7 +1161,6 @@ document.addEventListener('DOMContentLoaded', () => {
   els.userFilter?.addEventListener('change', async () => {
     state.selectedUserId = els.userFilter.value || '';
     await loadData();
-    await loadAnalytics();
   });
   [els.address, els.city, els.province, els.postalCode, els.country].forEach((field) => {
     field?.addEventListener('input', () => {
@@ -1044,6 +1168,22 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     field?.addEventListener('change', () => {
       if (els.fullAddress) els.fullAddress.value = getFullAddressFromForm();
+    });
+  });
+
+  els.applyComparisonBtn?.addEventListener('click', () => {
+    loadAnalytics();
+  });
+
+  els.clearComparisonBtn?.addEventListener('click', () => {
+    if (els.compareFrom) els.compareFrom.value = '';
+    if (els.compareTo) els.compareTo.value = '';
+    loadAnalytics();
+  });
+
+  [els.compareFrom, els.compareTo].forEach((field) => {
+    field?.addEventListener('change', () => {
+      if (els.compareFrom?.value && els.compareTo?.value) loadAnalytics();
     });
   });
 

@@ -2,303 +2,162 @@
 {% block title %}Dashboard · Martins Density Map{% endblock %}
 
 {% block content %}
-<section class="dashboard-wrap">
-  <section class="dashboard-top-fixed">
-    <section class="stats-grid">
-      <article class="stat-card">
-        <span>Total rows</span>
-        <strong id="totalRows">-</strong>
-      </article>
-      <article class="stat-card">
-        <span>Mapped</span>
-        <strong id="mappedRows">-</strong>
-      </article>
-      <article class="stat-card">
-        <span>Unmapped</span>
-        <strong id="unmappedRows">-</strong>
-      </article>
-      <article class="stat-card">
-        <span>Scope</span>
-        <strong id="scopeValue">-</strong>
-      </article>
-    </section>
-
-    <section class="dashboard-grid">
-      <article class="panel">
-        <div class="panel-head">
-          <div>
-            <h2>Filters</h2>
-            <p class="muted">
-              {% if preview_mode %}
-              Preview a user dashboard in read-only mode.
-              {% elif current_user.is_admin %}
-              View all registered users combined or switch to a single user.
-              {% else %}
-              View your map and record list faster.
-              {% endif %}
-            </p>
-          </div>
+<section class="dashboard-wrap dashboard-simple-wrap">
+  <section class="dashboard-grid dashboard-grid-single">
+    <article class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Filters</h2>
+          <p class="muted">
+            {% if preview_mode %}
+            Preview a user dashboard in read-only mode.
+            {% elif current_user.is_admin %}
+            View all registered users combined or switch to a single user.
+            {% else %}
+            Filter your map and comparison charts.
+            {% endif %}
+          </p>
         </div>
+      </div>
 
-        <div class="filters {% if current_user.is_admin %}filters-admin{% endif %}">
-          {% if current_user.is_admin %}
-          <label>
-            {% if preview_mode %}Preview user{% else %}User details{% endif %}
-            <select id="userFilter">
-              <option value="">{% if preview_mode %}Choose user{% else %}All users combined{% endif %}</option>
-            </select>
-          </label>
-          {% endif %}
+      <div class="filters {% if current_user.is_admin %}filters-admin{% endif %}">
+        {% if current_user.is_admin %}
+        <label>
+          {% if preview_mode %}Preview user{% else %}User details{% endif %}
+          <select id="userFilter">
+            <option value="">{% if preview_mode %}Choose user{% else %}All users combined{% endif %}</option>
+          </select>
+        </label>
+        {% endif %}
 
-          <label>
-            Town / city
-            <input id="townFilter" type="search" placeholder="Search town">
-          </label>
+        <label>
+          Town / city
+          <input id="townFilter" type="search" placeholder="Search town">
+        </label>
 
-          <label>
-            Province
-            <select id="provinceFilter">
-              <option value="">All provinces</option>
-              {% for province in provinces %}
-              <option value="{{ province }}">{{ province }}</option>
-              {% endfor %}
-            </select>
-          </label>
+        <label>
+          Province
+          <select id="provinceFilter">
+            <option value="">All provinces</option>
+            {% for province in provinces %}
+            <option value="{{ province }}">{{ province }}</option>
+            {% endfor %}
+          </select>
+        </label>
 
-          <label>
-            View mode
-            <select id="mapMode">
-              <option value="pins">Pins</option>
-              <option value="clusters">Clusters</option>
-              <option value="heatmap">Heatmap</option>
-              <option value="churches">Church coverage</option>
-            </select>
-          </label>
-        </div>
-      </article>
-    </section>
+        <label>
+          View mode
+          <select id="mapMode">
+            <option value="pins">Pins</option>
+            <option value="clusters">Clusters</option>
+            <option value="heatmap">Heatmap</option>
+            <option value="churches">Church coverage</option>
+          </select>
+        </label>
+      </div>
+    </article>
   </section>
 
   <section class="dashboard-scroll-content">
-    <section class="map-layout {% if not show_editor %}map-layout-wide{% endif %}">
-      <article id="mapPanel" class="panel map-panel">
-        <div class="panel-head">
-          <div>
-            <h2>Client addresses map</h2>
-            <p class="muted">
-              {% if preview_mode %}
-              This is the user-facing dashboard preview.
-              {% elif current_user.is_admin %}
-              Scroll your mouse wheel to zoom and switch between combined or per-user data.
-              {% else %}
-              Choose how you want to view your data.
-              {% endif %}
-            </p>
-          </div>
+    <article id="mapPanel" class="panel map-panel dashboard-map-only">
+      <div class="panel-head">
+        <div>
+          <h2>Client addresses map</h2>
+          <p class="muted">
+            {% if preview_mode %}
+            This is the user-facing dashboard preview.
+            {% elif current_user.is_admin %}
+            Use Google Maps search, zoom, and filters to review client addresses.
+            {% else %}
+            Use the filters to change the map and charts below.
+            {% endif %}
+          </p>
         </div>
+      </div>
 
-        {% if dashboard_read_only %}
-        <p class="panel-note">Read-only view. No user data can be changed from this screen.</p>
-        {% endif %}
-
-        <div class="map-toggle">
-          <button type="button" onclick="showMarkers()">Markers</button>
-          <button type="button" onclick="showClusters()">Clusters</button>
-          <button type="button" onclick="showHeat()">Heatmap</button>
-          <button type="button" onclick="showChurchCoverage()">Church coverage</button>
-        </div>
-
-        <div class="filters">
-          <label>
-            Heat radius
-            <input id="heatRadius" type="range" min="10" max="50" value="25">
-          </label>
-
-          <label>
-            Pin size
-            <input id="pinRadius" type="range" min="3" max="12" value="6">
-          </label>
-
-          <div></div>
-        </div>
-
-        <div id="map"></div>
-      </article>
-
-      {% if show_editor %}
-      <article class="panel editor-panel">
-        <div class="panel-head">
-          <div>
-            <h2>Record editor</h2>
-            <p class="muted">
-              {% if dashboard_read_only %}
-              Preview only. This editor is locked while testing the user view.
-              {% else %}
-              Add, update, or delete records on your own data only.
-              {% endif %}
-            </p>
-          </div>
-          <button id="clearFormBtn" class="ghost-btn" type="button" {% if dashboard_read_only %}disabled{% endif %}>Clear form</button>
-        </div>
-
-        <form id="recordForm" class="editor-grid" novalidate>
-          <fieldset id="recordEditorFieldset" class="editor-fieldset" {% if dashboard_read_only %}disabled{% endif %}>
-            <input type="hidden" id="recordId">
-            <input type="hidden" id="latitude">
-            <input type="hidden" id="longitude">
-            <input type="hidden" id="weight" value="1">
-            <input type="hidden" id="fullAddress">
-
-            <div class="form-section-card full-span">
-              <h3>Deceased Details</h3>
-              <div class="editor-grid">
-                <label>
-                  MF File
-                  <input id="mfFile" required>
-                </label>
-
-                <label>
-                  DOD
-                  <input id="dod" type="date">
-                </label>
-
-                <label>
-                  Deceased name
-                  <input id="deceasedName">
-                </label>
-
-                <label>
-                  Deceased surname
-                  <input id="deceasedSurname">
-                </label>
-              </div>
-            </div>
-
-            <div class="form-section-card full-span">
-              <h3>Church Details</h3>
-              <div class="editor-grid">
-                <label>
-                  Church name
-                  <input id="churchName" name="churchName" placeholder="Enter church name">
-                </label>
-
-                <label>
-                  Church address
-                  <input id="churchAddress" name="churchAddress" placeholder="Enter church address">
-                </label>
-
-                <label>
-                  Pastor name
-                  <input id="pastorName" name="pastorName" placeholder="Enter pastor name">
-                </label>
-              </div>
-            </div>
-
-            <div class="form-section-card full-span">
-              <h3>Address Details</h3>
-              <div class="editor-grid">
-                <label>
-                  Street address
-                  <input id="address" name="address" type="text" placeholder="Enter South African street address" autocomplete="new-password" spellcheck="false" autocorrect="off" autocapitalize="off">
-                </label>
-
-                <label>
-                  Town / city
-                  <input id="city" autocomplete="address-level2">
-                </label>
-
-                <label>
-                  Province
-                  <select id="province" autocomplete="address-level1">
-                    <option value="">Choose province</option>
-                    {% for province in provinces %}
-                    <option value="{{ province }}">{{ province }}</option>
-                    {% endfor %}
-                  </select>
-                </label>
-
-                <label>
-                  Postal code
-                  <input id="postalCode" autocomplete="postal-code">
-                </label>
-
-                <label>
-                  Country
-                  <input id="country" value="South Africa" autocomplete="country-name">
-                </label>
-              </div>
-            </div>
-
-            <div class="form-section-card full-span">
-              <h3>Next of Kin Details</h3>
-              <div class="editor-grid">
-                <label>
-                  Next of kin name
-                  <input id="nextOfKinName">
-                </label>
-
-                <label>
-                  Next of kin surname
-                  <input id="nextOfKinSurname">
-                </label>
-
-                <label>
-                  Relationship
-                  <input id="relationship">
-                </label>
-
-                <label>
-                  Contact number
-                  <input id="contactNumber" inputmode="tel" maxlength="12" placeholder="082 123 4567" pattern="^0\d{2}\s?\d{3}\s?\d{4}$" required>
-                </label>
-              </div>
-            </div>
-
-            <div class="form-actions full-span">
-              <button class="primary-btn" type="submit" {% if dashboard_read_only %}disabled{% endif %}>Save record</button>
-              <p class="form-required-note">Fields marked required must be completed before saving.</p>
-            </div>
-          </fieldset>
-        </form>
-
-        <div id="formStatus" class="info-box hidden"></div>
-        <p id="addressHelp" class="address-help muted hidden"></p>
-      </article>
+      {% if dashboard_read_only %}
+      <p class="panel-note">Read-only view. No user data can be changed from this screen.</p>
       {% endif %}
-    </section>
 
-    <section id="analyticsPanel" class="panel analytics-panel {% if show_editor %}analytics-panel-map-width{% endif %}">
-  <div class="panel-head">
-    <div>
-      <h2>Analytics</h2>
-      <p class="muted">
-        {% if preview_mode %}
-        User dashboard analytics preview.
-        {% elif current_user.is_admin %}
-        Combined dashboard analytics with per-user switching.
-        {% else %}
-        City and monthly trends.
+      <div class="map-toggle">
+        <button type="button" onclick="showMarkers()">Markers</button>
+        <button type="button" onclick="showClusters()">Clusters</button>
+        <button type="button" onclick="showHeat()">Heatmap</button>
+      </div>
+
+      <div class="filters compact-map-controls">
+        <label>
+          Heat radius
+          <input id="heatRadius" type="range" min="10" max="50" value="25">
+        </label>
+
+        <label>
+          Pin size
+          <input id="pinRadius" type="range" min="3" max="12" value="6">
+        </label>
+
+        <div></div>
+      </div>
+
+      <div id="map"></div>
+    </article>
+
+    <section id="analyticsPanel" class="panel analytics-panel analytics-panel-full">
+      <div class="panel-head">
+        <div>
+          <h2>Comparisons</h2>
+          <p class="muted">
+            Select dates to compare one period against the previous period with the same number of days.
+          </p>
+        </div>
+      </div>
+
+      <div class="comparison-controls">
+        <label>
+          From date
+          <input type="date" id="compareFrom">
+        </label>
+
+        <label>
+          To date
+          <input type="date" id="compareTo">
+        </label>
+
+        <div class="comparison-actions">
+          <button type="button" id="applyComparisonBtn">Apply comparison</button>
+          <button type="button" id="clearComparisonBtn" class="ghost-btn">Clear dates</button>
+        </div>
+      </div>
+
+      <div id="comparisonSummary" class="comparison-summary muted">
+        Select a start and end date to compare periods.
+      </div>
+
+      <div class="charts-container comparison-charts-grid">
+        <div class="chart-block comparison-chart-block full-width-chart">
+          <canvas id="comparisonChart"></canvas>
+        </div>
+
+        {% if show_province_chart %}
+        <div class="chart-block">
+          <canvas id="provinceChart"></canvas>
+        </div>
         {% endif %}
-      </p>
-    </div>
-  </div>
 
-  <div class="charts-container">
-    {% if show_province_chart %}
-    <div class="chart-block">
-      <canvas id="provinceChart"></canvas>
-    </div>
-    {% endif %}
+        <div class="chart-block">
+          <canvas id="cityChart"></canvas>
+        </div>
 
-    <div class="chart-block">
-      <canvas id="cityChart"></canvas>
-    </div>
+        <div class="chart-block">
+          <canvas id="monthlyChart"></canvas>
+        </div>
 
-    <div class="chart-block">
-      <canvas id="monthlyChart"></canvas>
-            <canvas id="churchChart"></canvas>
-    </div>
-  </div>
+        <div class="chart-block">
+          <canvas id="churchChart"></canvas>
+        </div>
+      </div>
+    </section>
+  </section>
 </section>
 {% endblock %}
 
@@ -320,5 +179,5 @@
 {% if google_maps_api_key %}
 <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places,geocoding&loading=async&callback=initGoogleAddress"></script>
 {% endif %}
-<script src="{{ url_for('static', filename='js/dashboard.js', v='20260316-1') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js', v='20260316-2') }}"></script>
 {% endblock %}

@@ -19,7 +19,7 @@
 
   <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
   <link rel="preload" href="{{ url_for('static', filename='img/martins-logo.png') }}" as="image">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260316-1') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260316-2') }}">
 
   {% if current_user.is_authenticated %}
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
@@ -50,7 +50,6 @@
 
       <nav class="sidebar-nav">
         <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
-        <a href="#mapPanel" data-map-view="churches">Church Coverage Map</a>
         <a href="#analyticsPanel">Comparisons</a>
         {% if current_user.is_admin %}
         <a href="{{ url_for('admin.admin') }}">Admin</a>

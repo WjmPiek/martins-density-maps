@@ -1,0 +1,33 @@
+{
+  "name": "Martin's Client Map",
+  "short_name": "Client Map",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f8f7fb",
+  "theme_color": "#8d6fd1",
+  "icons": [
+    
+    {
+      "src": "/static/android-chrome-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/android-chrome-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    },
+
+    {
+      "src": "/static/img/martins-logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+
+    {
+      "src": "/static/img/martins-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

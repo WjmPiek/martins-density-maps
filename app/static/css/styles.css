@@ -1261,6 +1261,13 @@ td {
     font-size: 15px;
     padding: 8px 12px;
   }
+
+  .sidebar-nav a.excel-action {
+  font-size: 13px;
+  min-height: 34px;
+  padding: 6px 10px;
+  font-weight: 600;
+}
 }
 
 /* ===== Form card layout (hospital style) ===== */

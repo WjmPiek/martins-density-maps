@@ -2,7 +2,7 @@
 {% block title %}Dashboard · Martins Density Map{% endblock %}
 
 {% block content %}
-<section class="dashboard-wrap" id="dashboardTop">
+<section class="dashboard-wrap" id="dashboardPanel">
   <section class="dashboard-top-fixed">
     <section class="stats-grid">
       <article class="stat-card">
@@ -271,14 +271,14 @@
   <div class="panel-head">
     <div>
       <h2>Charts</h2>
-      <p class="muted">Use one chart with filters to compare periods or view deaths by province, city, or church.</p>
+      <p class="muted">Use one chart and switch views, date range, and result size.</p>
     </div>
   </div>
 
-  <div class="filters chart-controls {% if current_user.is_admin %}filters-admin{% endif %}">
+  <div class="chart-toolbar">
     <label>
       Chart view
-      <select id="chartFilter">
+      <select id="chartViewFilter">
         <option value="comparison">Comparison</option>
         <option value="province">Deaths per province</option>
         <option value="city">Deaths per city</option>
@@ -295,12 +295,21 @@
       To date
       <input id="chartToDate" type="date">
     </label>
+
+    <label>
+      Show
+      <select id="chartLimitFilter">
+        <option value="all">All</option>
+        <option value="10">Top 10</option>
+        <option value="5">Top 5</option>
+      </select>
+    </label>
   </div>
 
-  <p id="chartSummary" class="muted chart-summary">Select a chart filter and optional date range.</p>
-  <div class="charts-container single-chart-container">
-    <div class="chart-block single-chart-block">
-      <canvas id="analyticsChart"></canvas>
+  <div class="chart-summary" id="chartSummary">Showing current records.</div>
+  <div class="charts-container charts-container-single">
+    <div class="chart-block chart-block-single">
+      <canvas id="mainChart"></canvas>
     </div>
   </div>
 </section>

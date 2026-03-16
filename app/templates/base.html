@@ -44,25 +44,25 @@
         <img src="{{ url_for('static', filename='img/martins-logo.png') }}" class="sidebar-logo" alt="Martins logo">
         <div class="sidebar-brand-text">
           <div class="eyebrow">Martin's Franchising</div>
-          <strong>Client addresses</strong>
+          <strong>Admin dashboard</strong>
         </div>
       </div>
-
-      <nav class="sidebar-nav">
-        <a href="{{ url_for('main.dashboard') }}#dashboardTop">Dashboard</a>
-        <a href="#chartsPanel">Charts</a>
-        {% if current_user.is_admin %}
-        <a href="{{ url_for('admin.admin') }}">Admin</a>
-        <a href="{{ url_for('admin.users') }}">Registered Users</a>
-        {% endif %}
-      </nav>
 
       <div class="sidebar-actions sidebar-actions-bottom">
         <a class="sidebar-text-link" href="{{ url_for('main.upload_page') }}">Upload Excel File</a>
         <a class="sidebar-text-link" href="{{ url_for('main.download_template') }}">Download Excel Template</a>
         <a class="sidebar-text-link" href="{{ url_for('main.download_my_data') }}">Download My Data</a>
-        <a class="primary-btn" href="{{ url_for('auth.logout') }}">Logout</a>
       </div>
+
+      <nav class="sidebar-nav">
+        <a href="#dashboardPanel">Dashboard</a>
+        <a href="#chartsPanel">Charts</a>
+        {% if current_user.is_admin %}
+        <a href="#dashboardPanel">{{ current_user.branch if current_user.branch else "Admin" }}</a>
+        <a href="{{ url_for('admin.users') }}">Registered Users</a>
+        {% endif %}
+        <a href="{{ url_for('auth.logout') }}">Logout</a>
+      </nav>
     </aside>
     {% endif %}
 

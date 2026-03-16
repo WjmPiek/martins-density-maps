@@ -1,0 +1,13 @@
+project/
+│
+├── app.py
+├── models.py        ← database tables
+├── routes.py        ← API routes
+├── database.db
+│
+├── templates/
+│     └── dashboard.html
+│
+└── static/
+      └── js/
+            └── dashboard.js

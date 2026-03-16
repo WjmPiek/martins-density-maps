@@ -96,10 +96,10 @@ function popupHtml(record) {
       <div><b>Address:</b> ${escapeHtml(record.fullAddress || record.address || '-')}</div>
       <div><b>Town:</b> ${escapeHtml(record.city || '-')}</div>
       <div><b>Province:</b> ${escapeHtml(record.province || '-')}</div>
-      <div><b>Contact:</b> ${escapeHtml(record.contactNumber || '-')}</div>
       <div><b>Church:</b> ${escapeHtml(record.churchName || '-')}</div>
       <div><b>Church Address:</b> ${escapeHtml(record.churchAddress || '-')}</div>
       <div><b>Pastor:</b> ${escapeHtml(record.pastorName || '-')}</div>
+      <div><b>Contact:</b> ${escapeHtml(record.contactNumber || '-')}</div>
       ${googleMapsHref ? `<div><a href="${googleMapsHref}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div>` : ''}
     </div>
   `;

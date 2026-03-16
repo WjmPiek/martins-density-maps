@@ -173,6 +173,26 @@
             </div>
 
             <div class="form-section-card full-span">
+              <h3>Church Details</h3>
+              <div class="editor-grid">
+                <label>
+                  Church name
+                  <input id="churchName" name="churchName" placeholder="Enter church name">
+                </label>
+
+                <label>
+                  Church address
+                  <input id="churchAddress" name="churchAddress" placeholder="Enter church address">
+                </label>
+
+                <label>
+                  Pastor name
+                  <input id="pastorName" name="pastorName" placeholder="Enter pastor name">
+                </label>
+              </div>
+            </div>
+
+            <div class="form-section-card full-span">
               <h3>Address Details</h3>
               <div class="editor-grid">
                 <label>
@@ -203,26 +223,6 @@
                 <label>
                   Country
                   <input id="country" value="South Africa" autocomplete="country-name">
-                </label>
-              </div>
-            </div>
-
-            <div class="form-section-card full-span">
-              <h3>Church Details</h3>
-              <div class="editor-grid">
-                <label>
-                  Church name
-                  <input id="churchName" name="churchName" placeholder="Enter church name">
-                </label>
-
-                <label>
-                  Church address
-                  <input id="churchAddress" name="churchAddress" placeholder="Enter church address">
-                </label>
-
-                <label>
-                  Pastor name
-                  <input id="pastorName" name="pastorName" placeholder="Enter pastor name">
                 </label>
               </div>
             </div>
@@ -297,28 +297,6 @@
     </div>
   </div>
 </section>
-
-<section id="comparisonPanel" class="panel analytics-panel comparison-panel {% if show_editor %}analytics-panel-map-width{% endif %}">
-  <div class="panel-head">
-    <div>
-      <h2>Comparisons</h2>
-      <p class="muted">Compare last year vs this year, last month vs this month, or a day-by-day trend in a dedicated chart.</p>
-    </div>
-  </div>
-
-  <div class="comparison-toolbar">
-    <div class="comparison-tabs" role="tablist" aria-label="Comparison views">
-      <button type="button" class="comparison-tab active" data-comparison-mode="year">Last year vs this year</button>
-      <button type="button" class="comparison-tab" data-comparison-mode="month">Last month vs this month</button>
-      <button type="button" class="comparison-tab" data-comparison-mode="day">Day by day</button>
-    </div>
-    <div class="comparison-summary" id="comparisonSummary">Waiting for data…</div>
-  </div>
-
-  <div class="chart-block comparison-chart-block">
-    <canvas id="comparisonChart"></canvas>
-  </div>
-</section>
 {% endblock %}
 
 {% block scripts %}
@@ -340,182 +318,4 @@
 <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places,geocoding&loading=async&callback=initGoogleAddress"></script>
 {% endif %}
 <script src="{{ url_for('static', filename='js/dashboard.js', v='20260314-2') }}"></script>
-
-<script>
-  function parseDashboardDate(record) {
-    const raw = record?.dod || record?.date || record?.created_at || record?.createdAt || record?.timestamp;
-    if (!raw) return null;
-    const parsed = new Date(raw);
-    return Number.isNaN(parsed.getTime()) ? null : parsed;
-  }
-
-  function collectDashboardRecords() {
-    if (Array.isArray(window.dashboardRecords)) return window.dashboardRecords;
-    if (Array.isArray(window.filteredRows)) return window.filteredRows;
-    if (Array.isArray(window.records)) return window.records;
-    if (Array.isArray(window.mapData)) return window.mapData;
-    return [];
-  }
-
-  function buildComparisonSeries(records, mode) {
-    const now = new Date();
-    const currentYear = now.getFullYear();
-    const lastYear = currentYear - 1;
-    const currentMonth = now.getMonth();
-    const previousMonthDate = new Date(currentYear, currentMonth - 1, 1);
-    const daysInCurrentMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-    const daysInPreviousMonth = new Date(previousMonthDate.getFullYear(), previousMonthDate.getMonth() + 1, 0).getDate();
-
-    if (mode === 'year') {
-      const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-      const current = new Array(12).fill(0);
-      const previous = new Array(12).fill(0);
-      records.forEach((record) => {
-        const date = parseDashboardDate(record);
-        if (!date) return;
-        if (date.getFullYear() === currentYear) current[date.getMonth()] += 1;
-        if (date.getFullYear() === lastYear) previous[date.getMonth()] += 1;
-      });
-      return {
-        labels,
-        datasets: [
-          { label: String(lastYear), data: previous, borderWidth: 2, tension: 0.3 },
-          { label: String(currentYear), data: current, borderWidth: 2, tension: 0.3 }
-        ],
-        summary: `${lastYear}: ${previous.reduce((a, b) => a + b, 0)} records · ${currentYear}: ${current.reduce((a, b) => a + b, 0)} records`
-      };
-    }
-
-    if (mode === 'month') {
-      const labels = Array.from({ length: Math.max(daysInCurrentMonth, daysInPreviousMonth) }, (_, index) => String(index + 1));
-      const current = new Array(labels.length).fill(0);
-      const previous = new Array(labels.length).fill(0);
-      records.forEach((record) => {
-        const date = parseDashboardDate(record);
-        if (!date) return;
-        if (date.getFullYear() === currentYear && date.getMonth() === currentMonth) current[date.getDate() - 1] += 1;
-        if (date.getFullYear() === previousMonthDate.getFullYear() && date.getMonth() === previousMonthDate.getMonth()) previous[date.getDate() - 1] += 1;
-      });
-      const currentLabel = now.toLocaleString('en-US', { month: 'long' });
-      const previousLabel = previousMonthDate.toLocaleString('en-US', { month: 'long' });
-      return {
-        labels,
-        datasets: [
-          { label: previousLabel, data: previous, borderWidth: 2, tension: 0.3 },
-          { label: currentLabel, data: current, borderWidth: 2, tension: 0.3 }
-        ],
-        summary: `${previousLabel}: ${previous.reduce((a, b) => a + b, 0)} records · ${currentLabel}: ${current.reduce((a, b) => a + b, 0)} records`
-      };
-    }
-
-    const labels = Array.from({ length: 31 }, (_, index) => String(index + 1));
-    const values = new Array(31).fill(0);
-    records.forEach((record) => {
-      const date = parseDashboardDate(record);
-      if (!date) return;
-      if (date.getFullYear() === currentYear && date.getMonth() === currentMonth && date.getDate() <= 31) values[date.getDate() - 1] += 1;
-    });
-    return {
-      labels,
-      datasets: [{ label: 'This month day by day', data: values, borderWidth: 2, tension: 0.3 }],
-      summary: `Daily total for ${now.toLocaleString('en-US', { month: 'long', year: 'numeric' })}: ${values.reduce((a, b) => a + b, 0)} records`
-    };
-  }
-
-  let comparisonChartInstance = null;
-
-  function renderComparisonChart(mode = 'year', externalRecords = null) {
-    const canvas = document.getElementById('comparisonChart');
-    const summary = document.getElementById('comparisonSummary');
-    if (!canvas || typeof Chart === 'undefined') return;
-
-    const records = Array.isArray(externalRecords) ? externalRecords : collectDashboardRecords();
-    if (!records.length) {
-      if (comparisonChartInstance) comparisonChartInstance.destroy();
-      comparisonChartInstance = new Chart(canvas, {
-        type: 'line',
-        data: { labels: [], datasets: [] },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { display: false }, tooltip: { enabled: false } }
-        }
-      });
-      if (summary) summary.textContent = 'No dated records found yet. Connect this chart to your filtered dashboard dataset.';
-      return;
-    }
-
-    const series = buildComparisonSeries(records, mode);
-    if (comparisonChartInstance) comparisonChartInstance.destroy();
-    comparisonChartInstance = new Chart(canvas, {
-      type: 'line',
-      data: { labels: series.labels, datasets: series.datasets },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        interaction: { mode: 'index', intersect: false },
-        scales: { y: { beginAtZero: true, ticks: { precision: 0 } } }
-      }
-    });
-    if (summary) summary.textContent = series.summary;
-  }
-
-  window.renderComparisonChartFromRecords = function(records) {
-    const active = document.querySelector('.comparison-tab.active');
-    renderComparisonChart(active ? active.dataset.comparisonMode : 'year', records);
-  };
-
-  document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('.comparison-tab').forEach((button) => {
-      button.addEventListener('click', () => {
-        document.querySelectorAll('.comparison-tab').forEach((tab) => tab.classList.remove('active'));
-        button.classList.add('active');
-        renderComparisonChart(button.dataset.comparisonMode);
-      });
-    });
-
-    renderComparisonChart('year');
-  });
-</script>
-<style>
-  .comparison-panel { margin-top: 1.25rem; }
-  .comparison-toolbar {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-    gap: 1rem;
-    align-items: center;
-    margin-bottom: 1rem;
-  }
-  .comparison-tabs { display: flex; flex-wrap: wrap; gap: 0.75rem; }
-  .comparison-tab {
-    border: 1px solid rgba(107, 47, 163, 0.2);
-    background: #fff;
-    color: #4b286d;
-    border-radius: 999px;
-    padding: 0.65rem 1rem;
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .comparison-tab.active {
-    background: #6b2fa3;
-    color: #fff;
-    border-color: #6b2fa3;
-  }
-  .comparison-summary {
-    color: #6b7280;
-    font-size: 0.95rem;
-    font-weight: 500;
-  }
-  .comparison-chart-block {
-    min-height: 360px;
-    position: relative;
-  }
-  .comparison-chart-block canvas {
-    width: 100% !important;
-    height: 360px !important;
-  }
-</style>
-
 {% endblock %}

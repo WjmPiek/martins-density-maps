@@ -227,7 +227,7 @@ label {
   padding: 24px 20px;
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
   position: fixed;
   top: 0;
   left: 0;
@@ -1905,4 +1905,52 @@ textarea:focus {
   table {
     min-width: 560px;
   }
+}
+
+
+.sidebar-bottom {
+  margin-top: auto;
+  display: grid;
+  gap: 16px;
+  padding-top: 10px;
+}
+
+.sidebar-utilities {
+  display: grid;
+  gap: 10px;
+  padding: 8px 4px 0;
+  border-top: 1px solid var(--line);
+}
+
+.sidebar-text-link {
+  display: inline-block;
+  width: auto;
+  border: none;
+  padding: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.sidebar-text-link:hover {
+  color: var(--primary-strong);
+  text-decoration: underline;
+}
+
+.logout-btn {
+  display: block;
+  width: 100%;
+  border: none;
+  border-radius: 14px;
+  padding: 12px 16px;
+  background: var(--danger);
+  color: #fff;
+  font-weight: 700;
+  text-align: center;
+}
+
+.logout-btn:hover {
+  filter: brightness(0.98);
 }

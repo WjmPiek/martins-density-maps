@@ -19,7 +19,7 @@
 
   <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
   <link rel="preload" href="{{ url_for('static', filename='img/martins-logo.png') }}" as="image">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260314-2') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260316-1') }}">
 
   {% if current_user.is_authenticated %}
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
@@ -48,22 +48,25 @@
         </div>
       </div>
 
-      <div class="sidebar-actions">
-        <a class="primary-btn" href="{{ url_for('main.upload_page') }}">Upload Excel File</a>
-        <a class="ghost-btn" href="{{ url_for('main.download_template') }}">Download Excel Template</a>
-        <a class="ghost-btn" href="{{ url_for('main.download_my_data') }}">Download My Data</a>
-      </div>
-
       <nav class="sidebar-nav">
         <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
-        <a href="#comparisonPanel">Comparisons</a>
+        <a href="#mapPanel" data-map-view="churches">Church Coverage Map</a>
+        <a href="#analyticsPanel">Comparisons</a>
         {% if current_user.is_admin %}
         <a href="{{ url_for('admin.admin') }}">Admin</a>
-        <a href="{{ url_for('admin.user_dashboard_preview') }}">Testing Service</a>
+        <a href="{{ url_for('admin.user_dashboard_preview') }}">Admin Testing</a>
         <a href="{{ url_for('admin.users') }}">Registered Users</a>
         {% endif %}
-        <a href="{{ url_for('auth.logout') }}">Logout</a>
       </nav>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-utilities" aria-label="File actions">
+          <a class="sidebar-text-link" href="{{ url_for('main.upload_page') }}">Upload Excel File</a>
+          <a class="sidebar-text-link" href="{{ url_for('main.download_template') }}">Download Excel Template</a>
+          <a class="sidebar-text-link" href="{{ url_for('main.download_my_data') }}">Download My Data</a>
+        </div>
+        <a class="logout-btn" href="{{ url_for('auth.logout') }}">Logout</a>
+      </div>
     </aside>
     {% endif %}
 

@@ -28,9 +28,6 @@ const els = {
   deceasedSurname: document.getElementById('deceasedSurname'),
   churchName: document.getElementById('churchName'),
   churchAddress: document.getElementById('churchAddress'),
-  churchCity: document.getElementById('churchCity'),
-  churchProvince: document.getElementById('churchProvince'),
-  churchCountry: document.getElementById('churchCountry'),
   pastorName: document.getElementById('pastorName'),
   address: document.getElementById('address'),
   city: document.getElementById('city'),
@@ -100,9 +97,6 @@ function popupHtml(record) {
       <div><b>Church:</b> ${escapeHtml(record.churchName || '-')}</div>
       <div><b>Pastor:</b> ${escapeHtml(record.pastorName || '-')}</div>
       <div><b>Church Address:</b> ${escapeHtml(record.churchAddress || '-')}</div>
-      <div><b>Church City:</b> ${escapeHtml(record.churchCity || '-')}</div>
-      <div><b>Church Province:</b> ${escapeHtml(record.churchProvince || '-')}</div>
-      <div><b>Church Country:</b> ${escapeHtml(record.churchCountry || '-')}</div>
       <div><b>Address:</b> ${escapeHtml(record.fullAddress || record.address || '-')}</div>
       <div><b>Town:</b> ${escapeHtml(record.city || '-')}</div>
       <div><b>Province:</b> ${escapeHtml(record.province || '-')}</div>
@@ -360,11 +354,8 @@ function getChurchCoveragePoints(records) {
     if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
     const churchName = String(record.churchName || '').trim();
     const churchAddress = String(record.churchAddress || '').trim();
-    const churchCity = String(record.churchCity || '').trim();
-    const churchProvince = String(record.churchProvince || '').trim();
-    const churchCountry = String(record.churchCountry || '').trim();
-    if (!churchName && !churchAddress && !churchCity && !churchProvince) return;
-    const key = `${churchName.toLowerCase()}|${churchAddress.toLowerCase()}|${churchCity.toLowerCase()}|${churchProvince.toLowerCase()}|${churchCountry.toLowerCase()}`;
+    if (!churchName && !churchAddress) return;
+    const key = `${churchName.toLowerCase()}|${churchAddress.toLowerCase()}`;
     if (!groups.has(key)) {
       groups.set(key, {
         churchName: churchName || 'Unnamed church',
@@ -591,9 +582,6 @@ function fillForm(record) {
   if (els.deceasedSurname) els.deceasedSurname.value = record.deceasedSurname || '';
   if (els.churchName) els.churchName.value = record.churchName || '';
   if (els.churchAddress) els.churchAddress.value = record.churchAddress || '';
-  if (els.churchCity) els.churchCity.value = record.churchCity || '';
-  if (els.churchProvince) els.churchProvince.value = record.churchProvince || '';
-  if (els.churchCountry) els.churchCountry.value = record.churchCountry || 'South Africa';
   if (els.pastorName) els.pastorName.value = record.pastorName || '';
   if (els.address) els.address.value = record.address || '';
   if (els.city) els.city.value = record.city || '';
@@ -620,7 +608,6 @@ function clearFormValidation() {
 function clearForm() {
   els.recordForm?.reset();
   if (els.country) els.country.value = 'South Africa';
-  if (els.churchCountry) els.churchCountry.value = 'South Africa';
   if (els.weight) els.weight.value = 1;
   if (els.recordId) els.recordId.value = '';
   if (els.latitude) els.latitude.value = '';
@@ -687,9 +674,6 @@ async function saveRecord(event) {
     deceasedSurname: els.deceasedSurname?.value?.trim(),
     churchName: els.churchName?.value?.trim(),
     churchAddress: els.churchAddress?.value?.trim(),
-    churchCity: els.churchCity?.value?.trim(),
-    churchProvince: els.churchProvince?.value?.trim(),
-    churchCountry: els.churchCountry?.value?.trim() || 'South Africa',
     pastorName: els.pastorName?.value?.trim(),
     address: els.address?.value?.trim(),
     city: els.city?.value?.trim(),
@@ -970,6 +954,20 @@ async function queueMissingGeocodes() {
   applyFilters();
 }
 
+
+function bindSidebarQuickLinks() {
+  document.querySelectorAll('[data-map-view]').forEach((link) => {
+    link.addEventListener('click', (event) => {
+      const view = link.dataset.mapView;
+      if (view === 'churches') {
+        event.preventDefault();
+        showChurchCoverage();
+        document.getElementById('mapPanel')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    });
+  });
+}
+
 window.showMarkers = showMarkers;
 window.showClusters = showClusters;
 window.showHeat = showHeat;
@@ -979,6 +977,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMap();
   if (window.google && google.maps && google.maps.places) initAddressAutocomplete();
   clearForm();
+  bindSidebarQuickLinks();
   loadData();
   loadAnalytics();
 

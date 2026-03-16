@@ -2,7 +2,7 @@
 {% block title %}Dashboard · Martins Density Map{% endblock %}
 
 {% block content %}
-<section class="dashboard-wrap">
+<section class="dashboard-wrap" id="dashboardTop">
   <section class="dashboard-top-fixed">
     <section class="stats-grid">
       <article class="stat-card">
@@ -271,32 +271,36 @@
   <div class="panel-head">
     <div>
       <h2>Charts</h2>
-      <p class="muted">
-        {% if preview_mode %}
-        User dashboard chart preview.
-        {% elif current_user.is_admin %}
-        All dashboard charts in one place with per-user switching.
-        {% else %}
-        View your chart summary here.
-        {% endif %}
-      </p>
+      <p class="muted">Use one chart with filters to compare periods or view deaths by province, city, or church.</p>
     </div>
   </div>
 
-  <div class="charts-container">
-    {% if show_province_chart %}
-    <div class="chart-block">
-      <canvas id="provinceChart"></canvas>
-    </div>
-    {% endif %}
+  <div class="filters chart-controls {% if current_user.is_admin %}filters-admin{% endif %}">
+    <label>
+      Chart view
+      <select id="chartFilter">
+        <option value="comparison">Comparison</option>
+        <option value="province">Deaths per province</option>
+        <option value="city">Deaths per city</option>
+        <option value="church">Deaths per church</option>
+      </select>
+    </label>
 
-    <div class="chart-block">
-      <canvas id="cityChart"></canvas>
-    </div>
+    <label>
+      From date
+      <input id="chartFromDate" type="date">
+    </label>
 
-    <div class="chart-block">
-      <canvas id="monthlyChart"></canvas>
-            <canvas id="churchChart"></canvas>
+    <label>
+      To date
+      <input id="chartToDate" type="date">
+    </label>
+  </div>
+
+  <p id="chartSummary" class="muted chart-summary">Select a chart filter and optional date range.</p>
+  <div class="charts-container single-chart-container">
+    <div class="chart-block single-chart-block">
+      <canvas id="analyticsChart"></canvas>
     </div>
   </div>
 </section>

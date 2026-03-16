@@ -49,7 +49,7 @@
       </div>
 
       <nav class="sidebar-nav">
-        <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+        <a href="{{ url_for('main.dashboard') }}#dashboardTop">Dashboard</a>
         <a href="#chartsPanel">Charts</a>
         {% if current_user.is_admin %}
         <a href="{{ url_for('admin.admin') }}">Admin</a>
@@ -61,11 +61,8 @@
         <a class="sidebar-text-link" href="{{ url_for('main.upload_page') }}">Upload Excel File</a>
         <a class="sidebar-text-link" href="{{ url_for('main.download_template') }}">Download Excel Template</a>
         <a class="sidebar-text-link" href="{{ url_for('main.download_my_data') }}">Download My Data</a>
+        <a class="primary-btn" href="{{ url_for('auth.logout') }}">Logout</a>
       </div>
-
-      <nav class="sidebar-nav sidebar-nav-bottom">
-        <a href="{{ url_for('auth.logout') }}">Logout</a>
-      </nav>
     </aside>
     {% endif %}
 

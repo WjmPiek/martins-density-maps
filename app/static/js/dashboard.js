@@ -46,8 +46,9 @@ const els = {
   heatRadius: document.getElementById('heatRadius'),
   pinRadius: document.getElementById('pinRadius'),
   chartFilter: document.getElementById('chartFilter'),
+  chartFromDate: document.getElementById('chartFromDate'),
+  chartToDate: document.getElementById('chartToDate'),
   chartSummary: document.getElementById('chartSummary'),
-  dashboardChart: document.getElementById('dashboardChart'),
 };
 
 let map;
@@ -55,7 +56,7 @@ let baseLayer;
 let heatLayer = null;
 let markerLayer = null;
 let clusterLayer = null;
-let dashboardChartInstance = null;
+let analyticsChartInstance = null;
 let geocodeQueueActive = false;
 
 function setBox(el, message, isError = false) {
@@ -751,287 +752,168 @@ function showChurchCoverage() {
   renderMap();
 }
 
-function parseRecordDate(value) {
-  if (!value) return null;
-  const textValue = String(value).trim();
-  if (!textValue) return null;
-  const direct = new Date(`${textValue}T00:00:00`);
-  if (!Number.isNaN(direct.getTime())) return direct;
-  const parts = textValue.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
-  if (!parts) return null;
-  const day = Number(parts[1]);
-  const month = Number(parts[2]) - 1;
-  let year = Number(parts[3]);
-  if (year < 100) year += 2000;
-  const parsed = new Date(year, month, day);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function formatDateKey(date) {
-  return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString().slice(0, 10);
-}
-
-function formatDateLabel(date) {
-  return new Intl.DateTimeFormat('en-ZA', { day: '2-digit', month: 'short' }).format(date);
-}
-
-function formatMonthKey(date) {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  return `${date.getFullYear()}-${month}`;
-}
-
-function getDatedFilteredRecords() {
-  return state.filtered
-    .map((record) => ({ ...record, __dodDate: parseRecordDate(record.dod) }))
-    .filter((record) => record.__dodDate instanceof Date && !Number.isNaN(record.__dodDate.getTime()));
-}
-
-function getSelectedComparisonRange() {
-  const from = els.compareFrom?.value ? new Date(`${els.compareFrom.value}T00:00:00`) : null;
-  const to = els.compareTo?.value ? new Date(`${els.compareTo.value}T00:00:00`) : null;
-  if (!from || !to || Number.isNaN(from.getTime()) || Number.isNaN(to.getTime()) || from > to) return null;
-  return { from, to };
-}
-
-function isWithinRange(date, range) {
-  return date >= range.from && date <= range.to;
-}
-
-function aggregateCounts(records, getter) {
-  const counts = {};
-  records.forEach((record) => {
-    const key = getter(record);
-    if (!key) return;
-    counts[key] = (counts[key] || 0) + 1;
-  });
-  return counts;
-}
-
-function applyDateRangeToRecords(records) {
-  const range = getSelectedComparisonRange();
-  if (!range) return records;
-  return records.filter((record) => isWithinRange(record.__dodDate, range));
-}
-
-function updateComparisonSummary(message) {
-  if (els.comparisonSummary) els.comparisonSummary.textContent = message;
-}
-
-function renderComparisonChart() {
-  if (!els.comparisonChart || typeof Chart === 'undefined') return;
-  destroyChart(comparisonChartInstance);
-
-  const datedRecords = getDatedFilteredRecords();
-  if (!datedRecords.length) {
-    updateComparisonSummary('No dated records are available for comparison.');
-    return;
-  }
-
-  let range = getSelectedComparisonRange();
-  if (!range) {
-    const sorted = datedRecords.map((record) => record.__dodDate).sort((a, b) => a - b);
-    const latest = sorted[sorted.length - 1];
-    const from = new Date(latest);
-    from.setDate(from.getDate() - 29);
-    range = { from, to: latest };
-    if (els.compareFrom && !els.compareFrom.value) els.compareFrom.value = formatDateKey(from);
-    if (els.compareTo && !els.compareTo.value) els.compareTo.value = formatDateKey(latest);
-  }
-
-  const totalDays = Math.max(1, Math.round((range.to - range.from) / 86400000) + 1);
-  const previousTo = new Date(range.from);
-  previousTo.setDate(previousTo.getDate() - 1);
-  const previousFrom = new Date(previousTo);
-  previousFrom.setDate(previousFrom.getDate() - totalDays + 1);
-
-  const currentMap = new Map();
-  const previousMap = new Map();
-  for (let i = 0; i < totalDays; i += 1) {
-    const currentDate = new Date(range.from);
-    currentDate.setDate(currentDate.getDate() + i);
-    const previousDate = new Date(previousFrom);
-    previousDate.setDate(previousDate.getDate() + i);
-    currentMap.set(formatDateKey(currentDate), 0);
-    previousMap.set(formatDateKey(previousDate), 0);
-  }
-
-  datedRecords.forEach((record) => {
-    const key = formatDateKey(record.__dodDate);
-    if (currentMap.has(key)) currentMap.set(key, currentMap.get(key) + 1);
-    if (previousMap.has(key)) previousMap.set(key, previousMap.get(key) + 1);
-  });
-
-  const labels = [];
-  const currentData = [];
-  const previousData = [];
-  for (let i = 0; i < totalDays; i += 1) {
-    const currentDate = new Date(range.from);
-    currentDate.setDate(currentDate.getDate() + i);
-    const previousDate = new Date(previousFrom);
-    previousDate.setDate(previousDate.getDate() + i);
-    labels.push(totalDays > 31 ? formatMonthKey(currentDate) : formatDateLabel(currentDate));
-    currentData.push(currentMap.get(formatDateKey(currentDate)) || 0);
-    previousData.push(previousMap.get(formatDateKey(previousDate)) || 0);
-  }
-
-  const currentTotal = currentData.reduce((sum, value) => sum + value, 0);
-  const previousTotal = previousData.reduce((sum, value) => sum + value, 0);
-  const difference = currentTotal - previousTotal;
-  const summary = `${currentTotal} records from ${formatDateKey(range.from)} to ${formatDateKey(range.to)} compared with ${previousTotal} in the previous ${totalDays}-day period (${difference >= 0 ? '+' : ''}${difference}).`;
-  updateComparisonSummary(summary);
-
-  comparisonChartInstance = new Chart(els.comparisonChart, {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          label: `Selected period (${formatDateKey(range.from)} to ${formatDateKey(range.to)})`,
-          data: currentData,
-          borderColor: '#8d6fd1',
-          backgroundColor: 'rgba(141, 111, 209, 0.12)',
-          pointBackgroundColor: '#8d6fd1',
-          pointRadius: 3,
-          fill: true,
-          tension: 0.3,
-        },
-        {
-          label: `Previous period (${formatDateKey(previousFrom)} to ${formatDateKey(previousTo)})`,
-          data: previousData,
-          borderColor: '#c04b73',
-          backgroundColor: 'rgba(192, 75, 115, 0.08)',
-          pointBackgroundColor: '#c04b73',
-          pointRadius: 3,
-          fill: true,
-          tension: 0.3,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      interaction: { mode: 'index', intersect: false },
-      plugins: {
-        legend: { labels: { color: '#5b4a7d', usePointStyle: true, boxWidth: 10, padding: 16 } },
-        tooltip: {
-          backgroundColor: '#ffffff',
-          titleColor: '#5b4a7d',
-          bodyColor: '#6f6288',
-          borderColor: '#eadff3',
-          borderWidth: 1,
-          cornerRadius: 12,
-        },
-      },
-      scales: {
-        x: { ticks: { color: '#7a6b95', maxRotation: 0, autoSkip: true }, grid: { display: false } },
-        y: { beginAtZero: true, ticks: { color: '#7a6b95', precision: 0 }, grid: { color: 'rgba(91, 74, 125, 0.08)' } },
-      },
-    },
-  });
-}
-
 function destroyChart(instance) {
   if (instance && typeof instance.destroy === 'function') instance.destroy();
 }
 
-
-async function loadAnalytics() {
-  const chartCanvas = document.getElementById('dashboardChart');
-  if (!chartCanvas || typeof Chart === 'undefined') return;
-
-  const datedRecords = getDatedFilteredRecords();
-  const provinceCounts = aggregateCounts(datedRecords, (record) => record.province || 'Unknown');
-  const cityCounts = aggregateCounts(datedRecords, (record) => record.city || 'Unknown');
-  const monthCounts = aggregateCounts(datedRecords, (record) => formatMonthKey(record.__dodDate));
-  const churchCounts = aggregateCounts(datedRecords, (record) => record.churchName || 'Unknown church');
-
-  const topEntries = (counts, limit = null) => {
-    const entries = Object.entries(counts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
-    return limit ? entries.slice(0, limit) : entries;
-  };
-
-  const sortedMonthEntries = Object.entries(monthCounts).sort((a, b) => a[0].localeCompare(b[0]));
-  const chartKey = els.chartFilter?.value || 'months';
-
-  const chartConfigs = {
-    province: {
-      type: 'bar',
-      label: 'Deaths per Province',
-      summary: 'Showing totals by province for the current filters.',
-      entries: topEntries(provinceCounts),
-    },
-    city: {
-      type: 'bar',
-      label: 'Top Cities',
-      summary: 'Showing the top cities for the current filters.',
-      entries: topEntries(cityCounts, 10),
-    },
-    church: {
-      type: 'bar',
-      label: 'Church Coverage',
-      summary: 'Showing the churches with the most linked records.',
-      entries: topEntries(churchCounts, 10),
-    },
-    months: {
-      type: 'line',
-      label: 'Monthly Trend',
-      summary: 'Showing monthly trend for the current filtered records.',
-      entries: sortedMonthEntries,
-    },
-  };
-
-  const selected = chartConfigs[chartKey] || chartConfigs.months;
-  const labels = selected.entries.map(([label]) => label);
-  const values = selected.entries.map(([, value]) => value);
-
-  if (els.chartSummary) {
-    els.chartSummary.textContent = labels.length
-      ? selected.summary
-      : 'No dated records are available for the selected chart view.';
+function parseRecordDate(value) {
+  const raw = String(value || '').trim();
+  if (!raw) return null;
+  let y; let m; let d;
+  if (/^(\d{4})-(\d{2})-(\d{2})$/.test(raw)) {
+    [, y, m, d] = raw.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  } else {
+    const match = raw.match(/^(\d{2})[\/-](\d{2})[\/-](\d{4})$/);
+    if (!match) return null;
+    [, d, m, y] = match;
   }
+  const date = new Date(Number(y), Number(m) - 1, Number(d));
+  return Number.isNaN(date.getTime()) ? null : date;
+}
 
-  destroyChart(dashboardChartInstance);
-  dashboardChartInstance = new Chart(chartCanvas, {
-    type: selected.type,
+function formatDateInputValue(date) {
+  if (!(date instanceof Date) || Number.isNaN(date.getTime())) return '';
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+function normaliseDay(date) {
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+function getChartDateRange() {
+  const from = els.chartFromDate?.value ? normaliseDay(new Date(els.chartFromDate.value)) : null;
+  const to = els.chartToDate?.value ? normaliseDay(new Date(els.chartToDate.value)) : null;
+  return { from, to };
+}
+
+function getRecordsForChartRange(records, from, to) {
+  if (!from && !to) return records.slice();
+  return records.filter((record) => {
+    const date = parseRecordDate(record.dod);
+    if (!date) return false;
+    const day = normaliseDay(date);
+    if (from && day < from) return false;
+    if (to && day > to) return false;
+    return true;
+  });
+}
+
+function countBy(records, getKey, limit = 10) {
+  const map = new Map();
+  records.forEach((record) => {
+    const key = String(getKey(record) || '').trim();
+    if (!key) return;
+    map.set(key, (map.get(key) || 0) + 1);
+  });
+  return Array.from(map.entries()).sort((a, b) => b[1] - a[1]).slice(0, limit);
+}
+
+function getDefaultComparisonRange(records) {
+  const dates = records.map((record) => parseRecordDate(record.dod)).filter(Boolean).sort((a, b) => a - b);
+  const today = normaliseDay(new Date());
+  if (!dates.length) {
+    const from = new Date(today.getFullYear(), today.getMonth(), 1);
+    return { from, to: today };
+  }
+  const maxDate = normaliseDay(dates[dates.length - 1]);
+  const from = new Date(maxDate.getFullYear(), maxDate.getMonth(), 1);
+  return { from, to: maxDate };
+}
+
+function ensureChartDates() {
+  if (!els.chartFromDate || !els.chartToDate) return;
+  if (els.chartFromDate.value && els.chartToDate.value) return;
+  const range = getDefaultComparisonRange(state.filtered.length ? state.filtered : state.records);
+  if (!els.chartFromDate.value) els.chartFromDate.value = formatDateInputValue(range.from);
+  if (!els.chartToDate.value) els.chartToDate.value = formatDateInputValue(range.to);
+}
+
+function buildComparisonDataset(records, from, to) {
+  const safeTo = to || normaliseDay(new Date());
+  const safeFrom = from || new Date(safeTo.getFullYear(), safeTo.getMonth(), 1);
+  const msPerDay = 24 * 60 * 60 * 1000;
+  const spanDays = Math.max(1, Math.round((normaliseDay(safeTo) - normaliseDay(safeFrom)) / msPerDay) + 1);
+  const previousTo = new Date(safeFrom.getTime() - msPerDay);
+  const previousFrom = new Date(previousTo.getTime() - ((spanDays - 1) * msPerDay));
+  const currentCount = getRecordsForChartRange(records, safeFrom, safeTo).length;
+  const previousCount = getRecordsForChartRange(records, previousFrom, previousTo).length;
+  return {
+    type: 'bar',
+    labels: ['Previous period', 'Selected period'],
+    values: [previousCount, currentCount],
+    label: 'Deaths',
+    summary: `Comparing ${formatDateInputValue(safeFrom)} to ${formatDateInputValue(safeTo)} against the previous ${spanDays}-day period.`,
+  };
+}
+
+function buildCategoryDataset(records, mode) {
+  const config = {
+    province: { label: 'Deaths per province', accessor: (record) => record.province || 'Unknown province' },
+    city: { label: 'Deaths per city', accessor: (record) => record.city || 'Unknown city' },
+    church: { label: 'Deaths per church', accessor: (record) => record.churchName || 'Unknown church' },
+  }[mode];
+  const rows = countBy(records, config.accessor, 10);
+  return {
+    type: 'bar',
+    labels: rows.map(([key]) => key),
+    values: rows.map(([, value]) => value),
+    label: config.label,
+    summary: records.length ? `${config.label} for the selected filters and date range.` : `No data available for ${config.label.toLowerCase()}.`,
+  };
+}
+
+function buildChartConfig() {
+  const chartMode = els.chartFilter?.value || 'comparison';
+  let { from, to } = getChartDateRange();
+  if (chartMode === 'comparison' && !from && !to) {
+    ({ from, to } = getDefaultComparisonRange(state.filtered.length ? state.filtered : state.records));
+  }
+  const scopedRecords = chartMode === 'comparison'
+    ? (state.filtered.length ? state.filtered : state.records)
+    : getRecordsForChartRange(state.filtered, from, to);
+
+  if (chartMode === 'comparison') return buildComparisonDataset(scopedRecords, from, to);
+  return buildCategoryDataset(scopedRecords, chartMode);
+}
+
+function loadAnalytics() {
+  const chartCanvas = document.getElementById('analyticsChart');
+  if (!chartCanvas || typeof Chart === 'undefined') return;
+  const config = buildChartConfig();
+  destroyChart(analyticsChartInstance);
+
+  if (els.chartSummary) els.chartSummary.textContent = config.summary;
+
+  analyticsChartInstance = new Chart(chartCanvas, {
+    type: config.type,
     data: {
-      labels,
+      labels: config.labels,
       datasets: [{
-        label: selected.label,
-        data: values,
-        backgroundColor: selected.type === 'line' ? 'rgba(200, 162, 200, 0.18)' : '#c8a2c8',
-        borderColor: '#c8a2c8',
-        borderWidth: 1,
-        borderRadius: selected.type === 'bar' ? 10 : 0,
-        barThickness: selected.type === 'bar' ? 34 : undefined,
-        maxBarThickness: selected.type === 'bar' ? 42 : undefined,
-        pointBackgroundColor: '#c8a2c8',
-        pointBorderColor: '#c8a2c8',
-        pointRadius: selected.type === 'line' ? 4 : 0,
-        pointHoverRadius: selected.type === 'line' ? 6 : 0,
-        fill: selected.type === 'line',
-        tension: selected.type === 'line' ? 0.35 : 0,
+        label: config.label,
+        data: config.values,
+        backgroundColor: 'rgba(141, 111, 209, 0.35)',
+        borderColor: '#8d6fd1',
+        borderWidth: 2,
+        borderRadius: 10,
+        fill: config.type === 'line',
+        tension: 0.25,
+        pointRadius: 4,
       }],
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
-      animation: { duration: 900, easing: 'easeOutQuart' },
-      interaction: { mode: 'index', intersect: false },
       plugins: {
-        legend: { labels: { color: '#5b4a7d', usePointStyle: true, boxWidth: 10, padding: 16 } },
-        tooltip: {
-          backgroundColor: '#ffffff',
-          titleColor: '#5b4a7d',
-          bodyColor: '#6f6288',
-          borderColor: '#eadff3',
-          borderWidth: 1,
-          cornerRadius: 12,
-          displayColors: true,
-        },
+        legend: { display: true },
       },
       scales: {
-        x: { ticks: { color: '#7a6b95', maxRotation: 0, autoSkip: true }, grid: { display: false } },
-        y: { beginAtZero: true, ticks: { color: '#7a6b95', precision: 0 }, grid: { color: 'rgba(91, 74, 125, 0.08)' } },
+        y: {
+          beginAtZero: true,
+          ticks: { precision: 0 },
+        },
       },
     },
   });
@@ -1085,9 +967,6 @@ async function queueMissingGeocodes() {
   applyFilters();
 }
 
-
-function bindSidebarQuickLinks() {}
-
 window.showMarkers = showMarkers;
 window.showClusters = showClusters;
 window.showHeat = showHeat;
@@ -1097,7 +976,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initMap();
   if (window.google && google.maps && google.maps.places) initAddressAutocomplete();
   clearForm();
-  bindSidebarQuickLinks();
+  ensureChartDates();
   loadData();
   loadAnalytics();
 
@@ -1153,6 +1032,9 @@ document.addEventListener('DOMContentLoaded', () => {
   els.clearFormBtn?.addEventListener('click', clearForm);
   els.townFilter?.addEventListener('input', applyFilters);
   els.provinceFilter?.addEventListener('change', applyFilters);
+  els.chartFilter?.addEventListener('change', loadAnalytics);
+  els.chartFromDate?.addEventListener('change', loadAnalytics);
+  els.chartToDate?.addEventListener('change', loadAnalytics);
   els.userFilter?.addEventListener('change', async () => {
     state.selectedUserId = els.userFilter.value || '';
     await loadData();
@@ -1163,22 +1045,6 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     field?.addEventListener('change', () => {
       if (els.fullAddress) els.fullAddress.value = getFullAddressFromForm();
-    });
-  });
-
-  els.applyComparisonBtn?.addEventListener('click', () => {
-    loadAnalytics();
-  });
-
-  els.clearComparisonBtn?.addEventListener('click', () => {
-    if (els.compareFrom) els.compareFrom.value = '';
-    if (els.compareTo) els.compareTo.value = '';
-    loadAnalytics();
-  });
-
-  [els.compareFrom, els.compareTo].forEach((field) => {
-    field?.addEventListener('change', () => {
-      if (els.compareFrom?.value && els.compareTo?.value) loadAnalytics();
     });
   });
 

@@ -39,6 +39,9 @@ const els = {
   nextOfKinSurname: document.getElementById('nextOfKinSurname'),
   relationship: document.getElementById('relationship'),
   contactNumber: document.getElementById('contactNumber'),
+  churchName: document.getElementById('churchName'),
+  churchAddress: document.getElementById('churchAddress'),
+  pastorName: document.getElementById('pastorName'),
   mapMode: document.getElementById('mapMode'),
   heatRadius: document.getElementById('heatRadius'),
   pinRadius: document.getElementById('pinRadius'),
@@ -94,6 +97,9 @@ function popupHtml(record) {
       <div><b>Town:</b> ${escapeHtml(record.city || '-')}</div>
       <div><b>Province:</b> ${escapeHtml(record.province || '-')}</div>
       <div><b>Contact:</b> ${escapeHtml(record.contactNumber || '-')}</div>
+      <div><b>Church:</b> ${escapeHtml(record.churchName || '-')}</div>
+      <div><b>Church Address:</b> ${escapeHtml(record.churchAddress || '-')}</div>
+      <div><b>Pastor:</b> ${escapeHtml(record.pastorName || '-')}</div>
       ${googleMapsHref ? `<div><a href="${googleMapsHref}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div>` : ''}
     </div>
   `;
@@ -516,6 +522,9 @@ function fillForm(record) {
   if (els.nextOfKinSurname) els.nextOfKinSurname.value = record.nextOfKinSurname || '';
   if (els.relationship) els.relationship.value = record.relationship || '';
   if (els.contactNumber) els.contactNumber.value = record.contactNumber || '';
+  if (els.churchName) els.churchName.value = record.churchName || '';
+  if (els.churchAddress) els.churchAddress.value = record.churchAddress || '';
+  if (els.pastorName) els.pastorName.value = record.pastorName || '';
 }
 
 function clearFormValidation() {
@@ -605,6 +614,9 @@ async function saveRecord(event) {
     nextOfKinSurname: els.nextOfKinSurname?.value?.trim(),
     relationship: els.relationship?.value?.trim(),
     contactNumber: els.contactNumber?.value?.trim(),
+    churchName: els.churchName?.value?.trim(),
+    churchAddress: els.churchAddress?.value?.trim(),
+    pastorName: els.pastorName?.value?.trim(),
   };
 
   payload.province = normalizeProvinceName(payload.province);

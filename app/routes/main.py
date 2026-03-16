@@ -30,8 +30,8 @@ def dashboard():
         preview_mode=False,
         dashboard_read_only=False,
         show_editor=True,
-        show_owner_column=current_user.is_admin,
-        show_province_chart=current_user.is_admin,
+        show_owner_column=False,
+        show_province_chart=False,
         selected_user_id="",
     )
 

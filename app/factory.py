@@ -1,14 +1,13 @@
 import os
 
-from flask import url_for
+from flask import Flask, url_for
 
-from .bootstrap import bootstrap_admin
 from .config import Config
 from .extensions import db, login_manager
 
 
 def create_app():
-    app = __import__("flask").Flask(__name__, template_folder="../templates", static_folder="../static")
+    app = Flask(__name__, template_folder="templates", static_folder="static")
     app.config.from_object(Config)
     app.config["SQLALCHEMY_DATABASE_URI"] = Config.normalize_database_uri()
 
@@ -18,9 +17,9 @@ def create_app():
 
     db.init_app(app)
     login_manager.init_app(app)
+    login_manager.login_view = "auth.login"
 
     from . import models  # noqa: F401
-    from .routes.admin import admin_bp
     from .routes.api import api_bp
     from .routes.auth import auth_bp
     from .routes.main import main_bp
@@ -28,7 +27,6 @@ def create_app():
 
     app.register_blueprint(main_bp)
     app.register_blueprint(auth_bp)
-    app.register_blueprint(admin_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(web_upload_bp)
 
@@ -41,6 +39,5 @@ def create_app():
 
     with app.app_context():
         db.create_all()
-        bootstrap_admin(app)
 
     return app

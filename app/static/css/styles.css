@@ -2020,3 +2020,31 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+
+
+.single-chart-controls {
+  grid-template-columns: minmax(0, 280px);
+}
+
+.single-chart-grid {
+  grid-template-columns: 1fr;
+}
+
+.single-chart-block {
+  min-height: 320px;
+}
+
+@media (max-width: 768px) {
+  .sidebar-nav a {
+    font-size: 18px;
+    min-height: 48px;
+  }
+
+  .admin-mobile-analytics .panel-head h2 {
+    font-size: 22px;
+  }
+
+  .single-chart-block {
+    min-height: 280px;
+  }
+}

@@ -102,58 +102,31 @@
       <div id="map"></div>
     </article>
 
-    <section id="analyticsPanel" class="panel analytics-panel analytics-panel-full">
+    <section id="analyticsPanel" class="panel analytics-panel analytics-panel-full admin-mobile-analytics">
       <div class="panel-head">
         <div>
-          <h2>Comparisons</h2>
-          <p class="muted">
-            Select dates to compare one period against the previous period with the same number of days.
-          </p>
+          <h2>Dashboard chart</h2>
+          <p class="muted">Use the chart filter to switch between province, city, monthly, and church views.</p>
         </div>
       </div>
 
-      <div class="comparison-controls">
+      <div class="comparison-controls single-chart-controls">
         <label>
-          From date
-          <input type="date" id="compareFrom">
+          Chart filter
+          <select id="chartFilter">
+            <option value="months">Monthly trend</option>
+            <option value="province">Province</option>
+            <option value="city">Top cities</option>
+            <option value="church">Church coverage</option>
+          </select>
         </label>
-
-        <label>
-          To date
-          <input type="date" id="compareTo">
-        </label>
-
-        <div class="comparison-actions">
-          <button type="button" id="applyComparisonBtn">Apply comparison</button>
-          <button type="button" id="clearComparisonBtn" class="ghost-btn">Clear dates</button>
-        </div>
       </div>
 
-      <div id="comparisonSummary" class="comparison-summary muted">
-        Select a start and end date to compare periods.
-      </div>
+      <div id="chartSummary" class="comparison-summary muted">Showing monthly trend for the current filtered records.</div>
 
-      <div class="charts-container comparison-charts-grid">
-        <div class="chart-block comparison-chart-block full-width-chart">
-          <canvas id="comparisonChart"></canvas>
-        </div>
-
-        {% if show_province_chart %}
-        <div class="chart-block">
-          <canvas id="provinceChart"></canvas>
-        </div>
-        {% endif %}
-
-        <div class="chart-block">
-          <canvas id="cityChart"></canvas>
-        </div>
-
-        <div class="chart-block">
-          <canvas id="monthlyChart"></canvas>
-        </div>
-
-        <div class="chart-block">
-          <canvas id="churchChart"></canvas>
+      <div class="charts-container comparison-charts-grid single-chart-grid">
+        <div class="chart-block comparison-chart-block full-width-chart single-chart-block">
+          <canvas id="dashboardChart"></canvas>
         </div>
       </div>
     </section>

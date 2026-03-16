@@ -45,12 +45,9 @@ const els = {
   mapMode: document.getElementById('mapMode'),
   heatRadius: document.getElementById('heatRadius'),
   pinRadius: document.getElementById('pinRadius'),
-  compareFrom: document.getElementById('compareFrom'),
-  compareTo: document.getElementById('compareTo'),
-  applyComparisonBtn: document.getElementById('applyComparisonBtn'),
-  clearComparisonBtn: document.getElementById('clearComparisonBtn'),
-  comparisonSummary: document.getElementById('comparisonSummary'),
-  comparisonChart: document.getElementById('comparisonChart'),
+  chartFilter: document.getElementById('chartFilter'),
+  chartSummary: document.getElementById('chartSummary'),
+  dashboardChart: document.getElementById('dashboardChart'),
 };
 
 let map;
@@ -58,11 +55,7 @@ let baseLayer;
 let heatLayer = null;
 let markerLayer = null;
 let clusterLayer = null;
-let provinceChartInstance = null;
-let cityChartInstance = null;
-let monthlyChartInstance = null;
-let churchChartInstance = null;
-let comparisonChartInstance = null;
+let dashboardChartInstance = null;
 let geocodeQueueActive = false;
 
 function setBox(el, message, isError = false) {
@@ -941,17 +934,12 @@ function destroyChart(instance) {
   if (instance && typeof instance.destroy === 'function') instance.destroy();
 }
 
-async function loadAnalytics() {
-  const provinceCanvas = document.getElementById('provinceChart');
-  const cityCanvas = document.getElementById('cityChart');
-  const monthlyCanvas = document.getElementById('monthlyChart');
-  const churchCanvas = document.getElementById('churchChart');
-  if ((!cityCanvas && !monthlyCanvas && !provinceCanvas && !churchCanvas) || typeof Chart === 'undefined') {
-    renderComparisonChart();
-    return;
-  }
 
-  const datedRecords = applyDateRangeToRecords(getDatedFilteredRecords());
+async function loadAnalytics() {
+  const chartCanvas = document.getElementById('dashboardChart');
+  if (!chartCanvas || typeof Chart === 'undefined') return;
+
+  const datedRecords = getDatedFilteredRecords();
   const provinceCounts = aggregateCounts(datedRecords, (record) => record.province || 'Unknown');
   const cityCounts = aggregateCounts(datedRecords, (record) => record.city || 'Unknown');
   const monthCounts = aggregateCounts(datedRecords, (record) => formatMonthKey(record.__dodDate));
@@ -963,83 +951,90 @@ async function loadAnalytics() {
   };
 
   const sortedMonthEntries = Object.entries(monthCounts).sort((a, b) => a[0].localeCompare(b[0]));
+  const chartKey = els.chartFilter?.value || 'months';
 
-  destroyChart(provinceChartInstance);
-  destroyChart(cityChartInstance);
-  destroyChart(monthlyChartInstance);
-  destroyChart(churchChartInstance);
-
-  const sharedChartOptions = {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: { duration: 900, easing: 'easeOutQuart' },
-    interaction: { mode: 'index', intersect: false },
-    plugins: {
-      legend: { labels: { color: '#5b4a7d', usePointStyle: true, boxWidth: 10, padding: 16 } },
-      tooltip: {
-        backgroundColor: '#ffffff',
-        titleColor: '#5b4a7d',
-        bodyColor: '#6f6288',
-        borderColor: '#eadff3',
-        borderWidth: 1,
-        cornerRadius: 12,
-        displayColors: true,
-      },
+  const chartConfigs = {
+    province: {
+      type: 'bar',
+      label: 'Deaths per Province',
+      summary: 'Showing totals by province for the current filters.',
+      entries: topEntries(provinceCounts),
     },
-    scales: {
-      x: { ticks: { color: '#7a6b95', maxRotation: 0, autoSkip: true }, grid: { display: false } },
-      y: { beginAtZero: true, ticks: { color: '#7a6b95', precision: 0 }, grid: { color: 'rgba(91, 74, 125, 0.08)' } },
+    city: {
+      type: 'bar',
+      label: 'Top Cities',
+      summary: 'Showing the top cities for the current filters.',
+      entries: topEntries(cityCounts, 10),
+    },
+    church: {
+      type: 'bar',
+      label: 'Church Coverage',
+      summary: 'Showing the churches with the most linked records.',
+      entries: topEntries(churchCounts, 10),
+    },
+    months: {
+      type: 'line',
+      label: 'Monthly Trend',
+      summary: 'Showing monthly trend for the current filtered records.',
+      entries: sortedMonthEntries,
     },
   };
 
-  if (provinceCanvas) {
-    const entries = topEntries(provinceCounts);
-    provinceChartInstance = new Chart(provinceCanvas, {
-      type: 'bar',
-      data: {
-        labels: entries.map(([label]) => label),
-        datasets: [{ label: 'Deaths per Province', data: entries.map(([, value]) => value), backgroundColor: '#c8a2c8', borderColor: '#c8a2c8', borderWidth: 1, borderRadius: 10, barThickness: 34, maxBarThickness: 42 }],
-      },
-      options: sharedChartOptions,
-    });
+  const selected = chartConfigs[chartKey] || chartConfigs.months;
+  const labels = selected.entries.map(([label]) => label);
+  const values = selected.entries.map(([, value]) => value);
+
+  if (els.chartSummary) {
+    els.chartSummary.textContent = labels.length
+      ? selected.summary
+      : 'No dated records are available for the selected chart view.';
   }
 
-  if (cityCanvas) {
-    const entries = topEntries(cityCounts, 10);
-    cityChartInstance = new Chart(cityCanvas, {
-      type: 'bar',
-      data: {
-        labels: entries.map(([label]) => label),
-        datasets: [{ label: 'Top Cities', data: entries.map(([, value]) => value), backgroundColor: '#c8a2c8', borderColor: '#c8a2c8', borderWidth: 1, borderRadius: 10, barThickness: 34, maxBarThickness: 42 }],
+  destroyChart(dashboardChartInstance);
+  dashboardChartInstance = new Chart(chartCanvas, {
+    type: selected.type,
+    data: {
+      labels,
+      datasets: [{
+        label: selected.label,
+        data: values,
+        backgroundColor: selected.type === 'line' ? 'rgba(200, 162, 200, 0.18)' : '#c8a2c8',
+        borderColor: '#c8a2c8',
+        borderWidth: 1,
+        borderRadius: selected.type === 'bar' ? 10 : 0,
+        barThickness: selected.type === 'bar' ? 34 : undefined,
+        maxBarThickness: selected.type === 'bar' ? 42 : undefined,
+        pointBackgroundColor: '#c8a2c8',
+        pointBorderColor: '#c8a2c8',
+        pointRadius: selected.type === 'line' ? 4 : 0,
+        pointHoverRadius: selected.type === 'line' ? 6 : 0,
+        fill: selected.type === 'line',
+        tension: selected.type === 'line' ? 0.35 : 0,
+      }],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 900, easing: 'easeOutQuart' },
+      interaction: { mode: 'index', intersect: false },
+      plugins: {
+        legend: { labels: { color: '#5b4a7d', usePointStyle: true, boxWidth: 10, padding: 16 } },
+        tooltip: {
+          backgroundColor: '#ffffff',
+          titleColor: '#5b4a7d',
+          bodyColor: '#6f6288',
+          borderColor: '#eadff3',
+          borderWidth: 1,
+          cornerRadius: 12,
+          displayColors: true,
+        },
       },
-      options: sharedChartOptions,
-    });
-  }
-
-  if (monthlyCanvas) {
-    monthlyChartInstance = new Chart(monthlyCanvas, {
-      type: 'line',
-      data: {
-        labels: sortedMonthEntries.map(([label]) => label),
-        datasets: [{ label: 'Monthly Trend', data: sortedMonthEntries.map(([, value]) => value), borderColor: '#c8a2c8', backgroundColor: 'rgba(200, 162, 200, 0.18)', pointBackgroundColor: '#c8a2c8', pointBorderColor: '#c8a2c8', pointRadius: 4, pointHoverRadius: 6, fill: true, tension: 0.35 }],
+      scales: {
+        x: { ticks: { color: '#7a6b95', maxRotation: 0, autoSkip: true }, grid: { display: false } },
+        y: { beginAtZero: true, ticks: { color: '#7a6b95', precision: 0 }, grid: { color: 'rgba(91, 74, 125, 0.08)' } },
       },
-      options: sharedChartOptions,
-    });
-  }
-
-  if (churchCanvas) {
-    const entries = topEntries(churchCounts, 10);
-    churchChartInstance = new Chart(churchCanvas, {
-      type: 'bar',
-      data: {
-        labels: entries.map(([label]) => label),
-        datasets: [{ label: 'Church Coverage', data: entries.map(([, value]) => value), backgroundColor: '#c8a2c8', borderColor: '#c8a2c8', borderWidth: 1, borderRadius: 10, barThickness: 34, maxBarThickness: 42 }],
-      },
-      options: sharedChartOptions,
-    });
-  }
-
-  renderComparisonChart();
+    },
+  });
 }
 
 async function updateRecordGeocode(record, point) {

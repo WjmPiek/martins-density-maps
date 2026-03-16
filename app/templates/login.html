@@ -1,0 +1,42 @@
+{% extends 'base_auth.html' %}
+{% block title %}Login · Martins Density Map{% endblock %}
+
+{% block content %}
+<section class="auth-wrap">
+  <div class="auth-card auth-card-wide">
+    <img
+      src="{{ url_for('static', filename='img/martins-logo.png') }}"
+      class="login-logo"
+      width="300"
+      height="110"
+      alt="Martins Logo"
+    >
+    <p class="auth-subtitle">Martin's Franchising</p>
+
+    <form method="POST" class="auth-form">
+      <label>
+        Email
+        <input type="email" name="email" required>
+      </label>
+
+      <label>
+        Password
+        <input type="password" name="password" required>
+      </label>
+
+      <button class="primary-btn" type="submit">Login</button>
+
+      <div class="auth-footer">
+        <div class="auth-footer-link">
+          <a href="{{ url_for('auth.reset_password') }}">forgot my password</a>
+        </div>
+        <a href="{{ url_for('auth.register') }}">Register New User</a>
+      </div>
+
+      <div class="auth-install" id="installApp" style="display:none;">
+        Install App
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}

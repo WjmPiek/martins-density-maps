@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Register · Martins Density Map{% endblock %}
+
+{% block content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    <img
+      src="{{ url_for('static', filename='img/martins-logo.png') }}"
+      class="login-logo"
+      alt="Martins Logo"
+    >
+
+    <div class="eyebrow">Martin's Franchising</div>
+    <h2 style="margin: 6px 0 18px 0;">Register</h2>
+
+    <form method="post" class="auth-form">
+      <label>
+        Full name
+        <input type="text" name="name" required>
+      </label>
+
+      <label>
+        Email
+        <input type="email" name="email" required>
+      </label>
+
+      <label>
+        Password
+        <input type="password" name="password" required>
+      </label>
+
+      <label>
+        Confirm password
+        <input type="password" name="confirm_password" required>
+      </label>
+
+      <button class="primary-btn" type="submit">Create Account</button>
+
+      <a class="ghost-btn auth-link-btn" href="{{ url_for('auth.login') }}">
+        Back to Login
+      </a>
+    </form>
+  </div>
+</div>
+{% endblock %}

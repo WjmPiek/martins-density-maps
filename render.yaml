@@ -3,7 +3,7 @@ services:
     name: martins-density-map
     runtime: python
     buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn app:app
+    startCommand: gunicorn wsgi:app
     
     envVars:
       - key: SECRET_KEY

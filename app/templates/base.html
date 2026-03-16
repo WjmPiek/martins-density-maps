@@ -56,6 +56,7 @@
 
       <nav class="sidebar-nav">
         <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
+        <a href="#comparisonPanel">Comparisons</a>
         {% if current_user.is_admin %}
         <a href="{{ url_for('admin.admin') }}">Admin</a>
         <a href="{{ url_for('admin.user_dashboard_preview') }}">Testing Service</a>

@@ -1,32 +1,22 @@
-import os
-
-from flask import url_for
 from pathlib import Path
-from flask import Flask
+
+from flask import Flask, url_for
 from .bootstrap import bootstrap_admin
 from .config import Config
 from .extensions import db, login_manager
 
 BASE_DIR = Path(__file__).resolve().parent
 
+
 def create_app():
     app = Flask(
-        print("APP ROOT:", app.root_path)
-print("TEMPLATE FOLDER:", app.template_folder)
-print("JINJA SEARCH PATH:", app.jinja_loader.searchpath)
         __name__,
         template_folder=str(BASE_DIR / "templates"),
         static_folder=str(BASE_DIR / "static"),
     )
 
-    # your existing config / init code stays below here
-    app = __import__("flask").Flask(__name__, template_folder="../templates", static_folder="../static")
     app.config.from_object(Config)
     app.config["SQLALCHEMY_DATABASE_URI"] = Config.normalize_database_uri()
-
-    os.makedirs(app.config["UPLOAD_DIR"], exist_ok=True)
-    os.makedirs(app.config["INSTANCE_DIR"], exist_ok=True)
-    os.makedirs(app.config["DATA_DIR"], exist_ok=True)
 
     db.init_app(app)
     login_manager.init_app(app)

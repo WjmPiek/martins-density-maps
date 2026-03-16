@@ -71,6 +71,7 @@
               <option value="pins">Pins</option>
               <option value="clusters">Clusters</option>
               <option value="heatmap">Heatmap</option>
+              <option value="churches">Church coverage</option>
             </select>
           </label>
         </div>
@@ -104,6 +105,7 @@
           <button type="button" onclick="showMarkers()">Markers</button>
           <button type="button" onclick="showClusters()">Clusters</button>
           <button type="button" onclick="showHeat()">Heatmap</button>
+          <button type="button" onclick="showChurchCoverage()">Church coverage</button>
         </div>
 
         <div class="filters">
@@ -183,6 +185,26 @@
                 <label>
                   Church address
                   <input id="churchAddress" name="churchAddress" placeholder="Enter church address">
+                </label>
+
+                <label>
+                  Church city
+                  <input id="churchCity" name="churchCity" placeholder="Enter church city">
+                </label>
+
+                <label>
+                  Church province
+                  <select id="churchProvince" name="churchProvince">
+                    <option value="">Choose province</option>
+                    {% for province in provinces %}
+                    <option value="{{ province }}">{{ province }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+
+                <label>
+                  Church country
+                  <input id="churchCountry" name="churchCountry" value="South Africa" placeholder="Enter church country">
                 </label>
 
                 <label>
@@ -294,6 +316,7 @@
 
     <div class="chart-block">
       <canvas id="monthlyChart"></canvas>
+            <canvas id="churchChart"></canvas>
     </div>
   </div>
 </section>

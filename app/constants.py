@@ -11,6 +11,12 @@ UPLOAD_COLUMNS = [
     "Next of Kin Surname",
     "Relationship",
     "Contact Number",
+    "Church Name",
+    "Pastor Name",
+    "Church Address",
+    "Church City",
+    "Church Province",
+    "Church Country",
 ]
 
 EXPORT_COLUMNS = [
@@ -23,16 +29,19 @@ EXPORT_COLUMNS = [
     "Province",
     "Country",
     "Full Address",
-    "Place ID",
-    "Formatted Address",
     "Latitude",
     "Longitude",
-    "Geocode Status",
     "Weight",
     "Next of Kin Name",
     "Next of Kin Surname",
     "Relationship",
     "Contact Number",
+    "Church Name",
+    "Pastor Name",
+    "Church Address",
+    "Church City",
+    "Church Province",
+    "Church Country",
 ]
 
 PROVINCES = [

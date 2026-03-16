@@ -49,6 +49,12 @@ class Record(db.Model):
     deceased_name = db.Column(db.String(120))
     deceased_surname = db.Column(db.String(120))
     dod = db.Column(db.String(50))
+    church_name = db.Column(db.String(255), index=True)
+    pastor_name = db.Column(db.String(255))
+    church_address = db.Column(db.String(255))
+    church_city = db.Column(db.String(120), index=True)
+    church_province = db.Column(db.String(120), index=True)
+    church_country = db.Column(db.String(120))
     address = db.Column(db.String(255))
     city = db.Column(db.String(120), index=True)
     province = db.Column(db.String(120), index=True)
@@ -73,6 +79,12 @@ class Record(db.Model):
             "deceasedName": self.deceased_name or "",
             "deceasedSurname": self.deceased_surname or "",
             "dod": self.dod or "",
+            "churchName": self.church_name or "",
+            "pastorName": self.pastor_name or "",
+            "churchAddress": self.church_address or "",
+            "churchCity": self.church_city or "",
+            "churchProvince": self.church_province or "",
+            "churchCountry": self.church_country or "",
             "address": self.address or "",
             "city": self.city or "",
             "province": self.province or "",

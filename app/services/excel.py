@@ -44,18 +44,12 @@ def parse_upload(file_storage):
 
         latitude = normalize_float(data.get("Latitude"))
         longitude = normalize_float(data.get("Longitude"))
-        place_id = normalize_text(data.get("Place ID"))
-        formatted_address = normalize_text(data.get("Formatted Address")) or full_address
-        geocode_status = normalize_text(data.get("Geocode Status")) or "SKIPPED"
 
         if latitude is None or longitude is None:
             geo = geocode_address(full_address)
             latitude = normalize_float(geo.get("latitude"))
             longitude = normalize_float(geo.get("longitude"))
-            place_id = normalize_text(geo.get("place_id"))
-            formatted_address = normalize_text(geo.get("formatted_address")) or full_address
             geocode_status = normalize_text(geo.get("geocode_status")) or "ERROR"
-
             if geocode_status != "OK":
                 warnings.append(f"Row {idx}: geocoding status '{geocode_status}' for MF File '{mf_file}'.")
 
@@ -70,16 +64,19 @@ def parse_upload(file_storage):
                 "province": province,
                 "country": country,
                 "full_address": full_address,
-                "place_id": place_id,
-                "formatted_address": formatted_address,
                 "latitude": latitude,
                 "longitude": longitude,
-                "geocode_status": geocode_status,
                 "weight": normalize_float(data.get("Weight")) or 1.0,
                 "next_of_kin_name": normalize_text(data.get("Next of Kin Name")),
                 "next_of_kin_surname": normalize_text(data.get("Next of Kin Surname")),
                 "relationship": normalize_text(data.get("Relationship")),
                 "contact_number": normalize_text(data.get("Contact Number")),
+                "church_name": normalize_text(data.get("Church Name")),
+                "pastor_name": normalize_text(data.get("Pastor Name")),
+                "church_address": normalize_text(data.get("Church Address")),
+                "church_city": normalize_text(data.get("Church City")),
+                "church_province": normalize_text(data.get("Church Province")),
+                "church_country": normalize_text(data.get("Church Country")) or "South Africa",
             }
         )
 

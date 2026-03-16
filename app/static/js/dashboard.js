@@ -26,6 +26,12 @@ const els = {
   dod: document.getElementById('dod'),
   deceasedName: document.getElementById('deceasedName'),
   deceasedSurname: document.getElementById('deceasedSurname'),
+  churchName: document.getElementById('churchName'),
+  churchAddress: document.getElementById('churchAddress'),
+  churchCity: document.getElementById('churchCity'),
+  churchProvince: document.getElementById('churchProvince'),
+  churchCountry: document.getElementById('churchCountry'),
+  pastorName: document.getElementById('pastorName'),
   address: document.getElementById('address'),
   city: document.getElementById('city'),
   province: document.getElementById('province'),
@@ -39,9 +45,6 @@ const els = {
   nextOfKinSurname: document.getElementById('nextOfKinSurname'),
   relationship: document.getElementById('relationship'),
   contactNumber: document.getElementById('contactNumber'),
-  churchName: document.getElementById('churchName'),
-  churchAddress: document.getElementById('churchAddress'),
-  pastorName: document.getElementById('pastorName'),
   mapMode: document.getElementById('mapMode'),
   heatRadius: document.getElementById('heatRadius'),
   pinRadius: document.getElementById('pinRadius'),
@@ -55,6 +58,7 @@ let clusterLayer = null;
 let provinceChartInstance = null;
 let cityChartInstance = null;
 let monthlyChartInstance = null;
+let churchChartInstance = null;
 let geocodeQueueActive = false;
 
 function setBox(el, message, isError = false) {
@@ -93,12 +97,15 @@ function popupHtml(record) {
       <strong>${escapeHtml(record.deceasedName || '')} ${escapeHtml(record.deceasedSurname || '')}</strong>
       <div><b>MF File:</b> ${escapeHtml(record.mfFile || '-')}</div>
       <div><b>DOD:</b> ${escapeHtml(record.dod || '-')}</div>
+      <div><b>Church:</b> ${escapeHtml(record.churchName || '-')}</div>
+      <div><b>Pastor:</b> ${escapeHtml(record.pastorName || '-')}</div>
+      <div><b>Church Address:</b> ${escapeHtml(record.churchAddress || '-')}</div>
+      <div><b>Church City:</b> ${escapeHtml(record.churchCity || '-')}</div>
+      <div><b>Church Province:</b> ${escapeHtml(record.churchProvince || '-')}</div>
+      <div><b>Church Country:</b> ${escapeHtml(record.churchCountry || '-')}</div>
       <div><b>Address:</b> ${escapeHtml(record.fullAddress || record.address || '-')}</div>
       <div><b>Town:</b> ${escapeHtml(record.city || '-')}</div>
       <div><b>Province:</b> ${escapeHtml(record.province || '-')}</div>
-      <div><b>Church:</b> ${escapeHtml(record.churchName || '-')}</div>
-      <div><b>Church Address:</b> ${escapeHtml(record.churchAddress || '-')}</div>
-      <div><b>Pastor:</b> ${escapeHtml(record.pastorName || '-')}</div>
       <div><b>Contact:</b> ${escapeHtml(record.contactNumber || '-')}</div>
       ${googleMapsHref ? `<div><a href="${googleMapsHref}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div>` : ''}
     </div>
@@ -319,6 +326,7 @@ function initMap() {
       const value = els.mapMode.value;
       if (value === 'heatmap') state.currentMapView = 'heat';
       else if (value === 'clusters') state.currentMapView = 'clusters';
+      else if (value === 'churches') state.currentMapView = 'churches';
       else state.currentMapView = 'markers';
       renderMap();
     });
@@ -341,6 +349,63 @@ function clearMapLayers() {
   heatLayer = null;
   markerLayer?.clearLayers();
   clusterLayer?.clearLayers();
+}
+
+
+function getChurchCoveragePoints(records) {
+  const groups = new Map();
+  records.forEach((record) => {
+    const lat = Number(record.latitude);
+    const lng = Number(record.longitude);
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+    const churchName = String(record.churchName || '').trim();
+    const churchAddress = String(record.churchAddress || '').trim();
+    const churchCity = String(record.churchCity || '').trim();
+    const churchProvince = String(record.churchProvince || '').trim();
+    const churchCountry = String(record.churchCountry || '').trim();
+    if (!churchName && !churchAddress && !churchCity && !churchProvince) return;
+    const key = `${churchName.toLowerCase()}|${churchAddress.toLowerCase()}|${churchCity.toLowerCase()}|${churchProvince.toLowerCase()}|${churchCountry.toLowerCase()}`;
+    if (!groups.has(key)) {
+      groups.set(key, {
+        churchName: churchName || 'Unnamed church',
+        churchAddress: churchAddress || '-',
+        pastorName: record.pastorName || '-',
+        count: 0,
+        latSum: 0,
+        lngSum: 0,
+        towns: new Set(),
+      });
+    }
+    const item = groups.get(key);
+    item.count += 1;
+    item.latSum += lat;
+    item.lngSum += lng;
+    if (record.city) item.towns.add(record.city);
+    if ((!item.pastorName || item.pastorName === '-') && record.pastorName) item.pastorName = record.pastorName;
+  });
+  return Array.from(groups.values()).map((item) => ({
+    ...item,
+    latitude: item.latSum / item.count,
+    longitude: item.lngSum / item.count,
+    townsLabel: Array.from(item.towns).slice(0, 4).join(', '),
+  }));
+}
+
+function churchCoveragePopup(item) {
+  const googleMapsHref = Number.isFinite(item.latitude) && Number.isFinite(item.longitude)
+    ? `https://www.google.com/maps?q=${item.latitude},${item.longitude}`
+    : '';
+
+  return `
+    <div class="popup-grid">
+      <strong>${escapeHtml(item.churchName || 'Church coverage')}</strong>
+      <div><b>Pastor:</b> ${escapeHtml(item.pastorName || '-')}</div>
+      <div><b>Church Address:</b> ${escapeHtml(item.churchAddress || '-')}</div>
+      <div><b>Covered records:</b> ${escapeHtml(item.count)}</div>
+      <div><b>Towns:</b> ${escapeHtml(item.townsLabel || '-')}</div>
+      ${googleMapsHref ? `<div><a href="${googleMapsHref}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div>` : ''}
+    </div>
+  `;
 }
 
 function renderMap() {
@@ -374,7 +439,22 @@ function renderMap() {
     clusterLayer.addLayer(L.marker([lat, lng]).bindPopup(popup));
   });
 
-  if (state.currentMapView === 'heat' && mapped.length > 20) {
+  if (state.currentMapView === 'churches') {
+    const churches = getChurchCoveragePoints(mapped);
+    churches.forEach((item) => {
+      const lat = Number(item.latitude);
+      const lng = Number(item.longitude);
+      if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
+      const radius = Math.max(pinRadius + 2, Math.min(pinRadius + item.count, 18));
+      markerLayer.addLayer(L.circleMarker([lat, lng], {
+        radius,
+        weight: 2,
+        opacity: 0.95,
+        fillOpacity: 0.75,
+      }).bindPopup(churchCoveragePopup(item)));
+    });
+    markerLayer.addTo(map);
+  } else if (state.currentMapView === 'heat' && mapped.length > 20) {
     heatLayer = L.heatLayer(heatData, {
       radius: heatRadius,
       blur: 25,
@@ -509,6 +589,12 @@ function fillForm(record) {
   if (els.dod) els.dod.value = record.dod || '';
   if (els.deceasedName) els.deceasedName.value = record.deceasedName || '';
   if (els.deceasedSurname) els.deceasedSurname.value = record.deceasedSurname || '';
+  if (els.churchName) els.churchName.value = record.churchName || '';
+  if (els.churchAddress) els.churchAddress.value = record.churchAddress || '';
+  if (els.churchCity) els.churchCity.value = record.churchCity || '';
+  if (els.churchProvince) els.churchProvince.value = record.churchProvince || '';
+  if (els.churchCountry) els.churchCountry.value = record.churchCountry || 'South Africa';
+  if (els.pastorName) els.pastorName.value = record.pastorName || '';
   if (els.address) els.address.value = record.address || '';
   if (els.city) els.city.value = record.city || '';
   if (els.province) els.province.value = record.province || '';
@@ -522,9 +608,6 @@ function fillForm(record) {
   if (els.nextOfKinSurname) els.nextOfKinSurname.value = record.nextOfKinSurname || '';
   if (els.relationship) els.relationship.value = record.relationship || '';
   if (els.contactNumber) els.contactNumber.value = record.contactNumber || '';
-  if (els.churchName) els.churchName.value = record.churchName || '';
-  if (els.churchAddress) els.churchAddress.value = record.churchAddress || '';
-  if (els.pastorName) els.pastorName.value = record.pastorName || '';
 }
 
 function clearFormValidation() {
@@ -537,6 +620,7 @@ function clearFormValidation() {
 function clearForm() {
   els.recordForm?.reset();
   if (els.country) els.country.value = 'South Africa';
+  if (els.churchCountry) els.churchCountry.value = 'South Africa';
   if (els.weight) els.weight.value = 1;
   if (els.recordId) els.recordId.value = '';
   if (els.latitude) els.latitude.value = '';
@@ -601,6 +685,12 @@ async function saveRecord(event) {
     dod: els.dod?.value,
     deceasedName: els.deceasedName?.value?.trim(),
     deceasedSurname: els.deceasedSurname?.value?.trim(),
+    churchName: els.churchName?.value?.trim(),
+    churchAddress: els.churchAddress?.value?.trim(),
+    churchCity: els.churchCity?.value?.trim(),
+    churchProvince: els.churchProvince?.value?.trim(),
+    churchCountry: els.churchCountry?.value?.trim() || 'South Africa',
+    pastorName: els.pastorName?.value?.trim(),
     address: els.address?.value?.trim(),
     city: els.city?.value?.trim(),
     province: els.province?.value,
@@ -614,9 +704,6 @@ async function saveRecord(event) {
     nextOfKinSurname: els.nextOfKinSurname?.value?.trim(),
     relationship: els.relationship?.value?.trim(),
     contactNumber: els.contactNumber?.value?.trim(),
-    churchName: els.churchName?.value?.trim(),
-    churchAddress: els.churchAddress?.value?.trim(),
-    pastorName: els.pastorName?.value?.trim(),
   };
 
   payload.province = normalizeProvinceName(payload.province);
@@ -673,6 +760,12 @@ function showHeat() {
   renderMap();
 }
 
+function showChurchCoverage() {
+  state.currentMapView = 'churches';
+  if (els.mapMode) els.mapMode.value = 'churches';
+  renderMap();
+}
+
 function destroyChart(instance) {
   if (instance && typeof instance.destroy === 'function') instance.destroy();
 }
@@ -681,6 +774,7 @@ async function loadAnalytics() {
   const provinceCanvas = document.getElementById('provinceChart');
   const cityCanvas = document.getElementById('cityChart');
   const monthlyCanvas = document.getElementById('monthlyChart');
+  const churchCanvas = document.getElementById('churchChart');
   if (!cityCanvas || !monthlyCanvas || typeof Chart === 'undefined') return;
 
   const selectedUserId = state.selectedUserId || (els.userFilter ? els.userFilter.value : '');
@@ -692,6 +786,7 @@ async function loadAnalytics() {
   destroyChart(provinceChartInstance);
   destroyChart(cityChartInstance);
   destroyChart(monthlyChartInstance);
+  destroyChart(churchChartInstance);
 
   const sharedChartOptions = {
     responsive: true,
@@ -804,6 +899,27 @@ async function loadAnalytics() {
     },
     options: sharedChartOptions,
   });
+
+
+  if (churchCanvas) {
+    churchChartInstance = new Chart(churchCanvas, {
+      type: 'bar',
+      data: {
+        labels: Object.keys(data.churches || {}),
+        datasets: [{
+          label: 'Church Coverage',
+          data: Object.values(data.churches || {}),
+          backgroundColor: '#c8a2c8',
+          borderColor: '#c8a2c8',
+          borderWidth: 1,
+          borderRadius: 10,
+          barThickness: 34,
+          maxBarThickness: 42,
+        }],
+      },
+      options: sharedChartOptions,
+    });
+  }
 }
 
 async function updateRecordGeocode(record, point) {
@@ -857,6 +973,7 @@ async function queueMissingGeocodes() {
 window.showMarkers = showMarkers;
 window.showClusters = showClusters;
 window.showHeat = showHeat;
+window.showChurchCoverage = showChurchCoverage;
 
 document.addEventListener('DOMContentLoaded', () => {
   initMap();

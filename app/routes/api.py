@@ -114,6 +114,7 @@ def api_analytics():
 
     province = Counter(r.province for r in records if r.province)
     cities = Counter(r.city for r in records if r.city)
+    churches = Counter(r.church_name for r in records if getattr(r, "church_name", None))
     months = Counter()
     for r in records:
         value = (r.dod or "").strip()
@@ -130,5 +131,6 @@ def api_analytics():
             months[parsed.strftime("%Y-%m")] += 1
 
     top_cities = dict(cities.most_common(10))
+    top_churches = dict(churches.most_common(10))
     ordered_months = dict(sorted(months.items()))
-    return jsonify({"province": dict(province), "cities": top_cities, "months": ordered_months})
+    return jsonify({"province": dict(province), "cities": top_cities, "churches": top_churches, "months": ordered_months})

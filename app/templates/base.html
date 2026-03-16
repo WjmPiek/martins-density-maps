@@ -19,7 +19,7 @@
 
   <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
   <link rel="preload" href="{{ url_for('static', filename='img/martins-logo.png') }}" as="image">
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260316-2') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260316-3') }}">
 
   {% if current_user.is_authenticated %}
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">
@@ -52,7 +52,7 @@
         <a href="{{ url_for('main.dashboard') }}">Dashboard</a>
         {% if current_user.is_admin %}
         {% set branch_label = current_user.branch_name if current_user.branch_name is defined and current_user.branch_name else (current_user.branch if current_user.branch is defined and current_user.branch else (current_user.name if current_user.name is defined and current_user.name else 'My Branch')) %}
-        <a href="{{ url_for('admin.admin') }}">{{ branch_label }}</a>
+        <a href="{{ url_for('main.dashboard') }}#recordEditorPanel">{{ branch_label }}</a>
         <a href="{{ url_for('admin.user_dashboard_preview') }}">Admin Testing</a>
         <a href="{{ url_for('admin.users') }}">Registered Users</a>
         {% endif %}

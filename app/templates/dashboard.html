@@ -12,9 +12,9 @@
             {% if preview_mode %}
             Preview a user dashboard in read-only mode.
             {% elif current_user.is_admin %}
-            View all registered users combined or switch to a single user.
+            View combined records or switch to a single user, then manage branch records below.
             {% else %}
-            Filter your map and comparison charts.
+            Filter your map, records, and chart.
             {% endif %}
           </p>
         </div>
@@ -59,48 +59,185 @@
   </section>
 
   <section class="dashboard-scroll-content">
-    <article id="mapPanel" class="panel map-panel dashboard-map-only">
-      <div class="panel-head">
-        <div>
-          <h2>Client addresses map</h2>
-          <p class="muted">
-            {% if preview_mode %}
-            This is the user-facing dashboard preview.
-            {% elif current_user.is_admin %}
-            Use Google Maps search, zoom, and filters to review client addresses.
-            {% else %}
-            Use the filters to change the map and charts below.
-            {% endif %}
-          </p>
+    <section class="map-layout">
+      <article id="mapPanel" class="panel map-panel dashboard-map-only">
+        <div class="panel-head">
+          <div>
+            <h2>Client addresses map</h2>
+            <p class="muted">
+              {% if preview_mode %}
+              This is the user-facing dashboard preview.
+              {% elif current_user.is_admin %}
+              Use Google Maps search, zoom, and filters to review client addresses and church coverage.
+              {% else %}
+              Use the filters to change the map and chart below.
+              {% endif %}
+            </p>
+          </div>
         </div>
-      </div>
 
-      {% if dashboard_read_only %}
-      <p class="panel-note">Read-only view. No user data can be changed from this screen.</p>
+        {% if dashboard_read_only %}
+        <p class="panel-note">Read-only view. No user data can be changed from this screen.</p>
+        {% endif %}
+
+        <div class="map-toggle">
+          <button type="button" onclick="showMarkers()">Markers</button>
+          <button type="button" onclick="showClusters()">Clusters</button>
+          <button type="button" onclick="showHeat()">Heatmap</button>
+        </div>
+
+        <div class="filters compact-map-controls">
+          <label>
+            Heat radius
+            <input id="heatRadius" type="range" min="10" max="50" value="25">
+          </label>
+
+          <label>
+            Pin size
+            <input id="pinRadius" type="range" min="3" max="12" value="6">
+          </label>
+
+          <div></div>
+        </div>
+
+        <div id="map"></div>
+      </article>
+
+      {% if show_editor %}
+      <article id="recordEditorPanel" class="panel form-panel map-form-panel">
+        <div class="panel-head">
+          <div>
+            <h2>Input settings</h2>
+            <p class="muted">Add or edit record, church, and next-of-kin details.</p>
+          </div>
+          <button type="button" id="clearFormBtn" class="ghost-btn tiny-btn">Clear</button>
+        </div>
+
+        <form id="recordForm" class="record-form">
+          <input type="hidden" id="recordId">
+          <input type="hidden" id="fullAddress">
+          <input type="hidden" id="latitude">
+          <input type="hidden" id="longitude">
+          <input type="hidden" id="weight" value="1">
+
+          <fieldset class="form-shell">
+            <div class="form-section-card full-span">
+              <h3>Client Details</h3>
+              <div class="editor-grid">
+                <label>
+                  MF file
+                  <input id="mfFile" required>
+                </label>
+
+                <label>
+                  Date of death
+                  <input id="dod" type="date">
+                </label>
+
+                <label>
+                  Deceased name
+                  <input id="deceasedName">
+                </label>
+
+                <label>
+                  Deceased surname
+                  <input id="deceasedSurname">
+                </label>
+              </div>
+            </div>
+
+            <div class="form-section-card full-span">
+              <h3>Church Details</h3>
+              <div class="editor-grid">
+                <label>
+                  Church name
+                  <input id="churchName" name="churchName" placeholder="Enter church name">
+                </label>
+
+                <label>
+                  Pastor name
+                  <input id="pastorName" name="pastorName" placeholder="Enter pastor name">
+                </label>
+
+                <label>
+                  Church address
+                  <input id="churchAddress" name="churchAddress" placeholder="Enter church address">
+                </label>
+              </div>
+            </div>
+
+            <div class="form-section-card full-span">
+              <h3>Address Details</h3>
+              <div class="editor-grid">
+                <label>
+                  Street address
+                  <input id="address" name="address" type="text" placeholder="Enter South African street address" autocomplete="new-password" spellcheck="false" autocorrect="off" autocapitalize="off">
+                </label>
+
+                <label>
+                  Town / city
+                  <input id="city" autocomplete="address-level2">
+                </label>
+
+                <label>
+                  Province
+                  <select id="province" autocomplete="address-level1">
+                    <option value="">Choose province</option>
+                    {% for province in provinces %}
+                    <option value="{{ province }}">{{ province }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+
+                <label>
+                  Postal code
+                  <input id="postalCode" autocomplete="postal-code">
+                </label>
+
+                <label>
+                  Country
+                  <input id="country" value="South Africa" autocomplete="country-name">
+                </label>
+              </div>
+            </div>
+
+            <div class="form-section-card full-span">
+              <h3>Next of Kin Details</h3>
+              <div class="editor-grid">
+                <label>
+                  Next of kin name
+                  <input id="nextOfKinName">
+                </label>
+
+                <label>
+                  Next of kin surname
+                  <input id="nextOfKinSurname">
+                </label>
+
+                <label>
+                  Relationship
+                  <input id="relationship">
+                </label>
+
+                <label>
+                  Contact number
+                  <input id="contactNumber" inputmode="tel" maxlength="12" placeholder="082 123 4567" pattern="^0\d{2}\s?\d{3}\s?\d{4}$" required>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-actions full-span">
+              <button class="primary-btn" type="submit" {% if dashboard_read_only %}disabled{% endif %}>Save record</button>
+              <p class="form-required-note">Fields marked required must be completed before saving.</p>
+            </div>
+          </fieldset>
+        </form>
+
+        <div id="formStatus" class="info-box hidden"></div>
+        <p id="addressHelp" class="address-help muted hidden"></p>
+      </article>
       {% endif %}
-
-      <div class="map-toggle">
-        <button type="button" onclick="showMarkers()">Markers</button>
-        <button type="button" onclick="showClusters()">Clusters</button>
-        <button type="button" onclick="showHeat()">Heatmap</button>
-      </div>
-
-      <div class="filters compact-map-controls">
-        <label>
-          Heat radius
-          <input id="heatRadius" type="range" min="10" max="50" value="25">
-        </label>
-
-        <label>
-          Pin size
-          <input id="pinRadius" type="range" min="3" max="12" value="6">
-        </label>
-
-        <div></div>
-      </div>
-
-      <div id="map"></div>
-    </article>
+    </section>
 
     <section id="analyticsPanel" class="panel analytics-panel analytics-panel-full admin-mobile-analytics">
       <div class="panel-head">
@@ -130,6 +267,32 @@
         </div>
       </div>
     </section>
+
+    <section class="panel">
+      <div class="panel-head">
+        <div>
+          <h2>Saved records</h2>
+          <p class="muted">Tap a record to edit or remove it.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>MF File</th>
+              <th>Name</th>
+              {% if show_owner_column %}<th>Owner</th>{% endif %}
+              <th>Town</th>
+              <th>Province</th>
+              <th>Address</th>
+              <th>Contact</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="recordsTable"></tbody>
+        </table>
+      </div>
+    </section>
   </section>
 </section>
 {% endblock %}
@@ -150,7 +313,7 @@
 <script src="https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% if google_maps_api_key %}
-<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places,geocoding&loading=async&callback=initGoogleAddress"></script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places&callback=initGoogleAddress"></script>
 {% endif %}
-<script src="{{ url_for('static', filename='js/dashboard.js', v='20260316-2') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js', v='20260316-3') }}"></script>
 {% endblock %}

@@ -1979,7 +1979,7 @@ textarea:focus {
 }
 
 .map-layout-stacked .editor-panel {
-  max-width: 1180px;
+  max-width: none;
 }
 
 .map-layout-stacked #recordForm {

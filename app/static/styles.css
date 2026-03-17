@@ -40,3 +40,9 @@ table{width:100%;border-collapse:collapse;font-size:.92rem}th,td{padding:12px 10
 .popup-row{margin-bottom:6px}.popup-actions{margin-top:12px}.hover-tooltip{background:rgba(17,24,39,.96);color:#fff;border:1px solid rgba(255,255,255,.08);border-radius:14px;box-shadow:0 12px 28px rgba(0,0,0,.35)}.marker-hover{min-width:220px}.empty-row{text-align:center;padding:20px}code{font-family:ui-monospace,SFMono-Regular,monospace}
 @media (max-width: 1200px){.shell{grid-template-columns:1fr}.panel{max-height:none;border-right:none;border-bottom:1px solid var(--border)}.content{grid-template-rows:minmax(420px,60vh) 1fr}}
 @media (max-width: 720px){.two-up,.editor-grid,.stat-grid,.segmented{grid-template-columns:1fr}.content{padding:12px}.panel{padding:12px}.table-wrap{max-height:none}}
+
+
+#map.map-active {
+  outline: 2px solid rgba(99, 102, 241, 0.45);
+  outline-offset: 3px;
+}

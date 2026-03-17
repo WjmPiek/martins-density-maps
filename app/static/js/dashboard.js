@@ -340,11 +340,26 @@ function initMap() {
   map = L.map('map', {
     preferCanvas: true,
     zoomControl: true,
-    scrollWheelZoom: true,
+    scrollWheelZoom: false,
     maxBounds: southAfricaBounds,
     maxBoundsViscosity: 1.0,
   });
-  map.scrollWheelZoom.enable();
+  map.scrollWheelZoom.disable();
+
+  mapEl.addEventListener('click', () => {
+    map.scrollWheelZoom.enable();
+    mapEl.classList.add('map-active');
+  });
+
+  mapEl.addEventListener('mouseleave', () => {
+    map.scrollWheelZoom.disable();
+    mapEl.classList.remove('map-active');
+  });
+
+  mapEl.addEventListener('blur', () => {
+    map.scrollWheelZoom.disable();
+    mapEl.classList.remove('map-active');
+  }, true);
 
   map.fitBounds(southAfricaBounds);
   baseLayer = buildTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');

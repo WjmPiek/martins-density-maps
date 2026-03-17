@@ -1,41 +1,19 @@
-Martins Density Map - fixed package
+Included files:
+- updated backend model and API/service files for church fields
+- updated dashboard HTML and JS for church fields and church coverage map
+- constants patch with church columns for import/export templates
+- SQL migration to add the three new database columns
 
-What was fixed:
-- removed duplicate/overriding route and service code that broke /api/records and imports
-- restored the full API: records list/save/delete, analytics, and upload
-- added missing auth reset-password route used by the login page
-- added missing admin features: users list, user preview, activate/deactivate, delete
-- added inactive-user support and blocked inactive logins
-- added missing record fields used by the dashboard UI:
-  - church_name
-  - church_address
-  - pastor_name
-  - postal_code
-- updated Excel import/export/template columns to include the newer church/postal fields
-- made Excel import backward-compatible with the older workbook format too
-- added startup schema compatibility patch so existing databases can add the new columns
-- ensured runtime folders are created automatically
-- kept admin dashboards read-only so admins do not accidentally overwrite user data
+Important:
+1. Run the SQL migration (or equivalent Flask-Migrate migration) before starting the app.
+2. Merge constants_church_patch.py into your existing constants.py so template download and import/export use the new columns.
+3. Replace your dashboard.js and templates/dashboard.html with the updated copies.
+4. Replace models.py, routes/api.py, services/records.py, services/excel.py, and services/export.py with the updated copies.
 
-Validation completed:
-- Flask app imports successfully
-- routes render successfully
-- user login/save/delete/upload flows tested
-- admin dashboard/users/preview flows tested
-- Python files compile successfully
 
-Main files updated:
-- app/config.py
-- app/constants.py
-- app/factory.py
-- app/models.py
-- app/schema.py
-- app/routes/admin.py
-- app/routes/api.py
-- app/routes/auth.py
-- app/routes/main.py
-- app/services/excel.py
-- app/services/export.py
-- app/services/geocoding.py
-- app/services/records.py
-- app/utils/helpers.py
+2026-03-17 patch:
+- fixed reserved PostgreSQL table-name migration issue by using quoted ALTER TABLE statements in app/schema.py
+- added missing is_active field to User model and login/admin flows
+- removed duplicate broken route/service code blocks that were shadowing the working implementation
+- restored record support for postal code and church fields across model/api/import/export
+- added reset-password route so the login page link works

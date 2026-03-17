@@ -150,8 +150,11 @@
             <input type="hidden" id="fullAddress">
 
             <div class="form-section-card full-span">
-              <h3>Deceased Details</h3>
-              <div class="editor-grid">
+              <div class="section-heading">
+                <h3>Deceased Details</h3>
+                <p>Basic details for the deceased together with the residential address used for mapping.</p>
+              </div>
+              <div class="editor-grid section-grid section-grid-deceased">
                 <label>
                   MF File
                   <input id="mfFile" required>
@@ -171,32 +174,7 @@
                   Deceased surname
                   <input id="deceasedSurname">
                 </label>
-              </div>
-            </div>
 
-            <div class="form-section-card full-span">
-              <h3>Church Details</h3>
-              <div class="editor-grid">
-                <label>
-                  Church name
-                  <input id="churchName" name="churchName" placeholder="Enter church name">
-                </label>
-
-                <label>
-                  Church address
-                  <input id="churchAddress" name="churchAddress" placeholder="Enter church address">
-                </label>
-
-                <label>
-                  Pastor name
-                  <input id="pastorName" name="pastorName" placeholder="Enter pastor name">
-                </label>
-              </div>
-            </div>
-
-            <div class="form-section-card full-span">
-              <h3>Address Details</h3>
-              <div class="editor-grid">
                 <label>
                   Street address
                   <input id="address" name="address" type="text" placeholder="Enter South African street address" autocomplete="new-password" spellcheck="false" autocorrect="off" autocapitalize="off">
@@ -230,8 +208,59 @@
             </div>
 
             <div class="form-section-card full-span">
-              <h3>Next of Kin Details</h3>
-              <div class="editor-grid">
+              <div class="section-heading">
+                <h3>Church Details</h3>
+                <p>Capture the church and service location with its own full address block.</p>
+              </div>
+              <div class="editor-grid section-grid section-grid-church">
+                <label>
+                  Church name
+                  <input id="churchName" name="churchName" placeholder="Enter church name">
+                </label>
+
+                <label>
+                  Pastor name
+                  <input id="pastorName" name="pastorName" placeholder="Enter pastor name">
+                </label>
+
+                <label>
+                  Street address
+                  <input id="churchStreetAddress" name="churchStreetAddress" type="text" placeholder="Enter church street address">
+                </label>
+
+                <label>
+                  Town / city
+                  <input id="churchCity" name="churchCity" autocomplete="address-level2">
+                </label>
+
+                <label>
+                  Province
+                  <select id="churchProvince" name="churchProvince" autocomplete="address-level1">
+                    <option value="">Choose province</option>
+                    {% for province in provinces %}
+                    <option value="{{ province }}">{{ province }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+
+                <label>
+                  Postal code
+                  <input id="churchPostalCode" name="churchPostalCode" autocomplete="postal-code">
+                </label>
+
+                <label>
+                  Country
+                  <input id="churchCountry" name="churchCountry" value="South Africa" autocomplete="country-name">
+                </label>
+              </div>
+            </div>
+
+            <div class="form-section-card full-span">
+              <div class="section-heading">
+                <h3>Next of Kin Details</h3>
+                <p>Emergency or family contact information linked to the record.</p>
+              </div>
+              <div class="editor-grid section-grid section-grid-kin">
                 <label>
                   Next of kin name
                   <input id="nextOfKinName">

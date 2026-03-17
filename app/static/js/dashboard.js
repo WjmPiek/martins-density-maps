@@ -26,9 +26,12 @@ const els = {
   dod: document.getElementById('dod'),
   deceasedName: document.getElementById('deceasedName'),
   deceasedSurname: document.getElementById('deceasedSurname'),
-  deceasedAddress: document.getElementById('deceasedAddress'),
   churchName: document.getElementById('churchName'),
-  churchAddress: document.getElementById('churchAddress'),
+  churchStreetAddress: document.getElementById('churchStreetAddress'),
+  churchCity: document.getElementById('churchCity'),
+  churchProvince: document.getElementById('churchProvince'),
+  churchPostalCode: document.getElementById('churchPostalCode'),
+  churchCountry: document.getElementById('churchCountry'),
   pastorName: document.getElementById('pastorName'),
   address: document.getElementById('address'),
   city: document.getElementById('city'),
@@ -97,7 +100,7 @@ function popupHtml(record) {
       <strong>${escapeHtml(record.deceasedName || '')} ${escapeHtml(record.deceasedSurname || '')}</strong>
       <div><b>MF File:</b> ${escapeHtml(record.mfFile || '-')}</div>
       <div><b>DOD:</b> ${escapeHtml(record.dod || '-')}</div>
-      <div><b>Deceased Address:</b> ${escapeHtml(record.deceasedAddress || record.address || '-')}</div>
+      <div><b>Deceased Address:</b> ${escapeHtml(record.fullAddress || record.deceasedAddress || record.address || '-')}</div>
       <div><b>Church:</b> ${escapeHtml(record.churchName || '-')}</div>
       <div><b>Pastor:</b> ${escapeHtml(record.pastorName || '-')}</div>
       <div><b>Church Address:</b> ${escapeHtml(record.churchAddress || '-')}</div>
@@ -585,9 +588,12 @@ function fillForm(record) {
   if (els.dod) els.dod.value = record.dod || '';
   if (els.deceasedName) els.deceasedName.value = record.deceasedName || '';
   if (els.deceasedSurname) els.deceasedSurname.value = record.deceasedSurname || '';
-  if (els.deceasedAddress) els.deceasedAddress.value = record.deceasedAddress || record.address || '';
-  if (els.churchName) els.churchName.value = record.churchName || '';
-  if (els.churchAddress) els.churchAddress.value = record.churchAddress || '';
+    if (els.churchName) els.churchName.value = record.churchName || '';
+    if (els.churchStreetAddress) els.churchStreetAddress.value = record.churchStreetAddress || '';
+  if (els.churchCity) els.churchCity.value = record.churchCity || '';
+  if (els.churchProvince) els.churchProvince.value = record.churchProvince || '';
+  if (els.churchPostalCode) els.churchPostalCode.value = record.churchPostalCode || '';
+  if (els.churchCountry) els.churchCountry.value = record.churchCountry || 'South Africa';
   if (els.pastorName) els.pastorName.value = record.pastorName || '';
   if (els.address) els.address.value = record.address || '';
   if (els.city) els.city.value = record.city || '';
@@ -614,6 +620,7 @@ function clearFormValidation() {
 function clearForm() {
   els.recordForm?.reset();
   if (els.country) els.country.value = 'South Africa';
+  if (els.churchCountry) els.churchCountry.value = 'South Africa';
   if (els.weight) els.weight.value = 1;
   if (els.recordId) els.recordId.value = '';
   if (els.latitude) els.latitude.value = '';
@@ -678,9 +685,12 @@ async function saveRecord(event) {
     dod: els.dod?.value,
     deceasedName: els.deceasedName?.value?.trim(),
     deceasedSurname: els.deceasedSurname?.value?.trim(),
-    deceasedAddress: els.deceasedAddress?.value?.trim(),
     churchName: els.churchName?.value?.trim(),
-    churchAddress: els.churchAddress?.value?.trim(),
+    churchStreetAddress: els.churchStreetAddress?.value?.trim(),
+    churchCity: els.churchCity?.value?.trim(),
+    churchProvince: els.churchProvince?.value,
+    churchPostalCode: els.churchPostalCode?.value?.trim(),
+    churchCountry: els.churchCountry?.value?.trim() || 'South Africa',
     pastorName: els.pastorName?.value?.trim(),
     address: els.address?.value?.trim(),
     city: els.city?.value?.trim(),
@@ -698,6 +708,7 @@ async function saveRecord(event) {
   };
 
   payload.province = normalizeProvinceName(payload.province);
+  payload.churchProvince = normalizeProvinceName(payload.churchProvince);
   if (!payload.fullAddress) payload.fullAddress = getFullAddressFromForm();
   await geocodePayloadIfNeeded(payload);
 

@@ -19,12 +19,14 @@ def upsert_record(user_id, payload):
     record.deceased_name = normalize_text(payload.get('deceasedName'))
     record.deceased_surname = normalize_text(payload.get('deceasedSurname'))
     record.dod = normalize_text(payload.get('dod'))
-    record.deceased_address = normalize_text(payload.get('deceasedAddress')) or normalize_text(payload.get('address'))
     record.address = normalize_text(payload.get('address'))
     record.city = normalize_text(payload.get('city'))
     record.province = normalize_text(payload.get('province'))
     record.postal_code = normalize_text(payload.get('postalCode'))
     record.country = normalize_text(payload.get('country'))
+    record.deceased_address = normalize_text(payload.get('deceasedAddress')) or build_full_address(
+        record.address, record.city, record.province, record.country
+    )
     record.full_address = normalize_text(payload.get('fullAddress')) or build_full_address(
         record.address, record.city, record.province, record.country
     )
@@ -34,7 +36,17 @@ def upsert_record(user_id, payload):
         record.latitude, record.longitude = geocode_address(record.full_address)
     record.weight = normalize_float(payload.get('weight')) or 1.0
     record.church_name = normalize_text(payload.get('churchName'))
-    record.church_address = normalize_text(payload.get('churchAddress'))
+    record.church_street_address = normalize_text(payload.get('churchStreetAddress'))
+    record.church_city = normalize_text(payload.get('churchCity'))
+    record.church_province = normalize_text(payload.get('churchProvince'))
+    record.church_postal_code = normalize_text(payload.get('churchPostalCode'))
+    record.church_country = normalize_text(payload.get('churchCountry')) or 'South Africa'
+    record.church_address = normalize_text(payload.get('churchAddress')) or build_full_address(
+        record.church_street_address,
+        record.church_city,
+        record.church_province,
+        record.church_country,
+    )
     record.pastor_name = normalize_text(payload.get('pastorName'))
     record.next_of_kin_name = normalize_text(payload.get('NextOfKinName') or payload.get('nextOfKinName'))
     record.next_of_kin_surname = normalize_text(payload.get('NextOfKinSurname') or payload.get('nextOfKinSurname'))

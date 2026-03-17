@@ -152,7 +152,7 @@
             <div class="form-section-card full-span">
               <div class="section-heading">
                 <h3>Deceased Details</h3>
-                <p>Basic details for the deceased and their residential address.</p>
+                <p>Basic details for the deceased together with the residential address used for mapping.</p>
               </div>
               <div class="editor-grid section-grid section-grid-deceased">
                 <label>
@@ -175,42 +175,6 @@
                   <input id="deceasedSurname">
                 </label>
 
-                <label class="full">
-                  Deceased address
-                  <input id="deceasedAddress" name="deceasedAddress" placeholder="Enter deceased residential address">
-                </label>
-              </div>
-            </div>
-
-            <div class="form-section-card full-span">
-              <div class="section-heading">
-                <h3>Church Details</h3>
-                <p>Capture the church and service location information separately.</p>
-              </div>
-              <div class="editor-grid section-grid section-grid-church">
-                <label>
-                  Church name
-                  <input id="churchName" name="churchName" placeholder="Enter church name">
-                </label>
-
-                <label class="full">
-                  Church address
-                  <input id="churchAddress" name="churchAddress" placeholder="Enter church address">
-                </label>
-
-                <label>
-                  Pastor name
-                  <input id="pastorName" name="pastorName" placeholder="Enter pastor name">
-                </label>
-              </div>
-            </div>
-
-            <div class="form-section-card full-span">
-              <div class="section-heading">
-                <h3>Address Details</h3>
-                <p>Structured map address used for geocoding, filtering, and exports.</p>
-              </div>
-              <div class="editor-grid section-grid section-grid-address">
                 <label>
                   Street address
                   <input id="address" name="address" type="text" placeholder="Enter South African street address" autocomplete="new-password" spellcheck="false" autocorrect="off" autocapitalize="off">
@@ -239,6 +203,54 @@
                 <label>
                   Country
                   <input id="country" value="South Africa" autocomplete="country-name">
+                </label>
+              </div>
+            </div>
+
+            <div class="form-section-card full-span">
+              <div class="section-heading">
+                <h3>Church Details</h3>
+                <p>Capture the church and service location with its own full address block.</p>
+              </div>
+              <div class="editor-grid section-grid section-grid-church">
+                <label>
+                  Church name
+                  <input id="churchName" name="churchName" placeholder="Enter church name">
+                </label>
+
+                <label>
+                  Pastor name
+                  <input id="pastorName" name="pastorName" placeholder="Enter pastor name">
+                </label>
+
+                <label>
+                  Street address
+                  <input id="churchStreetAddress" name="churchStreetAddress" type="text" placeholder="Enter church street address">
+                </label>
+
+                <label>
+                  Town / city
+                  <input id="churchCity" name="churchCity" autocomplete="address-level2">
+                </label>
+
+                <label>
+                  Province
+                  <select id="churchProvince" name="churchProvince" autocomplete="address-level1">
+                    <option value="">Choose province</option>
+                    {% for province in provinces %}
+                    <option value="{{ province }}">{{ province }}</option>
+                    {% endfor %}
+                  </select>
+                </label>
+
+                <label>
+                  Postal code
+                  <input id="churchPostalCode" name="churchPostalCode" autocomplete="postal-code">
+                </label>
+
+                <label>
+                  Country
+                  <input id="churchCountry" name="churchCountry" value="South Africa" autocomplete="country-name">
                 </label>
               </div>
             </div>

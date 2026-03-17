@@ -64,6 +64,11 @@ class Record(db.Model):
     weight = db.Column(db.Float, default=1.0)
     church_name = db.Column(db.String(255))
     church_address = db.Column(db.String(255))
+    church_street_address = db.Column(db.String(255))
+    church_city = db.Column(db.String(120))
+    church_province = db.Column(db.String(120))
+    church_postal_code = db.Column(db.String(64))
+    church_country = db.Column(db.String(120))
     pastor_name = db.Column(db.String(255))
     next_of_kin_name = db.Column(db.String(120))
     next_of_kin_surname = db.Column(db.String(120))
@@ -93,6 +98,11 @@ class Record(db.Model):
             'weight': self.weight if self.weight is not None else 1,
             'churchName': self.church_name or '',
             'churchAddress': self.church_address or '',
+            'churchStreetAddress': self.church_street_address or '',
+            'churchCity': self.church_city or '',
+            'churchProvince': self.church_province or '',
+            'churchPostalCode': self.church_postal_code or '',
+            'churchCountry': self.church_country or '',
             'pastorName': self.pastor_name or '',
             'nextOfKinName': self.next_of_kin_name or '',
             'nextOfKinSurname': self.next_of_kin_surname or '',

@@ -391,12 +391,12 @@ function initMap() {
       else if (value === 'clusters') state.currentMapView = 'clusters';
       else if (value === 'churches') state.currentMapView = 'churches';
       else state.currentMapView = 'markers';
-      renderMap();
+      renderMap({ preserveView: true });
     });
   }
 
-  els.heatRadius?.addEventListener('input', renderMap);
-  els.pinRadius?.addEventListener('input', renderMap);
+  els.heatRadius?.addEventListener('input', () => renderMap({ preserveView: true }));
+  els.pinRadius?.addEventListener('input', () => renderMap({ preserveView: true }));
 
   window.addEventListener('load', () => setTimeout(refreshMapSize, 300));
   window.addEventListener('resize', () => setTimeout(refreshMapSize, 150));
@@ -468,13 +468,17 @@ function churchCoveragePopup(item) {
   `;
 }
 
-function renderMap() {
+function renderMap(options = {}) {
+  const preserveView = Boolean(options.preserveView);
   if (!map || !markerLayer || !clusterLayer) return;
   clearMapLayers();
 
   const mapped = state.filtered.filter((r) => Number.isFinite(Number(r.latitude)) && Number.isFinite(Number(r.longitude)));
+  const currentCenter = preserveView ? map.getCenter() : null;
+  const currentZoom = preserveView ? map.getZoom() : null;
+
   if (!mapped.length) {
-    map.fitBounds([[-35.5, 16.0], [-22.0, 33.5]]);
+    if (!preserveView) map.fitBounds([[-35.5, 16.0], [-22.0, 33.5]]);
     return;
   }
 
@@ -534,8 +538,13 @@ function renderMap() {
     markerLayer.addTo(map);
   }
 
-  if (bounds.length === 1) map.setView(bounds[0], 10);
-  else map.fitBounds(bounds, { padding: [24, 24] });
+  if (preserveView && currentCenter && Number.isFinite(currentZoom)) {
+    map.setView(currentCenter, currentZoom, { animate: false });
+  } else if (bounds.length === 1) {
+    map.setView(bounds[0], 10);
+  } else {
+    map.fitBounds(bounds, { padding: [24, 24] });
+  }
 }
 
 function focusSavedRecordOnMap(record) {

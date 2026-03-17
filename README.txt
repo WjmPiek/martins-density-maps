@@ -17,3 +17,6 @@ Important:
 - removed duplicate broken route/service code blocks that were shadowing the working implementation
 - restored record support for postal code and church fields across model/api/import/export
 - added reset-password route so the login page link works
+
+
+V11: improved map clarity with retina tiles, size refresh on load/resize, and sharper tile rendering.

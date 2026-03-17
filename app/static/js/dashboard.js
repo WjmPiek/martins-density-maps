@@ -304,6 +304,9 @@ function autoMapMode() {
 function buildTileLayer(url, options = {}) {
   return L.tileLayer(url, {
     maxZoom: 19,
+    detectRetina: true,
+    updateWhenIdle: true,
+    keepBuffer: 4,
     attribution: '&copy; OpenStreetMap contributors',
     ...options,
   });
@@ -362,7 +365,14 @@ function initMap() {
   }, true);
 
   map.fitBounds(southAfricaBounds);
-  baseLayer = buildTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png');
+  map.whenReady(() => {
+    window.requestAnimationFrame(() => map.invalidateSize(true));
+    window.setTimeout(() => map.invalidateSize(true), 200);
+  });
+  window.addEventListener('load', () => map.invalidateSize(true));
+  window.addEventListener('resize', () => map.invalidateSize(true));
+
+  baseLayer = buildTileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}{r}.png');
   baseLayer.addTo(map);
   attachTileFallbacks();
 

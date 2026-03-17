@@ -2028,3 +2028,14 @@ textarea:focus {
     align-items: stretch;
   }
 }
+
+
+/* Map clarity fixes */
+#map,
+#map .leaflet-container {
+  background: #f8f7fb;
+}
+
+#map .leaflet-tile {
+  image-rendering: auto;
+}

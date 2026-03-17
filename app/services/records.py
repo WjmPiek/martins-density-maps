@@ -25,10 +25,10 @@ def upsert_record(user_id, payload):
     record.postal_code = normalize_text(payload.get('postalCode'))
     record.country = normalize_text(payload.get('country'))
     record.deceased_address = normalize_text(payload.get('deceasedAddress')) or build_full_address(
-        record.address, record.city, record.province, record.country
+        record.address, record.city, record.province, record.postal_code, record.country
     )
     record.full_address = normalize_text(payload.get('fullAddress')) or build_full_address(
-        record.address, record.city, record.province, record.country
+        record.address, record.city, record.province, record.postal_code, record.country
     )
     record.latitude = normalize_float(payload.get('latitude'))
     record.longitude = normalize_float(payload.get('longitude'))
@@ -45,6 +45,7 @@ def upsert_record(user_id, payload):
         record.church_street_address,
         record.church_city,
         record.church_province,
+        record.church_postal_code,
         record.church_country,
     )
     record.pastor_name = normalize_text(payload.get('pastorName'))

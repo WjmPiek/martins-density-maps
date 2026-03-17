@@ -23,7 +23,6 @@ def build_workbook(records):
                 record.deceased_name,
                 record.deceased_surname,
                 record.dod,
-                record.deceased_address,
                 record.address,
                 record.city,
                 record.province,

@@ -19,4 +19,4 @@ Important:
 - added reset-password route so the login page link works
 
 
-V11: improved map clarity with retina tiles, size refresh on load/resize, and sharper tile rendering.
+V11: improved map clarity with retina tiles, size refresh on load/resize, and sharper tile rendering.Updated import/template alignment for structured deceased and church addresses, legacy template compatibility, safer geocoding, and export/template consistency.

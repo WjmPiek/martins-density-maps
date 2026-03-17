@@ -331,6 +331,37 @@ label {
   border-color: transparent;
 }
 
+
+.sidebar-admin-group {
+  display: grid;
+  gap: 10px;
+}
+
+.sidebar-admin-link {
+  margin-bottom: 0;
+}
+
+.sidebar-subnav {
+  display: grid;
+  gap: 8px;
+  padding: 2px 0 4px 14px;
+}
+
+.sidebar-subnav a {
+  min-height: 40px;
+  justify-content: flex-start;
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  background: #f8f5ff;
+}
+
+.sidebar-subnav a:hover {
+  background: #f1ebff;
+}
+
 .sidebar-actions {
   display: grid;
   gap: 10px;

@@ -52,8 +52,15 @@
         <a href="{{ url_for('main.dashboard') }}#dashboardPanel">Dashboard</a>
         <a href="{{ url_for('main.charts') }}">Charts</a>
         {% if current_user.is_admin %}
-        <a href="{{ url_for('main.dashboard') }}#dashboardPanel">{{ current_user.branch if current_user.branch else "Admin" }}</a>
-        <a href="{{ url_for('admin.admin_users') }}">Registered Users</a>
+        <div class="sidebar-admin-group">
+          <a class="sidebar-admin-link" href="{{ url_for('admin.admin') }}">Admin</a>
+          <div class="sidebar-subnav" aria-label="Admin sections">
+            <a href="{{ url_for('admin.admin_users') }}">User management</a>
+            <a href="{{ url_for('main.dashboard') }}#dashboardPanel">View all users’ data</a>
+            <a href="{{ url_for('admin.admin_users') }}#user-status-tools">Activate/deactivate users</a>
+            <a href="{{ url_for('admin.admin') }}#system-tools">System tools</a>
+          </div>
+        </div>
         {% endif %}
         <a href="{{ url_for('auth.logout') }}">Logout</a>
       </nav>

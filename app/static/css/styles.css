@@ -1906,3 +1906,62 @@ textarea:focus {
     min-width: 560px;
   }
 }
+
+
+/* dashboard form grouping refresh */
+.form-section-card {
+  padding: 24px 24px 22px;
+  margin-bottom: 22px;
+  border: 1px solid #ddd6ee;
+  box-shadow: 0 14px 32px rgba(92, 74, 140, 0.08);
+}
+
+.section-heading {
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid #ebe5f6;
+}
+
+.section-heading h3 {
+  margin: 0;
+  border: 0;
+  padding: 0;
+}
+
+.section-heading p {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: #75698f;
+}
+
+.section-grid {
+  row-gap: 20px;
+}
+
+.section-grid .full {
+  grid-column: 1 / -1;
+}
+
+.section-grid-deceased,
+.section-grid-church,
+.section-grid-address,
+.section-grid-kin {
+  padding-top: 2px;
+}
+
+.form-section-card + .form-section-card {
+  margin-top: 4px;
+}
+
+@media (max-width: 720px) {
+  .form-section-card {
+    padding: 18px 16px;
+    margin-bottom: 18px;
+  }
+
+  .section-heading {
+    margin-bottom: 14px;
+    padding-bottom: 12px;
+  }
+}

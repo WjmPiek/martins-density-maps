@@ -28,6 +28,7 @@ def ensure_schema() -> None:
             ('is_active', 'BOOLEAN NOT NULL DEFAULT TRUE'),
         ],
         'record': [
+            ('deceased_address', 'VARCHAR(255)'),
             ('church_name', 'VARCHAR(255)'),
             ('church_address', 'VARCHAR(255)'),
             ('pastor_name', 'VARCHAR(255)'),

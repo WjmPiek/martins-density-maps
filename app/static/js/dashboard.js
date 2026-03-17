@@ -26,6 +26,7 @@ const els = {
   dod: document.getElementById('dod'),
   deceasedName: document.getElementById('deceasedName'),
   deceasedSurname: document.getElementById('deceasedSurname'),
+  deceasedAddress: document.getElementById('deceasedAddress'),
   churchName: document.getElementById('churchName'),
   churchAddress: document.getElementById('churchAddress'),
   pastorName: document.getElementById('pastorName'),
@@ -96,6 +97,7 @@ function popupHtml(record) {
       <strong>${escapeHtml(record.deceasedName || '')} ${escapeHtml(record.deceasedSurname || '')}</strong>
       <div><b>MF File:</b> ${escapeHtml(record.mfFile || '-')}</div>
       <div><b>DOD:</b> ${escapeHtml(record.dod || '-')}</div>
+      <div><b>Deceased Address:</b> ${escapeHtml(record.deceasedAddress || record.address || '-')}</div>
       <div><b>Church:</b> ${escapeHtml(record.churchName || '-')}</div>
       <div><b>Pastor:</b> ${escapeHtml(record.pastorName || '-')}</div>
       <div><b>Church Address:</b> ${escapeHtml(record.churchAddress || '-')}</div>
@@ -583,6 +585,7 @@ function fillForm(record) {
   if (els.dod) els.dod.value = record.dod || '';
   if (els.deceasedName) els.deceasedName.value = record.deceasedName || '';
   if (els.deceasedSurname) els.deceasedSurname.value = record.deceasedSurname || '';
+  if (els.deceasedAddress) els.deceasedAddress.value = record.deceasedAddress || record.address || '';
   if (els.churchName) els.churchName.value = record.churchName || '';
   if (els.churchAddress) els.churchAddress.value = record.churchAddress || '';
   if (els.pastorName) els.pastorName.value = record.pastorName || '';
@@ -675,6 +678,7 @@ async function saveRecord(event) {
     dod: els.dod?.value,
     deceasedName: els.deceasedName?.value?.trim(),
     deceasedSurname: els.deceasedSurname?.value?.trim(),
+    deceasedAddress: els.deceasedAddress?.value?.trim(),
     churchName: els.churchName?.value?.trim(),
     churchAddress: els.churchAddress?.value?.trim(),
     pastorName: els.pastorName?.value?.trim(),

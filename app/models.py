@@ -52,6 +52,7 @@ class Record(db.Model):
     deceased_name = db.Column(db.String(120))
     deceased_surname = db.Column(db.String(120))
     dod = db.Column(db.String(50))
+    deceased_address = db.Column(db.String(255))
     address = db.Column(db.String(255))
     city = db.Column(db.String(120), index=True)
     province = db.Column(db.String(120), index=True)
@@ -80,6 +81,7 @@ class Record(db.Model):
             'deceasedName': self.deceased_name or '',
             'deceasedSurname': self.deceased_surname or '',
             'dod': self.dod or '',
+            'deceasedAddress': self.deceased_address or '',
             'address': self.address or '',
             'city': self.city or '',
             'province': self.province or '',

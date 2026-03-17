@@ -36,6 +36,7 @@ def parse_upload(file_storage):
             continue
         seen_mf.add(mf_file)
 
+        deceased_address = normalize_text(data.get('Deceased Address'))
         address = normalize_text(data.get('Address'))
         city = normalize_text(data.get('City'))
         province = normalize_text(data.get('Province'))
@@ -53,6 +54,7 @@ def parse_upload(file_storage):
                 'deceased_name': normalize_text(data.get('Deceased Name')),
                 'deceased_surname': normalize_text(data.get('Deceased Surname')),
                 'dod': normalize_text(data.get('DOD')),
+                'deceased_address': deceased_address or address,
                 'address': address,
                 'city': city,
                 'province': province,

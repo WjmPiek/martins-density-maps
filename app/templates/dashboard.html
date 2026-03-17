@@ -150,8 +150,11 @@
             <input type="hidden" id="fullAddress">
 
             <div class="form-section-card full-span">
-              <h3>Deceased Details</h3>
-              <div class="editor-grid">
+              <div class="section-heading">
+                <h3>Deceased Details</h3>
+                <p>Basic details for the deceased and their residential address.</p>
+              </div>
+              <div class="editor-grid section-grid section-grid-deceased">
                 <label>
                   MF File
                   <input id="mfFile" required>
@@ -171,18 +174,26 @@
                   Deceased surname
                   <input id="deceasedSurname">
                 </label>
+
+                <label class="full">
+                  Deceased address
+                  <input id="deceasedAddress" name="deceasedAddress" placeholder="Enter deceased residential address">
+                </label>
               </div>
             </div>
 
             <div class="form-section-card full-span">
-              <h3>Church Details</h3>
-              <div class="editor-grid">
+              <div class="section-heading">
+                <h3>Church Details</h3>
+                <p>Capture the church and service location information separately.</p>
+              </div>
+              <div class="editor-grid section-grid section-grid-church">
                 <label>
                   Church name
                   <input id="churchName" name="churchName" placeholder="Enter church name">
                 </label>
 
-                <label>
+                <label class="full">
                   Church address
                   <input id="churchAddress" name="churchAddress" placeholder="Enter church address">
                 </label>
@@ -195,8 +206,11 @@
             </div>
 
             <div class="form-section-card full-span">
-              <h3>Address Details</h3>
-              <div class="editor-grid">
+              <div class="section-heading">
+                <h3>Address Details</h3>
+                <p>Structured map address used for geocoding, filtering, and exports.</p>
+              </div>
+              <div class="editor-grid section-grid section-grid-address">
                 <label>
                   Street address
                   <input id="address" name="address" type="text" placeholder="Enter South African street address" autocomplete="new-password" spellcheck="false" autocorrect="off" autocapitalize="off">
@@ -230,8 +244,11 @@
             </div>
 
             <div class="form-section-card full-span">
-              <h3>Next of Kin Details</h3>
-              <div class="editor-grid">
+              <div class="section-heading">
+                <h3>Next of Kin Details</h3>
+                <p>Emergency or family contact information linked to the record.</p>
+              </div>
+              <div class="editor-grid section-grid section-grid-kin">
                 <label>
                   Next of kin name
                   <input id="nextOfKinName">

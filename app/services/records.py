@@ -19,6 +19,7 @@ def upsert_record(user_id, payload):
     record.deceased_name = normalize_text(payload.get('deceasedName'))
     record.deceased_surname = normalize_text(payload.get('deceasedSurname'))
     record.dod = normalize_text(payload.get('dod'))
+    record.deceased_address = normalize_text(payload.get('deceasedAddress')) or normalize_text(payload.get('address'))
     record.address = normalize_text(payload.get('address'))
     record.city = normalize_text(payload.get('city'))
     record.province = normalize_text(payload.get('province'))

@@ -69,10 +69,6 @@
       </nav>
 
       <div class="sidebar-actions sidebar-actions-bottom sidebar-links-small">
-        <button id="desktopInstallApp" class="sidebar-install-link" type="button" hidden>
-          <img src="{{ url_for('static', filename='favicon.ico') }}" alt="Install" class="install-favicon">
-          <span>Install app</span>
-        </button>
         <a class="sidebar-text-link" href="{{ url_for('main.upload_page') }}">Upload Excel File</a>
         <a class="sidebar-text-link" href="{{ url_for('main.download_template') }}">Download Excel Template</a>
         <a class="sidebar-text-link" href="{{ url_for('main.download_my_data') }}">Download My Data</a>
@@ -87,12 +83,7 @@
         <div class="mobile-app-header-text">
           <span class="mobile-app-header-title">HeatMap</span>
         </div>
-        <button id="mobileInstallApp" class="mobile-install-link" type="button" hidden>
-          <img src="{{ url_for('static', filename='favicon.ico') }}" alt="Install" class="install-favicon">
-          <span>Install</span>
-        </button>
       </header>
-      <div id="installHelpBanner" class="install-help-banner" hidden></div>
       {% endif %}
       <div class="shell">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -113,91 +104,6 @@
   {% block scripts %}{% endblock %}
 
   <script>
-    let deferredPrompt = null;
-
-    async function registerServiceWorker() {
-      if (!('serviceWorker' in navigator)) return;
-      try {
-        await navigator.serviceWorker.register("{{ url_for('static', filename='service-worker.js') }}", { scope: '/' });
-      } catch (error) {
-        console.error('Service worker registration failed', error);
-      }
-    }
-
-    function getInstallButtons() {
-      return [document.getElementById('desktopInstallApp'), document.getElementById('mobileInstallApp')].filter(Boolean);
-    }
-
-    function showInstallHelp(message) {
-      const banner = document.getElementById('installHelpBanner');
-      if (!banner) return;
-      banner.textContent = message;
-      banner.hidden = false;
-    }
-
-    function hideInstallHelp() {
-      const banner = document.getElementById('installHelpBanner');
-      if (!banner) return;
-      banner.hidden = true;
-      banner.textContent = '';
-    }
-
-    function bindInstallButtons() {
-      const installButtons = getInstallButtons();
-      const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
-
-      if (!isStandalone) {
-        installButtons.forEach((btn) => {
-          btn.hidden = false;
-        });
-      }
-
-      installButtons.forEach((btn) => {
-        btn.onclick = async () => {
-          if (deferredPrompt) {
-            hideInstallHelp();
-            deferredPrompt.prompt();
-            const choice = await deferredPrompt.userChoice;
-            if (choice && choice.outcome === 'accepted') {
-              installButtons.forEach((item) => { item.hidden = true; });
-            }
-            deferredPrompt = null;
-            return;
-          }
-
-          if (isStandalone) {
-            showInstallHelp('HeatMap is already installed on this device.');
-            return;
-          }
-
-          if (isIos) {
-            showInstallHelp('On iPhone or iPad, tap Share and then Add to Home Screen.');
-            return;
-          }
-
-          showInstallHelp('Install is available once the browser marks this app ready. Refresh the page after a few seconds if needed.');
-        };
-      });
-    }
-
-    window.addEventListener('beforeinstallprompt', (e) => {
-      e.preventDefault();
-      deferredPrompt = e;
-      hideInstallHelp();
-      getInstallButtons().forEach((btn) => {
-        btn.hidden = false;
-      });
-    });
-
-    window.addEventListener('appinstalled', () => {
-      deferredPrompt = null;
-      hideInstallHelp();
-      getInstallButtons().forEach((btn) => {
-        btn.hidden = true;
-      });
-    });
-
     function applyMobilePageLayout() {
       if (window.innerWidth > 768) return;
 

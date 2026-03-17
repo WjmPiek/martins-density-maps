@@ -11,6 +11,9 @@
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#8d6fd1">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="HeatMap">
 </head>
 
 
@@ -30,39 +33,79 @@
   <script>
   let deferredPrompt = null;
   const installBtn = document.getElementById("installApp");
+  const installHelp = document.getElementById("installHelp");
+
+  async function registerServiceWorker() {
+    if (!("serviceWorker" in navigator)) return;
+    try {
+      await navigator.serviceWorker.register("/static/service-worker.js", { scope: "/" });
+    } catch (err) {
+      console.error("Service worker registration failed:", err);
+    }
+  }
+
+  function setInstallHelp(message) {
+    if (!installHelp) return;
+    installHelp.textContent = message;
+    installHelp.hidden = !message;
+  }
+
+  function showInstallButton() {
+    if (installBtn) installBtn.hidden = false;
+  }
+
+  function hideInstallButton() {
+    if (installBtn) installBtn.hidden = true;
+  }
 
   window.addEventListener("beforeinstallprompt", (e) => {
     e.preventDefault();
     deferredPrompt = e;
-
-    if (installBtn) {
-      installBtn.style.display = "block";
-    }
+    showInstallButton();
+    setInstallHelp("");
   });
 
   if (installBtn) {
     installBtn.addEventListener("click", async () => {
-      if (!deferredPrompt) return;
-      deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      deferredPrompt = null;
-      installBtn.style.display = "none";
+      const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+      if (isStandalone) {
+        setInstallHelp("HeatMap is already installed on this device.");
+        return;
+      }
+
+      if (deferredPrompt) {
+        setInstallHelp("");
+        deferredPrompt.prompt();
+        await deferredPrompt.userChoice;
+        deferredPrompt = null;
+        hideInstallButton();
+        return;
+      }
+
+      if (isIos) {
+        showInstallButton();
+        setInstallHelp("On iPhone or iPad, tap Share and then Add to Home Screen.");
+        return;
+      }
+
+      showInstallButton();
+      setInstallHelp("Install is available once the browser marks this app ready. Refresh the page after a few seconds if needed.");
     });
   }
 
   window.addEventListener("appinstalled", () => {
-    if (installBtn) {
-      installBtn.style.display = "none";
-    }
+    hideInstallButton();
+    setInstallHelp("");
     deferredPrompt = null;
   });
-</script>
 
-<script>
-  if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/static/service-worker.js")
-      .catch(err => console.error("Service worker registration failed:", err));
-  }
+  window.addEventListener("load", () => {
+    registerServiceWorker();
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+    if (!isStandalone) showInstallButton();
+  });
 </script>
 
 </body>

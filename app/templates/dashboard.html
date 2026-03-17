@@ -2,8 +2,13 @@
 {% block title %}Dashboard · Martins Density Map{% endblock %}
 
 {% block content %}
-<section class="dashboard-wrap" id="dashboardPanel">
-  <section class="dashboard-top-fixed">
+<section class="dashboard-wrap mobile-map-page" id="dashboardPanel">
+  <section class="mobile-page-tabs" aria-label="Mobile navigation">
+    <a class="mobile-page-tab active" href="{{ url_for('main.dashboard') }}">Maps</a>
+    <a class="mobile-page-tab" href="{{ url_for('main.charts') }}">Charts</a>
+  </section>
+
+<section class="dashboard-top-fixed">
     <section class="stats-grid">
       <article class="stat-card">
         <span>Total rows</span>

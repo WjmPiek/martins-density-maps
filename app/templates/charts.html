@@ -2,7 +2,11 @@
 {% block title %}Charts · Martins Density Map{% endblock %}
 
 {% block content %}
-<section class="dashboard-wrap charts-page-wrap">
+<section class="dashboard-wrap charts-page-wrap mobile-charts-page">
+    <section class="mobile-page-tabs" aria-label="Mobile navigation">
+    <a class="mobile-page-tab" href="{{ url_for('main.dashboard') }}">Maps</a>
+    <a class="mobile-page-tab active" href="{{ url_for('main.charts') }}">Charts</a>
+  </section>
   <section class="panel analytics-panel charts-page-panel" id="chartsPanel">
     <div class="panel-head">
       <div>

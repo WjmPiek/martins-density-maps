@@ -2088,3 +2088,71 @@ textarea:focus {
 .sidebar-text-link:hover {
   text-decoration: underline;
 }
+
+
+.mobile-page-tabs {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .sidebar {
+    display: none !important;
+  }
+
+  .main-content {
+    margin-left: 0 !important;
+    padding: 12px !important;
+  }
+
+  .mobile-page-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+
+  .mobile-page-tab {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 46px;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: #fff;
+    color: var(--text);
+    font-weight: 700;
+    font-size: 15px;
+    text-align: center;
+  }
+
+  .mobile-page-tab.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: transparent;
+  }
+
+  .mobile-map-page .editor-panel,
+  .mobile-map-page .analytics-panel,
+  .mobile-map-page .records-panel,
+  .mobile-map-page #chartsPanel {
+    display: none !important;
+  }
+
+  .mobile-map-page .map-panel {
+    margin-bottom: 0;
+  }
+
+  .mobile-map-page .filters,
+  .mobile-charts-page .chart-toolbar {
+    grid-template-columns: 1fr !important;
+  }
+
+  .mobile-charts-page .charts-page-panel .chart-block {
+    min-height: 360px;
+  }
+
+  .mobile-charts-page .charts-page-panel .chart-block canvas {
+    min-height: 320px;
+  }
+}

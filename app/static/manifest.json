@@ -1,32 +1,30 @@
 {
-  "name": "Martin's Client Map",
-  "short_name": "Client Map",
+  "id": "/",
+  "name": "HeatMap",
+  "short_name": "HeatMap",
+  "description": "Martins HeatMap dashboard for maps, charts, and record management.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
+  "orientation": "portrait-primary",
   "background_color": "#f8f7fb",
-  "theme_color": "#8d6fd1",
+  "theme_color": "#6b2fa3",
   "icons": [
-    
     {
       "src": "/static/android-chrome-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "/static/android-chrome-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
-
     {
-      "src": "/static/img/martins-logo.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-
-    {
-      "src": "/static/img/martins-logo.png",
-      "sizes": "512x512",
+      "src": "/static/apple-touch-icon.png",
+      "sizes": "180x180",
       "type": "image/png"
     }
   ]

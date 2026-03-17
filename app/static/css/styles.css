@@ -2315,3 +2315,21 @@ textarea:focus {
     margin-top: 0;
   }
 }
+
+.install-help-banner {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  border: 1px solid #e9d5ff;
+  background: #faf5ff;
+  color: #5b21b6;
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .install-help-banner {
+    margin: 0 0 10px;
+    font-size: 0.85rem;
+  }
+}

@@ -8,6 +8,9 @@
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
   <meta name="theme-color" content="#6b2fa3">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="HeatMap">
 
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='android-chrome-192.png') }}">
@@ -89,6 +92,7 @@
           <span>Install</span>
         </button>
       </header>
+      <div id="installHelpBanner" class="install-help-banner" hidden></div>
       {% endif %}
       <div class="shell">
         {% with messages = get_flashed_messages(with_categories=true) %}
@@ -110,23 +114,89 @@
 
   <script>
     let deferredPrompt = null;
+
+    async function registerServiceWorker() {
+      if (!('serviceWorker' in navigator)) return;
+      try {
+        await navigator.serviceWorker.register("{{ url_for('static', filename='service-worker.js') }}", { scope: '/' });
+      } catch (error) {
+        console.error('Service worker registration failed', error);
+      }
+    }
+
+    function getInstallButtons() {
+      return [document.getElementById('desktopInstallApp'), document.getElementById('mobileInstallApp')].filter(Boolean);
+    }
+
+    function showInstallHelp(message) {
+      const banner = document.getElementById('installHelpBanner');
+      if (!banner) return;
+      banner.textContent = message;
+      banner.hidden = false;
+    }
+
+    function hideInstallHelp() {
+      const banner = document.getElementById('installHelpBanner');
+      if (!banner) return;
+      banner.hidden = true;
+      banner.textContent = '';
+    }
+
+    function bindInstallButtons() {
+      const installButtons = getInstallButtons();
+      const isIos = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+      if (!isStandalone) {
+        installButtons.forEach((btn) => {
+          btn.hidden = false;
+        });
+      }
+
+      installButtons.forEach((btn) => {
+        btn.onclick = async () => {
+          if (deferredPrompt) {
+            hideInstallHelp();
+            deferredPrompt.prompt();
+            const choice = await deferredPrompt.userChoice;
+            if (choice && choice.outcome === 'accepted') {
+              installButtons.forEach((item) => { item.hidden = true; });
+            }
+            deferredPrompt = null;
+            return;
+          }
+
+          if (isStandalone) {
+            showInstallHelp('HeatMap is already installed on this device.');
+            return;
+          }
+
+          if (isIos) {
+            showInstallHelp('On iPhone or iPad, tap Share and then Add to Home Screen.');
+            return;
+          }
+
+          showInstallHelp('Install is available once the browser marks this app ready. Refresh the page after a few seconds if needed.');
+        };
+      });
+    }
+
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      const installButtons = [document.getElementById('desktopInstallApp'), document.getElementById('mobileInstallApp')].filter(Boolean);
-      if (!installButtons.length) return;
-      installButtons.forEach((btn) => {
+      hideInstallHelp();
+      getInstallButtons().forEach((btn) => {
         btn.hidden = false;
-        btn.onclick = async () => {
-          if (!deferredPrompt) return;
-          deferredPrompt.prompt();
-          await deferredPrompt.userChoice;
-          deferredPrompt = null;
-          installButtons.forEach((item) => { if (item) item.hidden = true; });
-        };
       });
     });
 
+    window.addEventListener('appinstalled', () => {
+      deferredPrompt = null;
+      hideInstallHelp();
+      getInstallButtons().forEach((btn) => {
+        btn.hidden = true;
+      });
+    });
 
     function applyMobilePageLayout() {
       if (window.innerWidth > 768) return;
@@ -156,7 +226,9 @@
       }
     }
 
-    window.addEventListener('load', function () {
+    window.addEventListener('load', async function () {
+      await registerServiceWorker();
+      bindInstallButtons();
       applyMobilePageLayout();
       const splash = document.getElementById('splash-screen');
       if (!splash) return;

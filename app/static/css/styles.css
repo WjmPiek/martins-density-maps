@@ -2187,3 +2187,45 @@ textarea:focus {
     min-height: 320px;
   }
 }
+
+
+.mobile-app-header {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-app-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 4px 14px;
+  }
+
+  .mobile-app-header-logo {
+    width: 44px;
+    height: 44px;
+    object-fit: contain;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 6px 18px rgba(17, 24, 39, 0.08);
+    padding: 4px;
+  }
+
+  .mobile-app-header-text {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .mobile-app-header-title {
+    font-size: 1.35rem;
+    line-height: 1.1;
+    font-weight: 800;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .shell {
+    min-height: auto;
+  }
+}

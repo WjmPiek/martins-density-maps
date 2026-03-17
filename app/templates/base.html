@@ -74,6 +74,14 @@
     {% endif %}
 
     <main class="main-content">
+      {% if current_user.is_authenticated %}
+      <header class="mobile-app-header" aria-label="Mobile header">
+        <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="mobile-app-header-logo">
+        <div class="mobile-app-header-text">
+          <span class="mobile-app-header-title">HeatMap</span>
+        </div>
+      </header>
+      {% endif %}
       <div class="shell">
         {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}

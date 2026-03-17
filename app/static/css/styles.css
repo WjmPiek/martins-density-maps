@@ -2039,3 +2039,25 @@ textarea:focus {
 #map .leaflet-tile {
   image-rendering: auto;
 }
+
+
+.charts-page-wrap {
+  display: block;
+}
+
+.charts-page-panel {
+  width: 100%;
+  max-width: none;
+}
+
+.charts-page-container {
+  width: 100%;
+}
+
+.charts-page-panel .chart-block {
+  min-height: 520px;
+}
+
+.charts-page-panel .chart-block canvas {
+  min-height: 460px;
+}

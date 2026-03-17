@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% block title %}Charts · Martins Density Map{% endblock %}
+
+{% block content %}
+<section class="dashboard-wrap charts-page-wrap">
+  <section class="panel analytics-panel charts-page-panel" id="chartsPanel">
+    <div class="panel-head">
+      <div>
+        <h2>Charts</h2>
+        <p class="muted">A dedicated chart page with filters at the top.</p>
+      </div>
+    </div>
+
+    <div class="chart-toolbar">
+      {% if current_user.is_admin %}
+      <label>
+        User details
+        <select id="userFilter">
+          <option value="">All users combined</option>
+        </select>
+      </label>
+      {% endif %}
+
+      <label>
+        Chart view
+        <select id="chartViewFilter">
+          <option value="comparison">Comparison</option>
+          <option value="province">Deaths per province</option>
+          <option value="city">Deaths per city</option>
+          <option value="church">Deaths per church</option>
+        </select>
+      </label>
+
+      <label>
+        Province
+        <select id="provinceFilter">
+          <option value="">All provinces</option>
+          {% for province in provinces %}
+          <option value="{{ province }}">{{ province }}</option>
+          {% endfor %}
+        </select>
+      </label>
+
+      <label>
+        Town / city
+        <input id="townFilter" type="search" placeholder="Search town">
+      </label>
+
+      <label>
+        From date
+        <input id="chartFromDate" type="date">
+      </label>
+
+      <label>
+        To date
+        <input id="chartToDate" type="date">
+      </label>
+
+      <label>
+        Show
+        <select id="chartLimitFilter">
+          <option value="all">All</option>
+          <option value="10">Top 10</option>
+          <option value="5">Top 5</option>
+        </select>
+      </label>
+    </div>
+
+    <div class="chart-summary" id="chartSummary">Showing current records.</div>
+
+    <div class="charts-container charts-container-single charts-page-container">
+      <div class="chart-block chart-block-single">
+        <canvas id="mainChart"></canvas>
+      </div>
+    </div>
+  </section>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  window.APP_CONTEXT = {
+    isAdmin: {{ 'true' if current_user.is_admin else 'false' }},
+    previewMode: false,
+    readOnly: false,
+    showOwnerColumn: {{ 'true' if show_owner_column else 'false' }},
+    selectedUserId: {{ selected_user_id|tojson }},
+    googleMapsApiKey: {{ google_maps_api_key|tojson if google_maps_api_key else '""' }}
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js', v='20260317-4') }}"></script>
+{% endblock %}

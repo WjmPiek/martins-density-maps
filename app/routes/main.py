@@ -33,6 +33,21 @@ def dashboard():
     )
 
 
+@main_bp.route("/charts")
+@login_required
+def charts():
+    return render_template(
+        "charts.html",
+        provinces=PROVINCES,
+        google_maps_api_key=current_app.config.get("GOOGLE_MAPS_API_KEY", ""),
+        preview_mode=False,
+        dashboard_read_only=False,
+        show_owner_column=bool(getattr(current_user, "is_admin", False)),
+        show_editor=False,
+        selected_user_id=None,
+    )
+
+
 @main_bp.route("/upload-page")
 @login_required
 def upload_page():

@@ -136,20 +136,65 @@ function getAddressComponent(components, type) {
   return (components || []).find((component) => component.types && component.types.includes(type));
 }
 
+function getJoinedAddress(parts) {
+  return (parts || []).map((item) => String(item || '').trim()).filter(Boolean).join(', ');
+}
+
 function getFullAddressFromForm() {
-  const parts = [
+  return getJoinedAddress([
     els.address?.value,
     els.city?.value,
     els.province?.value,
     els.postalCode?.value,
     els.country?.value || 'South Africa',
-  ].map((item) => String(item || '').trim()).filter(Boolean);
-
-  return parts.join(', ');
+  ]);
 }
 
-function initAddressAutocomplete() {
-  const streetInput = els.address;
+function applyAutocompletePlace(place, fieldSet, options = {}) {
+  if (!place || !place.address_components || !fieldSet || !fieldSet.street) return;
+
+  const components = place.address_components || [];
+  const streetNumber = getAddressComponent(components, 'street_number');
+  const route = getAddressComponent(components, 'route');
+  const locality =
+    getAddressComponent(components, 'locality') ||
+    getAddressComponent(components, 'postal_town') ||
+    getAddressComponent(components, 'administrative_area_level_2') ||
+    getAddressComponent(components, 'sublocality_level_1') ||
+    getAddressComponent(components, 'sublocality');
+  const province = getAddressComponent(components, 'administrative_area_level_1');
+  const postalCode = getAddressComponent(components, 'postal_code');
+  const country = getAddressComponent(components, 'country');
+
+  const streetValue =
+    [streetNumber && streetNumber.long_name, route && route.long_name]
+      .filter(Boolean)
+      .join(' ')
+      .trim() ||
+    place.name ||
+    fieldSet.street.value ||
+    '';
+
+  fieldSet.street.value = streetValue;
+  if (fieldSet.city) fieldSet.city.value = locality && locality.long_name ? locality.long_name : '';
+  if (fieldSet.province) fieldSet.province.value = normalizeProvinceName(province && province.long_name ? province.long_name : '');
+  if (fieldSet.postalCode) fieldSet.postalCode.value = postalCode && postalCode.long_name ? postalCode.long_name : '';
+  if (fieldSet.country) fieldSet.country.value = country && country.long_name ? country.long_name : 'South Africa';
+
+  if (typeof options.onFilled === 'function') options.onFilled(place);
+
+  if (options.updateMap && place.geometry && place.geometry.location) {
+    const lat = place.geometry.location.lat();
+    const lng = place.geometry.location.lng();
+    if (els.latitude) els.latitude.value = lat;
+    if (els.longitude) els.longitude.value = lng;
+    if (map) map.setView([lat, lng], 15, { animate: true });
+    clearBox(els.addressHelp);
+  }
+}
+
+function attachAddressAutocomplete(fieldSet, options = {}) {
+  const streetInput = fieldSet && fieldSet.street;
   if (!streetInput || !window.google || !google.maps || !google.maps.places) return;
   if (streetInput.dataset.autocompleteReady === '1') return;
   streetInput.dataset.autocompleteReady = '1';
@@ -165,53 +210,45 @@ function initAddressAutocomplete() {
   });
 
   streetInput.addEventListener('input', () => {
-    if (els.latitude) els.latitude.value = '';
-    if (els.longitude) els.longitude.value = '';
-    if (els.fullAddress) els.fullAddress.value = getFullAddressFromForm();
-    if (els.country && !els.country.value) els.country.value = 'South Africa';
+    if (options.updateMap) {
+      if (els.latitude) els.latitude.value = '';
+      if (els.longitude) els.longitude.value = '';
+      if (els.fullAddress) els.fullAddress.value = getFullAddressFromForm();
+    }
+    if (fieldSet.country && !fieldSet.country.value) fieldSet.country.value = 'South Africa';
   });
 
   autocomplete.addListener('place_changed', () => {
     const place = autocomplete.getPlace();
-    if (!place || !place.address_components) return;
+    applyAutocompletePlace(place, fieldSet, options);
+  });
+}
 
-    const components = place.address_components || [];
-    const streetNumber = getAddressComponent(components, 'street_number');
-    const route = getAddressComponent(components, 'route');
-    const locality =
-      getAddressComponent(components, 'locality') ||
-      getAddressComponent(components, 'postal_town') ||
-      getAddressComponent(components, 'administrative_area_level_2') ||
-      getAddressComponent(components, 'sublocality_level_1') ||
-      getAddressComponent(components, 'sublocality');
-    const province = getAddressComponent(components, 'administrative_area_level_1');
-    const postalCode = getAddressComponent(components, 'postal_code');
-    const country = getAddressComponent(components, 'country');
+function initAddressAutocomplete() {
+  attachAddressAutocomplete(
+    {
+      street: els.address,
+      city: els.city,
+      province: els.province,
+      postalCode: els.postalCode,
+      country: els.country,
+    },
+    {
+      updateMap: true,
+      onFilled(place) {
+        if (els.fullAddress) {
+          els.fullAddress.value = place.formatted_address || getFullAddressFromForm();
+        }
+      },
+    },
+  );
 
-    const streetValue =
-      [streetNumber && streetNumber.long_name, route && route.long_name]
-        .filter(Boolean)
-        .join(' ')
-        .trim() ||
-      place.name ||
-      streetInput.value ||
-      '';
-
-    if (els.address) els.address.value = streetValue;
-    if (els.city) els.city.value = locality && locality.long_name ? locality.long_name : '';
-    if (els.province) els.province.value = normalizeProvinceName(province && province.long_name ? province.long_name : '');
-    if (els.postalCode) els.postalCode.value = postalCode && postalCode.long_name ? postalCode.long_name : '';
-    if (els.country) els.country.value = country && country.long_name ? country.long_name : 'South Africa';
-    if (els.fullAddress) els.fullAddress.value = place.formatted_address || getFullAddressFromForm();
-
-    if (place.geometry && place.geometry.location) {
-      const lat = place.geometry.location.lat();
-      const lng = place.geometry.location.lng();
-      if (els.latitude) els.latitude.value = lat;
-      if (els.longitude) els.longitude.value = lng;
-      if (map) map.setView([lat, lng], 15, { animate: true });
-      clearBox(els.addressHelp);
-    }
+  attachAddressAutocomplete({
+    street: els.churchStreetAddress,
+    city: els.churchCity,
+    province: els.churchProvince,
+    postalCode: els.churchPostalCode,
+    country: els.churchCountry,
   });
 }
 

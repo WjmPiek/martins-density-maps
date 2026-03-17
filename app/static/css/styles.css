@@ -1965,3 +1965,66 @@ textarea:focus {
     padding-bottom: 12px;
   }
 }
+
+
+/* v8 layout refinement: place editor below map and polish section alignment */
+.map-layout-stacked {
+  grid-template-columns: 1fr;
+  gap: 18px;
+}
+
+.map-layout-stacked .map-panel,
+.map-layout-stacked .editor-panel {
+  width: 100%;
+}
+
+.map-layout-stacked .editor-panel {
+  max-width: 1180px;
+}
+
+.map-layout-stacked #recordForm {
+  width: 100%;
+}
+
+.map-layout-stacked .panel-head {
+  align-items: flex-start;
+}
+
+.map-layout-stacked .form-section-card {
+  padding: 28px 28px 24px;
+  border-radius: 22px;
+}
+
+.map-layout-stacked .section-heading {
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+}
+
+.map-layout-stacked .section-grid {
+  column-gap: 22px;
+  row-gap: 22px;
+}
+
+.map-layout-stacked .form-actions {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.map-layout-stacked .form-required-note {
+  margin: 0;
+}
+
+@media (max-width: 900px) {
+  .map-layout-stacked .form-section-card {
+    padding: 20px 18px 18px;
+  }
+
+  .map-layout-stacked .form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

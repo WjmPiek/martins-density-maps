@@ -2229,3 +2229,89 @@ textarea:focus {
     min-height: auto;
   }
 }
+
+
+.sidebar-install-link,
+.mobile-install-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+  color: var(--text);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.sidebar-install-link {
+  width: 100%;
+  min-height: 42px;
+  padding: 10px 12px;
+}
+
+.mobile-install-link {
+  margin-left: auto;
+  min-height: 40px;
+  padding: 8px 12px;
+}
+
+.install-favicon {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.mobile-logout-tab {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+
+@media (max-width: 768px) {
+  .dashboard-top-fixed .stats-grid {
+    display: none !important;
+  }
+
+  .mobile-page-tabs {
+    grid-template-columns: 1fr 1fr 1fr;
+    margin-bottom: 12px;
+  }
+
+  .mobile-map-page .dashboard-top-fixed,
+  .mobile-map-page .map-toggle,
+  .mobile-map-page .editor-panel,
+  .mobile-map-page .analytics-panel,
+  .mobile-map-page .records-panel,
+  .mobile-map-page #chartsPanel {
+    display: none !important;
+  }
+
+  .mobile-map-page .map-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .mobile-map-page .map-panel .filters {
+    order: 3;
+  }
+
+  .mobile-map-page #map {
+    order: 2;
+    margin-top: 0;
+  }
+
+  .mobile-map-page .dashboard-grid > .panel {
+    margin-top: 12px;
+  }
+
+  .mobile-charts-page .chart-toolbar {
+    margin-top: 14px;
+  }
+
+  .mobile-charts-page .charts-container {
+    margin-top: 0;
+  }
+}

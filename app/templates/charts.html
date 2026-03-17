@@ -6,6 +6,7 @@
     <section class="mobile-page-tabs" aria-label="Mobile navigation">
     <a class="mobile-page-tab" href="{{ url_for('main.dashboard') }}">Maps</a>
     <a class="mobile-page-tab active" href="{{ url_for('main.charts') }}">Charts</a>
+    <a class="mobile-page-tab mobile-logout-tab" href="{{ url_for('auth.logout') }}">Logout</a>
   </section>
   <section class="panel analytics-panel charts-page-panel" id="chartsPanel">
     <div class="panel-head">

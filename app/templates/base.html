@@ -66,6 +66,10 @@
       </nav>
 
       <div class="sidebar-actions sidebar-actions-bottom sidebar-links-small">
+        <button id="desktopInstallApp" class="sidebar-install-link" type="button" hidden>
+          <img src="{{ url_for('static', filename='favicon.ico') }}" alt="Install" class="install-favicon">
+          <span>Install app</span>
+        </button>
         <a class="sidebar-text-link" href="{{ url_for('main.upload_page') }}">Upload Excel File</a>
         <a class="sidebar-text-link" href="{{ url_for('main.download_template') }}">Download Excel Template</a>
         <a class="sidebar-text-link" href="{{ url_for('main.download_my_data') }}">Download My Data</a>
@@ -80,6 +84,10 @@
         <div class="mobile-app-header-text">
           <span class="mobile-app-header-title">HeatMap</span>
         </div>
+        <button id="mobileInstallApp" class="mobile-install-link" type="button" hidden>
+          <img src="{{ url_for('static', filename='favicon.ico') }}" alt="Install" class="install-favicon">
+          <span>Install</span>
+        </button>
       </header>
       {% endif %}
       <div class="shell">
@@ -105,18 +113,51 @@
     window.addEventListener('beforeinstallprompt', (e) => {
       e.preventDefault();
       deferredPrompt = e;
-      const installBtn = document.getElementById('installApp');
-      if (!installBtn) return;
-      installBtn.style.display = 'block';
-      installBtn.onclick = async () => {
-        if (!deferredPrompt) return;
-        deferredPrompt.prompt();
-        await deferredPrompt.userChoice;
-        deferredPrompt = null;
-      };
+      const installButtons = [document.getElementById('desktopInstallApp'), document.getElementById('mobileInstallApp')].filter(Boolean);
+      if (!installButtons.length) return;
+      installButtons.forEach((btn) => {
+        btn.hidden = false;
+        btn.onclick = async () => {
+          if (!deferredPrompt) return;
+          deferredPrompt.prompt();
+          await deferredPrompt.userChoice;
+          deferredPrompt = null;
+          installButtons.forEach((item) => { if (item) item.hidden = true; });
+        };
+      });
     });
 
+
+    function applyMobilePageLayout() {
+      if (window.innerWidth > 768) return;
+
+      const mapPage = document.querySelector('.mobile-map-page');
+      if (mapPage && !mapPage.dataset.mobileArranged) {
+        const mapLayout = mapPage.querySelector('.map-layout');
+        const mapPanel = mapPage.querySelector('.map-panel');
+        const filtersPanel = mapPage.querySelector('.dashboard-grid > .panel');
+        if (mapLayout && mapPanel && filtersPanel) {
+          mapPanel.insertAdjacentElement('afterend', filtersPanel);
+          mapPage.dataset.mobileArranged = '1';
+        }
+      }
+
+      const chartsPage = document.querySelector('.mobile-charts-page');
+      if (chartsPage && !chartsPage.dataset.mobileArranged) {
+        const chartsPanel = chartsPage.querySelector('.charts-page-panel');
+        const chartToolbar = chartsPage.querySelector('.chart-toolbar');
+        const chartSummary = chartsPage.querySelector('.chart-summary');
+        const chartsContainer = chartsPage.querySelector('.charts-container');
+        if (chartsPanel && chartToolbar && chartsContainer) {
+          chartsContainer.insertAdjacentElement('afterend', chartToolbar);
+          if (chartSummary) chartToolbar.insertAdjacentElement('afterend', chartSummary);
+          chartsPage.dataset.mobileArranged = '1';
+        }
+      }
+    }
+
     window.addEventListener('load', function () {
+      applyMobilePageLayout();
       const splash = document.getElementById('splash-screen');
       if (!splash) return;
       setTimeout(() => {

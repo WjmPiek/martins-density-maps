@@ -27,6 +27,7 @@ def admin():
     )
 
 
+@admin_bp.route('/admin/users', endpoint='users')
 @admin_bp.route('/admin/users')
 @login_required
 @admin_required

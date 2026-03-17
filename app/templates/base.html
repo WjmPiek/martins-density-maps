@@ -59,7 +59,7 @@
         <a href="#chartsPanel">Charts</a>
         {% if current_user.is_admin %}
         <a href="#dashboardPanel">{{ current_user.branch if current_user.branch else "Admin" }}</a>
-        <a href="{{ url_for('admin.users') }}">Registered Users</a>
+        <a href="{{ url_for('admin.admin_users') }}">Registered Users</a>
         {% endif %}
         <a href="{{ url_for('auth.logout') }}">Logout</a>
       </nav>

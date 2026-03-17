@@ -2061,3 +2061,30 @@ textarea:focus {
 .charts-page-panel .chart-block canvas {
   min-height: 460px;
 }
+
+
+.sidebar-actions-bottom {
+  margin-top: auto;
+  margin-bottom: 0;
+  padding-top: 12px;
+}
+
+.sidebar-links-small {
+  display: grid;
+  gap: 8px;
+}
+
+.sidebar-text-link {
+  display: block;
+  width: 100%;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.25;
+  font-weight: 600;
+  color: var(--primary-strong);
+  padding: 4px 0;
+}
+
+.sidebar-text-link:hover {
+  text-decoration: underline;
+}

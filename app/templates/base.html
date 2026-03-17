@@ -48,12 +48,6 @@
         </div>
       </div>
 
-      <div class="sidebar-actions sidebar-actions-bottom">
-        <a class="sidebar-text-link" href="{{ url_for('main.upload_page') }}">Upload Excel File</a>
-        <a class="sidebar-text-link" href="{{ url_for('main.download_template') }}">Download Excel Template</a>
-        <a class="sidebar-text-link" href="{{ url_for('main.download_my_data') }}">Download My Data</a>
-      </div>
-
       <nav class="sidebar-nav">
         <a href="{{ url_for('main.dashboard') }}#dashboardPanel">Dashboard</a>
         <a href="{{ url_for('main.charts') }}">Charts</a>
@@ -63,6 +57,12 @@
         {% endif %}
         <a href="{{ url_for('auth.logout') }}">Logout</a>
       </nav>
+
+      <div class="sidebar-actions sidebar-actions-bottom sidebar-links-small">
+        <a class="sidebar-text-link" href="{{ url_for('main.upload_page') }}">Upload Excel File</a>
+        <a class="sidebar-text-link" href="{{ url_for('main.download_template') }}">Download Excel Template</a>
+        <a class="sidebar-text-link" href="{{ url_for('main.download_my_data') }}">Download My Data</a>
+      </div>
     </aside>
     {% endif %}
 

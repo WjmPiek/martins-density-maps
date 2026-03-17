@@ -56,15 +56,34 @@ def upsert_record(user_id, payload):
     return record
 
 
-def dataset_for_user(user):
+def dataset_for_user(user, selected_user_id=None):
     query = Record.query
-    if not user.is_admin:
+    selected_id = None
+    if user.is_admin:
+        if selected_user_id not in (None, '', 'null'):
+            try:
+                selected_id = int(selected_user_id)
+            except (TypeError, ValueError):
+                selected_id = None
+        if selected_id:
+            query = query.filter_by(user_id=selected_id)
+    else:
         query = query.filter_by(user_id=user.id)
+        selected_id = user.id
 
     records = query.options(joinedload(Record.user)).order_by(Record.city.asc(), Record.mf_file.asc()).all()
     mapped = sum(1 for r in records if r.latitude is not None and r.longitude is not None)
     provinces = sorted({r.province for r in records if r.province})
     owners = sorted({r.user.name for r in records})
+
+    available_users = []
+    if user.is_admin:
+        from ..models import User
+        users = User.query.order_by(User.name.asc()).all()
+        available_users = [
+            {'id': item.id, 'name': item.name, 'email': item.email, 'isAdmin': item.is_admin}
+            for item in users
+        ]
 
     return {
         'records': [r.to_dict() for r in records],
@@ -74,5 +93,7 @@ def dataset_for_user(user):
             'unmapped': len(records) - mapped,
             'provinces': provinces,
             'owners': owners,
+            'selectedUserId': selected_id,
+            'availableUsers': available_users,
         },
     }

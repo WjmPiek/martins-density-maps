@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, render_template, send_file, url_for
+from flask import Blueprint, flash, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
 
 from ..extensions import db
@@ -96,5 +96,37 @@ def download_central():
         stream,
         as_attachment=True,
         download_name='martins_density_map_data.xlsx',
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+
+
+@admin_bp.route('/admin/users/<int:user_id>/dashboard')
+@login_required
+@admin_required
+def view_user_dashboard(user_id):
+    user = User.query.get_or_404(user_id)
+    return redirect(url_for('main.dashboard', user_id=user.id))
+
+
+@admin_bp.route('/admin/users/<int:user_id>/charts')
+@login_required
+@admin_required
+def view_user_charts(user_id):
+    user = User.query.get_or_404(user_id)
+    return redirect(url_for('main.charts', user_id=user.id))
+
+
+@admin_bp.route('/admin/users/<int:user_id>/download.xlsx')
+@login_required
+@admin_required
+def download_user_excel(user_id):
+    user = User.query.get_or_404(user_id)
+    records = Record.query.filter_by(user_id=user.id).order_by(Record.city.asc(), Record.mf_file.asc()).all()
+    stream = build_workbook(records)
+    safe_name = (user.name or f'user_{user.id}').strip().replace(' ', '_')
+    return send_file(
+        stream,
+        as_attachment=True,
+        download_name=f'{safe_name}_martins_density_map_data.xlsx',
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     )

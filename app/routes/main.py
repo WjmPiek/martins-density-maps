@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from flask import Blueprint, current_app, redirect, render_template, send_file, url_for
+from flask import Blueprint, current_app, redirect, render_template, request, send_file, url_for
 from flask_login import current_user, login_required
 from openpyxl import Workbook
 
@@ -21,6 +21,7 @@ def index():
 @main_bp.route("/dashboard")
 @login_required
 def dashboard():
+    selected_user_id = request.args.get("user_id") if current_user.is_admin else None
     return render_template(
         "dashboard.html",
         provinces=PROVINCES,
@@ -29,13 +30,14 @@ def dashboard():
         dashboard_read_only=False,
         show_owner_column=bool(getattr(current_user, "is_admin", False)),
         show_editor=True,
-        selected_user_id=None,
+        selected_user_id=selected_user_id,
     )
 
 
 @main_bp.route("/charts")
 @login_required
 def charts():
+    selected_user_id = request.args.get("user_id") if current_user.is_admin else None
     return render_template(
         "charts.html",
         provinces=PROVINCES,
@@ -44,7 +46,7 @@ def charts():
         dashboard_read_only=False,
         show_owner_column=bool(getattr(current_user, "is_admin", False)),
         show_editor=False,
-        selected_user_id=None,
+        selected_user_id=selected_user_id,
     )
 
 
@@ -81,5 +83,21 @@ def download_my_data():
         stream,
         as_attachment=True,
         download_name="my_martins_density_map_data.xlsx",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+@main_bp.route("/download/user/<int:user_id>.xlsx")
+@login_required
+def download_user_data(user_id):
+    if not current_user.is_admin and user_id != current_user.id:
+        return redirect(url_for("main.dashboard"))
+    records = Record.query.filter_by(user_id=user_id).order_by(Record.city.asc(), Record.mf_file.asc()).all()
+    stream = build_workbook(records)
+    download_name = f"user_{user_id}_martins_density_map_data.xlsx"
+    return send_file(
+        stream,
+        as_attachment=True,
+        download_name=download_name,
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     )

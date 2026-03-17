@@ -9,13 +9,13 @@
     </div>
   </div>
 
-  <article class="panel">
+  <article class="panel" id="user-status-tools">
     <div class="panel-head">
       <div>
         <h2>All registered users</h2>
-        <p class="muted">Activate, deactivate, or delete users when needed.</p>
+        <p class="muted">Admins can open a single user's map or charts, download a single user's workbook, or manage account status.</p>
       </div>
-      <a class="ghost-btn" href="{{ url_for('admin.user_dashboard_preview') }}">Open user dashboard preview</a>
+      <a class="ghost-btn" href="{{ url_for('admin.download_central') }}">Download central Excel</a>
     </div>
 
     <div class="table-wrap">
@@ -38,25 +38,28 @@
             <td>{{ 'Admin' if user.is_admin else 'User' }}</td>
             <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
             <td>{{ 'Active' if user.is_active else 'Deactivated' }}</td>
-            <td class="action-cell">
-              {% if user.id == current_user.id %}
-                <span class="muted">Current user</span>
-              {% else %}
-              <div class="action-group">
-                {% if user.is_active %}
-                <form method="post" action="{{ url_for('admin.deactivate_user', user_id=user.id) }}">
-                  <button class="small-btn" type="submit">Deactivate</button>
-                </form>
+            <td>
+              <div class="table-actions">
+                <a class="ghost-btn" href="{{ url_for('admin.view_user_dashboard', user_id=user.id) }}">Map data</a>
+                <a class="ghost-btn" href="{{ url_for('admin.view_user_charts', user_id=user.id) }}">Charts</a>
+                <a class="ghost-btn" href="{{ url_for('admin.download_user_excel', user_id=user.id) }}">Download</a>
+                {% if user.id != current_user.id %}
+                  {% if user.is_active %}
+                  <form method="post" action="{{ url_for('admin.deactivate_user', user_id=user.id) }}">
+                    <button type="submit" class="ghost-btn">Deactivate</button>
+                  </form>
+                  {% else %}
+                  <form method="post" action="{{ url_for('admin.activate_user', user_id=user.id) }}">
+                    <button type="submit" class="ghost-btn">Activate</button>
+                  </form>
+                  {% endif %}
+                  <form method="post" action="{{ url_for('admin.delete_user', user_id=user.id) }}" onsubmit="return confirm('Delete {{ user.name|escape }} and all of this user\'s records?');">
+                    <button type="submit" class="danger-btn">Delete</button>
+                  </form>
                 {% else %}
-                <form method="post" action="{{ url_for('admin.activate_user', user_id=user.id) }}">
-                  <button class="small-btn" type="submit">Activate</button>
-                </form>
+                  <span class="muted">Current account</span>
                 {% endif %}
-                <form method="post" action="{{ url_for('admin.delete_user', user_id=user.id) }}" onsubmit="return confirm('Delete {{ user.name|escape }} and all of this user\'s records?');">
-                  <button class="small-btn danger-btn" type="submit">Delete</button>
-                </form>
               </div>
-              {% endif %}
             </td>
           </tr>
           {% else %}

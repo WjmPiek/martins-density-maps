@@ -17,7 +17,8 @@ api_bp = Blueprint('api', __name__)
 @api_bp.route('/api/records')
 @login_required
 def api_records():
-    return jsonify(dataset_for_user(current_user))
+    selected_user_id = request.args.get('user_id') if current_user.is_admin else None
+    return jsonify(dataset_for_user(current_user, selected_user_id=selected_user_id))
 
 
 @api_bp.route('/api/records', methods=['POST'])

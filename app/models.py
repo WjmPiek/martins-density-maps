@@ -12,6 +12,7 @@ class User(UserMixin, db.Model):
     email = db.Column(db.String(255), unique=True, nullable=False, index=True)
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(20), nullable=False, default="user")
+    is_active = db.Column(db.Boolean, nullable=False, default=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
     uploads = db.relationship("Upload", backref="user", lazy=True, cascade="all, delete-orphan")
@@ -45,9 +46,13 @@ class Record(db.Model):
     deceased_name = db.Column(db.String(120))
     deceased_surname = db.Column(db.String(120))
     dod = db.Column(db.String(50))
+    church_name = db.Column(db.String(255))
+    church_address = db.Column(db.String(255))
+    pastor_name = db.Column(db.String(255))
     address = db.Column(db.String(255))
     city = db.Column(db.String(120), index=True)
     province = db.Column(db.String(120), index=True)
+    postal_code = db.Column(db.String(40))
     country = db.Column(db.String(120))
     full_address = db.Column(db.String(512))
     latitude = db.Column(db.Float)
@@ -69,9 +74,13 @@ class Record(db.Model):
             "deceasedName": self.deceased_name or "",
             "deceasedSurname": self.deceased_surname or "",
             "dod": self.dod or "",
+            "churchName": self.church_name or "",
+            "churchAddress": self.church_address or "",
+            "pastorName": self.pastor_name or "",
             "address": self.address or "",
             "city": self.city or "",
             "province": self.province or "",
+            "postalCode": self.postal_code or "",
             "country": self.country or "",
             "fullAddress": self.full_address or "",
             "latitude": self.latitude,
@@ -81,9 +90,10 @@ class Record(db.Model):
             "nextOfKinSurname": self.next_of_kin_surname or "",
             "relationship": self.relationship or "",
             "contactNumber": self.contact_number or "",
-            "owner": self.user.name,
-            "ownerEmail": self.user.email,
-            "updatedAt": self.updated_at.isoformat(),
+            "owner": self.user.name if self.user else "",
+            "ownerEmail": self.user.email if self.user else "",
+            "ownerId": self.user_id,
+            "updatedAt": self.updated_at.isoformat() if self.updated_at else None,
         }
 
 

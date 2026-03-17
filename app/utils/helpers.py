@@ -14,5 +14,5 @@ def normalize_float(value):
         return None
 
 
-def build_full_address(address, city, province, country):
-    return ", ".join([part for part in [address, city, province, country] if part])
+def build_full_address(address, city, province, postal_code, country):
+    return ", ".join([part for part in [address, city, province, postal_code, country] if part])

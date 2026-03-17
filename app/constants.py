@@ -1,4 +1,4 @@
-UPLOAD_COLUMNS = [
+BASE_UPLOAD_COLUMNS = [
     "MF File",
     "Deceased Name",
     "Deceased Surname",
@@ -13,14 +13,44 @@ UPLOAD_COLUMNS = [
     "Contact Number",
 ]
 
+CHURCH_UPLOAD_COLUMNS = [
+    "Church Name",
+    "Church Address",
+    "Pastor Name",
+    "Postal Code",
+]
+
+UPLOAD_COLUMNS = [
+    "MF File",
+    "Deceased Name",
+    "Deceased Surname",
+    "DOD",
+    "Church Name",
+    "Church Address",
+    "Pastor Name",
+    "Address",
+    "City",
+    "Province",
+    "Postal Code",
+    "Country",
+    "Next of Kin Name",
+    "Next of Kin Surname",
+    "Relationship",
+    "Contact Number",
+]
+
 EXPORT_COLUMNS = [
     "MF File",
     "Deceased Name",
     "Deceased Surname",
     "DOD",
+    "Church Name",
+    "Church Address",
+    "Pastor Name",
     "Address",
     "City",
     "Province",
+    "Postal Code",
     "Country",
     "Full Address",
     "Latitude",

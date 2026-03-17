@@ -7,7 +7,6 @@ from sqlalchemy.orm import joinedload
 from werkzeug.utils import secure_filename
 
 from ..constants import EXPORT_COLUMNS
-from ..extensions import db
 from ..models import Record, User
 
 
@@ -24,9 +23,13 @@ def build_workbook(records):
                 record.deceased_name,
                 record.deceased_surname,
                 record.dod,
+                getattr(record, "church_name", None),
+                getattr(record, "church_address", None),
+                getattr(record, "pastor_name", None),
                 record.address,
                 record.city,
                 record.province,
+                getattr(record, "postal_code", None),
                 record.country,
                 record.full_address,
                 record.latitude,

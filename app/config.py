@@ -3,12 +3,13 @@ import os
 
 class Config:
     BASE_DIR = os.path.abspath(os.path.dirname(os.path.dirname(__file__)))
+    APP_DIR = os.path.join(BASE_DIR, "app")
     INSTANCE_DIR = os.path.join(BASE_DIR, "instance")
     UPLOAD_DIR = os.path.join(BASE_DIR, "uploads")
     DATA_DIR = os.path.join(BASE_DIR, "data")
-    LOGO_PATH = os.path.join(BASE_DIR, "static", "img", "martins-logo.png")
+    LOGO_PATH = os.path.join(APP_DIR, "static", "img", "martins-logo.png")
     TEMPLATE_DOWNLOAD_PATH = os.path.join(
-        BASE_DIR, "static", "templates", "martins_density_map_template.xlsx"
+        APP_DIR, "static", "templates", "martins_density_map_template.xlsx"
     )
     CENTRAL_XLSX_PATH = os.path.join(DATA_DIR, "central.xlsx")
 

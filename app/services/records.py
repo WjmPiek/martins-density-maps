@@ -1,7 +1,7 @@
 from sqlalchemy.orm import joinedload
 
 from ..extensions import db
-from ..models import Record
+from ..models import Record, User
 from ..utils.helpers import build_full_address, normalize_float, normalize_text
 from .geocoding import geocode_address
 
@@ -19,12 +19,16 @@ def upsert_record(user_id, payload):
     record.deceased_name = normalize_text(payload.get("deceasedName"))
     record.deceased_surname = normalize_text(payload.get("deceasedSurname"))
     record.dod = normalize_text(payload.get("dod"))
+    record.church_name = normalize_text(payload.get("churchName"))
+    record.church_address = normalize_text(payload.get("churchAddress"))
+    record.pastor_name = normalize_text(payload.get("pastorName"))
     record.address = normalize_text(payload.get("address"))
     record.city = normalize_text(payload.get("city"))
     record.province = normalize_text(payload.get("province"))
-    record.country = normalize_text(payload.get("country"))
+    record.postal_code = normalize_text(payload.get("postalCode"))
+    record.country = normalize_text(payload.get("country")) or "South Africa"
     record.full_address = normalize_text(payload.get("fullAddress")) or build_full_address(
-        record.address, record.city, record.province, record.country
+        record.address, record.city, record.province, record.postal_code, record.country
     )
     record.latitude = normalize_float(payload.get("latitude"))
     record.longitude = normalize_float(payload.get("longitude"))
@@ -38,15 +42,24 @@ def upsert_record(user_id, payload):
     return record
 
 
-def dataset_for_user(user):
-    query = Record.query
-    if not user.is_admin:
+def dataset_for_request(user, selected_user_id=None):
+    users = []
+    query = Record.query.options(joinedload(Record.user))
+
+    if user.is_admin:
+        users = [
+            {"id": item.id, "name": item.name, "email": item.email}
+            for item in User.query.filter_by(is_active=True).order_by(User.name.asc(), User.email.asc()).all()
+        ]
+        if selected_user_id:
+            query = query.filter_by(user_id=selected_user_id)
+    else:
         query = query.filter_by(user_id=user.id)
 
-    records = query.options(joinedload(Record.user)).order_by(Record.city.asc(), Record.mf_file.asc()).all()
+    records = query.order_by(Record.city.asc(), Record.mf_file.asc()).all()
     mapped = sum(1 for r in records if r.latitude is not None and r.longitude is not None)
     provinces = sorted({r.province for r in records if r.province})
-    owners = sorted({r.user.name for r in records})
+    owners = sorted({r.user.name for r in records if r.user})
 
     return {
         "records": [r.to_dict() for r in records],
@@ -56,25 +69,7 @@ def dataset_for_user(user):
             "unmapped": len(records) - mapped,
             "provinces": provinces,
             "owners": owners,
+            "availableUsers": users,
+            "selectedUserId": selected_user_id if user.is_admin else None,
         },
     }
-
-# app/services/records.py
-
-from app.models import Record
-from app.extensions import db
-from app.services.geocoding import geocode_address
-
-def geocode_missing_records():
-    records = Record.query.filter(
-        (Record.latitude == None) | (Record.longitude == None)
-    ).all()
-
-    for record in records:
-        lat, lng = geocode_address(record.address)
-
-        if lat:
-            record.latitude = lat
-            record.longitude = lng
-
-    db.session.commit()

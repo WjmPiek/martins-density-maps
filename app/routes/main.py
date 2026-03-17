@@ -21,10 +21,16 @@ def index():
 @main_bp.route("/dashboard")
 @login_required
 def dashboard():
+    is_admin = current_user.is_admin
     return render_template(
         "dashboard.html",
         provinces=PROVINCES,
         google_maps_api_key=current_app.config.get("GOOGLE_MAPS_API_KEY", ""),
+        preview_mode=False,
+        dashboard_read_only=is_admin,
+        show_editor=not is_admin,
+        show_owner_column=is_admin,
+        selected_user_id=None,
     )
 
 

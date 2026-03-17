@@ -1,32 +1,67 @@
 from openpyxl import load_workbook
 
-from ..constants import EXPORT_COLUMNS, UPLOAD_COLUMNS
+from ..constants import BASE_UPLOAD_COLUMNS, CHURCH_UPLOAD_COLUMNS, EXPORT_COLUMNS, UPLOAD_COLUMNS
 from ..utils.helpers import build_full_address, normalize_float, normalize_text
 from .geocoding import geocode_address
+
+
+LEGACY_EXPORT_COLUMNS = [
+    "MF File",
+    "Deceased Name",
+    "Deceased Surname",
+    "DOD",
+    "Address",
+    "City",
+    "Province",
+    "Country",
+    "Full Address",
+    "Latitude",
+    "Longitude",
+    "Weight",
+    "Next of Kin Name",
+    "Next of Kin Surname",
+    "Relationship",
+    "Contact Number",
+]
+
+REQUIRED_COLUMNS = {"MF File", "Address", "City", "Province", "Country"}
+OPTIONAL_COLUMNS = set(UPLOAD_COLUMNS) | set(EXPORT_COLUMNS) | set(LEGACY_EXPORT_COLUMNS) | set(BASE_UPLOAD_COLUMNS) | set(
+    CHURCH_UPLOAD_COLUMNS
+)
+
+
+ALIASES = {
+    "Church": "Church Name",
+    "Church Address Line": "Church Address",
+    "Pastor": "Pastor Name",
+    "Postcode": "Postal Code",
+    "PostalCode": "Postal Code",
+}
+
+
+def _canonical_header(name):
+    header = normalize_text(name)
+    return ALIASES.get(header, header)
 
 
 def parse_upload(file_storage):
     file_storage.stream.seek(0)
     wb = load_workbook(file_storage.stream, data_only=True)
     ws = wb[wb.sheetnames[0]]
-    header_row = [normalize_text(cell) for cell in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
+    header_row = [_canonical_header(cell) for cell in next(ws.iter_rows(min_row=1, max_row=1, values_only=True))]
 
-    has_basic = header_row[: len(UPLOAD_COLUMNS)] == UPLOAD_COLUMNS
-    has_full = header_row[: len(EXPORT_COLUMNS)] == EXPORT_COLUMNS
-
-    if not has_basic and not has_full:
+    if not REQUIRED_COLUMNS.issubset(set(header_row)):
         raise ValueError("Workbook columns do not match the required Martins template.")
 
-    active_columns = EXPORT_COLUMNS if has_full else UPLOAD_COLUMNS
     records = []
     warnings = []
     seen_mf = set()
 
     for idx, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
-        data = dict(zip(active_columns, row[: len(active_columns)]))
-        mf_file = normalize_text(data.get("MF File"))
+        raw = {_canonical_header(header): value for header, value in zip(header_row, row) if _canonical_header(header) in OPTIONAL_COLUMNS}
+        mf_file = normalize_text(raw.get("MF File"))
 
-        if not any(normalize_text(v) for v in data.values()):
+        if not any(normalize_text(v) for v in raw.values()):
             continue
         if not mf_file:
             warnings.append(f"Row {idx}: missing MF File and skipped.")
@@ -36,56 +71,42 @@ def parse_upload(file_storage):
             continue
         seen_mf.add(mf_file)
 
-        address = normalize_text(data.get("Address"))
-        city = normalize_text(data.get("City"))
-        province = normalize_text(data.get("Province"))
-        country = normalize_text(data.get("Country"))
-        full_address = normalize_text(data.get("Full Address")) or build_full_address(address, city, province, country)
-        latitude = normalize_float(data.get("Latitude"))
-        longitude = normalize_float(data.get("Longitude"))
+        address = normalize_text(raw.get("Address"))
+        city = normalize_text(raw.get("City"))
+        province = normalize_text(raw.get("Province"))
+        postal_code = normalize_text(raw.get("Postal Code"))
+        country = normalize_text(raw.get("Country")) or "South Africa"
+        full_address = normalize_text(raw.get("Full Address")) or build_full_address(
+            address, city, province, postal_code, country
+        )
+        latitude = normalize_float(raw.get("Latitude"))
+        longitude = normalize_float(raw.get("Longitude"))
         if latitude is None or longitude is None:
             latitude, longitude = geocode_address(full_address)
 
         records.append(
             {
                 "mf_file": mf_file,
-                "deceased_name": normalize_text(data.get("Deceased Name")),
-                "deceased_surname": normalize_text(data.get("Deceased Surname")),
-                "dod": normalize_text(data.get("DOD")),
+                "deceased_name": normalize_text(raw.get("Deceased Name")),
+                "deceased_surname": normalize_text(raw.get("Deceased Surname")),
+                "dod": normalize_text(raw.get("DOD")),
+                "church_name": normalize_text(raw.get("Church Name")),
+                "church_address": normalize_text(raw.get("Church Address")),
+                "pastor_name": normalize_text(raw.get("Pastor Name")),
                 "address": address,
                 "city": city,
                 "province": province,
+                "postal_code": postal_code,
                 "country": country,
                 "full_address": full_address,
                 "latitude": latitude,
                 "longitude": longitude,
-                "weight": normalize_float(data.get("Weight")) or 1.0,
-                "next_of_kin_name": normalize_text(data.get("Next of Kin Name")),
-                "next_of_kin_surname": normalize_text(data.get("Next of Kin Surname")),
-                "relationship": normalize_text(data.get("Relationship")),
-                "contact_number": normalize_text(data.get("Contact Number")),
+                "weight": normalize_float(raw.get("Weight")) or 1.0,
+                "next_of_kin_name": normalize_text(raw.get("Next of Kin Name")),
+                "next_of_kin_surname": normalize_text(raw.get("Next of Kin Surname")),
+                "relationship": normalize_text(raw.get("Relationship")),
+                "contact_number": normalize_text(raw.get("Contact Number")),
             }
         )
 
     return records, warnings
-
-# app/services/excel.py
-
-import pandas as pd
-from app.models import Record
-from app.extensions import db
-
-def import_excel(file):
-    df = pd.read_excel(file)
-
-    for row in df.itertuples():
-        record = Record(
-            name=row.name,
-            address=row.address,
-            latitude=None,
-            longitude=None
-        )
-
-        db.session.add(record)
-
-    db.session.commit()

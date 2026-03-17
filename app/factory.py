@@ -1,11 +1,19 @@
 from pathlib import Path
 
 from flask import Flask, url_for
+
 from .bootstrap import bootstrap_admin
 from .config import Config
 from .extensions import db, login_manager
+from .schema import ensure_schema_compatibility
 
 BASE_DIR = Path(__file__).resolve().parent
+PROJECT_DIR = BASE_DIR.parent
+
+
+def _ensure_runtime_directories(app):
+    for key in ("INSTANCE_DIR", "UPLOAD_DIR", "DATA_DIR"):
+        Path(app.config[key]).mkdir(parents=True, exist_ok=True)
 
 
 def create_app():
@@ -42,7 +50,9 @@ def create_app():
         }
 
     with app.app_context():
+        _ensure_runtime_directories(app)
         db.create_all()
+        ensure_schema_compatibility()
         bootstrap_admin(app)
 
     return app

@@ -165,24 +165,28 @@ function openDirectionsModal(recordId) {
   note.textContent = '';
   note.classList.add('hidden');
 
-  const bindChoice = (button, address, emptyMessage) => {
+  const bindChoice = (button, address) => {
     const isAvailable = Boolean(address);
     button.disabled = !isAvailable;
     button.classList.toggle('is-disabled', !isAvailable);
-    button.onclick = () => {
-      if (!isAvailable) {
-        note.textContent = emptyMessage;
-        note.classList.remove('hidden');
-        return;
-      }
-      const href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
-      window.open(href, '_blank', 'noopener,noreferrer');
-      closeDirectionsModal();
-    };
+    button.classList.toggle('hidden', !isAvailable);
+    button.onclick = isAvailable
+      ? () => {
+          const href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+          window.open(href, '_blank', 'noopener,noreferrer');
+          closeDirectionsModal();
+        }
+      : null;
   };
 
-  bindChoice(deceasedBtn, deceasedAddress, 'No deceased address is available for this record yet.');
-  bindChoice(churchBtn, churchAddress, 'No church address is available for this record yet.');
+  bindChoice(deceasedBtn, deceasedAddress);
+  bindChoice(churchBtn, churchAddress);
+
+  const availableCount = Number(Boolean(deceasedAddress)) + Number(Boolean(churchAddress));
+  if (!availableCount) {
+    note.textContent = 'No directions address is available for this record yet.';
+    note.classList.remove('hidden');
+  }
 
   modal.classList.remove('hidden');
 }

@@ -104,6 +104,83 @@
   {% block scripts %}{% endblock %}
 
   <script>
+    let deferredInstallPrompt = null;
+
+    async function registerServiceWorker() {
+      if (!("serviceWorker" in navigator)) return;
+      try {
+        await navigator.serviceWorker.register("{{ url_for('static', filename='service-worker.js') }}", { scope: "/" });
+      } catch (error) {
+        console.warn("Service worker registration failed", error);
+      }
+    }
+
+    function bindInstallButtons() {
+      const buttons = Array.from(document.querySelectorAll('[data-install-app], #installApp'));
+      const helpBox = document.getElementById('installHelp');
+      if (!buttons.length && !helpBox) return;
+
+      const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
+      const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+
+      const setHelp = (message) => {
+        if (!helpBox) return;
+        helpBox.textContent = message || '';
+        helpBox.hidden = !message;
+      };
+
+      const showButtons = (show) => {
+        buttons.forEach((button) => {
+          button.hidden = !show;
+        });
+      };
+
+      if (isStandalone) {
+        showButtons(false);
+        setHelp('');
+      }
+
+      window.addEventListener('beforeinstallprompt', (event) => {
+        event.preventDefault();
+        deferredInstallPrompt = event;
+        showButtons(true);
+        setHelp('');
+      });
+
+      buttons.forEach((button) => {
+        button.addEventListener('click', async () => {
+          if (isStandalone) {
+            setHelp('HeatMap is already installed on this device.');
+            return;
+          }
+
+          if (deferredInstallPrompt) {
+            deferredInstallPrompt.prompt();
+            await deferredInstallPrompt.userChoice;
+            deferredInstallPrompt = null;
+            showButtons(false);
+            setHelp('');
+            return;
+          }
+
+          if (isIos) {
+            showButtons(true);
+            setHelp('On iPhone or iPad, tap Share and then Add to Home Screen.');
+            return;
+          }
+
+          showButtons(true);
+          setHelp('Install becomes available after the browser finishes preparing the app. Refresh once if needed.');
+        });
+      });
+
+      window.addEventListener('appinstalled', () => {
+        deferredInstallPrompt = null;
+        showButtons(false);
+        setHelp('');
+      });
+    }
+
     function applyMobilePageLayout() {
       if (window.innerWidth > 768) return;
 

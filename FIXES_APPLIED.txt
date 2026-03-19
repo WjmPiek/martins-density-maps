@@ -1,0 +1,5 @@
+Updated by ChatGPT:
+- fixed base authenticated layout JavaScript so service worker/install helpers exist
+- ensured instance/uploads/data folders are always created on startup
+- corrected config paths for app static assets and central workbook
+- smoke-tested login, dashboard, charts, upload, save, delete, and admin routes locally

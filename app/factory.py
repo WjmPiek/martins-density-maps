@@ -1,6 +1,7 @@
 from pathlib import Path
 
 from flask import Flask, url_for
+
 from .bootstrap import bootstrap_admin
 from .config import Config
 from .extensions import db, login_manager
@@ -18,6 +19,10 @@ def create_app():
 
     app.config.from_object(Config)
     app.config["SQLALCHEMY_DATABASE_URI"] = Config.normalize_database_uri()
+
+    Path(app.config["INSTANCE_DIR"]).mkdir(parents=True, exist_ok=True)
+    Path(app.config["UPLOAD_DIR"]).mkdir(parents=True, exist_ok=True)
+    Path(app.config["DATA_DIR"]).mkdir(parents=True, exist_ok=True)
 
     db.init_app(app)
     login_manager.init_app(app)

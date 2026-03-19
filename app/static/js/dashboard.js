@@ -88,27 +88,134 @@ function escapeHtml(value) {
   }[char]));
 }
 
+function getCombinedAddress(parts) {
+  return (parts || []).map((item) => String(item || '').trim()).filter(Boolean).join(', ');
+}
+
+function getDeceasedDirectionAddress(record) {
+  return String(
+    record.fullAddress ||
+    record.deceasedAddress ||
+    getCombinedAddress([record.address, record.city, record.province, record.postalCode, record.country || 'South Africa'])
+  ).trim();
+}
+
+function getChurchDirectionAddress(record) {
+  return String(
+    record.churchAddress ||
+    getCombinedAddress([
+      record.churchStreetAddress,
+      record.churchCity,
+      record.churchProvince,
+      record.churchPostalCode,
+      record.churchCountry || 'South Africa',
+    ])
+  ).trim();
+}
+
+function ensureDirectionsModal() {
+  if (document.getElementById('directionsModal')) return;
+
+  const modal = document.createElement('div');
+  modal.id = 'directionsModal';
+  modal.className = 'directions-modal hidden';
+  modal.innerHTML = `
+    <div class="directions-modal__backdrop" data-close="1"></div>
+    <div class="directions-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="directionsModalTitle">
+      <button type="button" class="directions-modal__close" aria-label="Close" data-close="1">&times;</button>
+      <h3 id="directionsModalTitle">Open directions</h3>
+      <p class="directions-modal__subtitle">Choose which address you want to navigate to.</p>
+      <div class="directions-modal__actions">
+        <button type="button" class="directions-choice directions-choice--primary" id="directionsDeceasedBtn">Deceased address</button>
+        <button type="button" class="directions-choice" id="directionsChurchBtn">Church address</button>
+      </div>
+      <div class="directions-modal__note hidden" id="directionsModalNote"></div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  modal.addEventListener('click', (event) => {
+    if (event.target instanceof HTMLElement && event.target.dataset.close === '1') {
+      closeDirectionsModal();
+    }
+  });
+}
+
+function closeDirectionsModal() {
+  const modal = document.getElementById('directionsModal');
+  if (!modal) return;
+  modal.classList.add('hidden');
+}
+
+function openDirectionsModal(recordId) {
+  ensureDirectionsModal();
+  const modal = document.getElementById('directionsModal');
+  const note = document.getElementById('directionsModalNote');
+  const deceasedBtn = document.getElementById('directionsDeceasedBtn');
+  const churchBtn = document.getElementById('directionsChurchBtn');
+  if (!modal || !note || !deceasedBtn || !churchBtn) return;
+
+  const record = state.records.find((item) => String(item.id) === String(recordId));
+  if (!record) return;
+
+  const deceasedAddress = getDeceasedDirectionAddress(record);
+  const churchAddress = getChurchDirectionAddress(record);
+
+  note.textContent = '';
+  note.classList.add('hidden');
+
+  const bindChoice = (button, address, emptyMessage) => {
+    const isAvailable = Boolean(address);
+    button.disabled = !isAvailable;
+    button.classList.toggle('is-disabled', !isAvailable);
+    button.onclick = () => {
+      if (!isAvailable) {
+        note.textContent = emptyMessage;
+        note.classList.remove('hidden');
+        return;
+      }
+      const href = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(address)}`;
+      window.open(href, '_blank', 'noopener,noreferrer');
+      closeDirectionsModal();
+    };
+  };
+
+  bindChoice(deceasedBtn, deceasedAddress, 'No deceased address is available for this record yet.');
+  bindChoice(churchBtn, churchAddress, 'No church address is available for this record yet.');
+
+  modal.classList.remove('hidden');
+}
+
+window.openDirectionsModal = openDirectionsModal;
+window.closeDirectionsModal = closeDirectionsModal;
+
 function popupHtml(record) {
   const lat = Number(record.latitude);
   const lng = Number(record.longitude);
   const googleMapsHref = Number.isFinite(lat) && Number.isFinite(lng)
     ? `https://www.google.com/maps?q=${lat},${lng}`
     : '';
+  const deceasedDirectionAddress = getDeceasedDirectionAddress(record);
+  const churchDirectionAddress = getChurchDirectionAddress(record);
+  const hasDirectionAddress = Boolean(deceasedDirectionAddress || churchDirectionAddress);
 
   return `
     <div class="popup-grid">
       <strong>${escapeHtml(record.deceasedName || '')} ${escapeHtml(record.deceasedSurname || '')}</strong>
       <div><b>MF File:</b> ${escapeHtml(record.mfFile || '-')}</div>
       <div><b>DOD:</b> ${escapeHtml(record.dod || '-')}</div>
-      <div><b>Deceased Address:</b> ${escapeHtml(record.fullAddress || record.deceasedAddress || record.address || '-')}</div>
+      <div><b>Deceased Address:</b> ${escapeHtml(deceasedDirectionAddress || '-')}</div>
       <div><b>Church:</b> ${escapeHtml(record.churchName || '-')}</div>
       <div><b>Pastor:</b> ${escapeHtml(record.pastorName || '-')}</div>
-      <div><b>Church Address:</b> ${escapeHtml(record.churchAddress || '-')}</div>
-      <div><b>Address:</b> ${escapeHtml(record.fullAddress || record.address || '-')}</div>
+      <div><b>Church Address:</b> ${escapeHtml(churchDirectionAddress || '-')}</div>
       <div><b>Town:</b> ${escapeHtml(record.city || '-')}</div>
       <div><b>Province:</b> ${escapeHtml(record.province || '-')}</div>
       <div><b>Contact:</b> ${escapeHtml(record.contactNumber || '-')}</div>
-      ${googleMapsHref ? `<div><a href="${googleMapsHref}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a></div>` : ''}
+      <div class="popup-actions">
+        ${googleMapsHref ? `<a href="${googleMapsHref}" target="_blank" rel="noopener noreferrer">Open in Google Maps</a>` : ''}
+        ${hasDirectionAddress ? `<button type="button" class="popup-action-btn" onclick="window.openDirectionsModal(${Number(record.id) || 0})">Directions</button>` : ''}
+      </div>
     </div>
   `;
 }

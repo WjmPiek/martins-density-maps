@@ -37,7 +37,6 @@ def ensure_schema() -> None:
             ('church_postal_code', 'VARCHAR(64)'),
             ('church_country', 'VARCHAR(120)'),
             ('pastor_name', 'VARCHAR(255)'),
-            ('church_mobile_number', 'VARCHAR(120)'),
             ('postal_code', 'VARCHAR(64)'),
         ],
     }

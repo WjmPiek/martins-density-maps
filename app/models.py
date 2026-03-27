@@ -70,7 +70,6 @@ class Record(db.Model):
     church_postal_code = db.Column(db.String(64))
     church_country = db.Column(db.String(120))
     pastor_name = db.Column(db.String(255))
-    church_mobile_number = db.Column(db.String(120))
     next_of_kin_name = db.Column(db.String(120))
     next_of_kin_surname = db.Column(db.String(120))
     relationship = db.Column(db.String(120))
@@ -105,7 +104,6 @@ class Record(db.Model):
             'churchPostalCode': self.church_postal_code or '',
             'churchCountry': self.church_country or '',
             'pastorName': self.pastor_name or '',
-            'churchMobileNumber': self.church_mobile_number or '',
             'nextOfKinName': self.next_of_kin_name or '',
             'nextOfKinSurname': self.next_of_kin_surname or '',
             'relationship': self.relationship or '',

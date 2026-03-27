@@ -33,6 +33,7 @@ const els = {
   churchPostalCode: document.getElementById('churchPostalCode'),
   churchCountry: document.getElementById('churchCountry'),
   pastorName: document.getElementById('pastorName'),
+  churchMobileNumber: document.getElementById('churchMobileNumber'),
   address: document.getElementById('address'),
   city: document.getElementById('city'),
   province: document.getElementById('province'),
@@ -128,6 +129,7 @@ function ensureDirectionsModal() {
       <div class="directions-modal__actions">
         <button type="button" class="directions-choice directions-choice--primary" id="directionsDeceasedBtn">Deceased address</button>
         <button type="button" class="directions-choice" id="directionsChurchBtn">Church address</button>
+        <button type="button" class="directions-choice" id="directionsFamilyBtn">Family contact</button>
       </div>
       <div class="directions-modal__note hidden" id="directionsModalNote"></div>
     </div>
@@ -154,13 +156,15 @@ function openDirectionsModal(recordId) {
   const note = document.getElementById('directionsModalNote');
   const deceasedBtn = document.getElementById('directionsDeceasedBtn');
   const churchBtn = document.getElementById('directionsChurchBtn');
-  if (!modal || !note || !deceasedBtn || !churchBtn) return;
+  const familyBtn = document.getElementById('directionsFamilyBtn');
+  if (!modal || !note || !deceasedBtn || !churchBtn || !familyBtn) return;
 
   const record = state.records.find((item) => String(item.id) === String(recordId));
   if (!record) return;
 
   const deceasedAddress = getDeceasedDirectionAddress(record);
   const churchAddress = getChurchDirectionAddress(record);
+  const familyPhone = String(record.contactNumber || '').trim();
 
   note.textContent = '';
   note.classList.add('hidden');
@@ -182,9 +186,20 @@ function openDirectionsModal(recordId) {
   bindChoice(deceasedBtn, deceasedAddress);
   bindChoice(churchBtn, churchAddress);
 
-  const availableCount = Number(Boolean(deceasedAddress)) + Number(Boolean(churchAddress));
+  const hasFamilyPhone = Boolean(familyPhone);
+  familyBtn.disabled = !hasFamilyPhone;
+  familyBtn.classList.toggle('is-disabled', !hasFamilyPhone);
+  familyBtn.classList.toggle('hidden', !hasFamilyPhone);
+  familyBtn.onclick = hasFamilyPhone
+    ? () => {
+        window.location.href = `tel:${familyPhone.replace(/\s+/g, '')}`;
+        closeDirectionsModal();
+      }
+    : null;
+
+  const availableCount = Number(Boolean(deceasedAddress)) + Number(Boolean(churchAddress)) + Number(hasFamilyPhone);
   if (!availableCount) {
-    note.textContent = 'No directions address is available for this record yet.';
+    note.textContent = 'No directions address or family contact is available for this record yet.';
     note.classList.remove('hidden');
   }
 
@@ -202,7 +217,7 @@ function popupHtml(record) {
     : '';
   const deceasedDirectionAddress = getDeceasedDirectionAddress(record);
   const churchDirectionAddress = getChurchDirectionAddress(record);
-  const hasDirectionAddress = Boolean(deceasedDirectionAddress || churchDirectionAddress);
+  const hasDirectionAddress = Boolean(deceasedDirectionAddress || churchDirectionAddress || String(record.contactNumber || '').trim());
 
   return `
     <div class="popup-grid">
@@ -212,6 +227,7 @@ function popupHtml(record) {
       <div><b>Deceased Address:</b> ${escapeHtml(deceasedDirectionAddress || '-')}</div>
       <div><b>Church:</b> ${escapeHtml(record.churchName || '-')}</div>
       <div><b>Pastor:</b> ${escapeHtml(record.pastorName || '-')}</div>
+      <div><b>Church Mobile:</b> ${escapeHtml(record.churchMobileNumber || '-')}</div>
       <div><b>Church Address:</b> ${escapeHtml(churchDirectionAddress || '-')}</div>
       <div><b>Town:</b> ${escapeHtml(record.city || '-')}</div>
       <div><b>Province:</b> ${escapeHtml(record.province || '-')}</div>
@@ -541,6 +557,7 @@ function getChurchCoveragePoints(records) {
         churchName: churchName || 'Unnamed church',
         churchAddress: churchAddress || '-',
         pastorName: record.pastorName || '-',
+        churchMobileNumber: record.churchMobileNumber || '-',
         count: 0,
         latSum: 0,
         lngSum: 0,
@@ -553,6 +570,7 @@ function getChurchCoveragePoints(records) {
     item.lngSum += lng;
     if (record.city) item.towns.add(record.city);
     if ((!item.pastorName || item.pastorName === '-') && record.pastorName) item.pastorName = record.pastorName;
+    if ((!item.churchMobileNumber || item.churchMobileNumber === '-') && record.churchMobileNumber) item.churchMobileNumber = record.churchMobileNumber;
   });
   return Array.from(groups.values()).map((item) => ({
     ...item,
@@ -571,6 +589,7 @@ function churchCoveragePopup(item) {
     <div class="popup-grid">
       <strong>${escapeHtml(item.churchName || 'Church coverage')}</strong>
       <div><b>Pastor:</b> ${escapeHtml(item.pastorName || '-')}</div>
+      <div><b>Church Mobile:</b> ${escapeHtml(item.churchMobileNumber || '-')}</div>
       <div><b>Church Address:</b> ${escapeHtml(item.churchAddress || '-')}</div>
       <div><b>Covered records:</b> ${escapeHtml(item.count)}</div>
       <div><b>Towns:</b> ${escapeHtml(item.townsLabel || '-')}</div>
@@ -777,6 +796,7 @@ function fillForm(record) {
   if (els.churchPostalCode) els.churchPostalCode.value = record.churchPostalCode || '';
   if (els.churchCountry) els.churchCountry.value = record.churchCountry || 'South Africa';
   if (els.pastorName) els.pastorName.value = record.pastorName || '';
+  if (els.churchMobileNumber) els.churchMobileNumber.value = record.churchMobileNumber || '';
   if (els.address) els.address.value = record.address || '';
   if (els.city) els.city.value = record.city || '';
   if (els.province) els.province.value = record.province || '';
@@ -809,6 +829,7 @@ function clearForm() {
   if (els.longitude) els.longitude.value = '';
   if (els.fullAddress) els.fullAddress.value = '';
   if (els.contactNumber) els.contactNumber.setCustomValidity('');
+  if (els.churchMobileNumber) els.churchMobileNumber.setCustomValidity('');
   clearFormValidation();
   clearBox(els.formStatus);
   clearBox(els.addressHelp);
@@ -874,6 +895,7 @@ async function saveRecord(event) {
     churchPostalCode: els.churchPostalCode?.value?.trim(),
     churchCountry: els.churchCountry?.value?.trim() || 'South Africa',
     pastorName: els.pastorName?.value?.trim(),
+    churchMobileNumber: els.churchMobileNumber?.value?.trim(),
     address: els.address?.value?.trim(),
     city: els.city?.value?.trim(),
     province: els.province?.value,
@@ -1216,6 +1238,16 @@ document.addEventListener('DOMContentLoaded', () => {
       field.addEventListener(eventName, () => setFieldState(field, triedSubmit));
     });
   });
+
+  if (els.churchMobileNumber) {
+    els.churchMobileNumber.addEventListener('input', function onInput() {
+      formatPhoneInput(this);
+      setFieldState(this, false);
+    });
+    els.churchMobileNumber.addEventListener('blur', function onBlur() {
+      setFieldState(this, true);
+    });
+  }
 
   if (els.contactNumber) {
     els.contactNumber.addEventListener('input', function onInput() {

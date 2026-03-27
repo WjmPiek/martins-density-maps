@@ -49,6 +49,7 @@ def upsert_record(user_id, payload):
         record.church_country,
     )
     record.pastor_name = normalize_text(payload.get('pastorName'))
+    record.church_mobile_number = normalize_text(payload.get('churchMobileNumber'))
     record.next_of_kin_name = normalize_text(payload.get('NextOfKinName') or payload.get('nextOfKinName'))
     record.next_of_kin_surname = normalize_text(payload.get('NextOfKinSurname') or payload.get('nextOfKinSurname'))
     record.relationship = normalize_text(payload.get('relationship'))

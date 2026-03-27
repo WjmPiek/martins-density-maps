@@ -230,6 +230,11 @@
                 </label>
 
                 <label>
+                  Church mobile number
+                  <input id="churchMobileNumber" name="churchMobileNumber" inputmode="tel" maxlength="12" placeholder="082 123 4567" pattern="^0\d{2}\s?\d{3}\s?\d{4}$">
+                </label>
+
+                <label>
                   Street address
                   <input id="churchStreetAddress" name="churchStreetAddress" type="text" placeholder="Start typing church street address" autocomplete="street-address">
                 </label>
@@ -368,5 +373,5 @@
 {% if google_maps_api_key %}
 <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ google_maps_api_key }}&libraries=places,geocoding&loading=async&callback=initGoogleAddress"></script>
 {% endif %}
-<script src="{{ url_for('static', filename='js/dashboard.js', v='20260319-25') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js', v='20260327-26') }}"></script>
 {% endblock %}

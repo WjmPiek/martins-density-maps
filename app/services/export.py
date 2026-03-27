@@ -40,6 +40,7 @@ def build_workbook(records):
                 record.church_country,
                 record.church_address,
                 record.pastor_name,
+                record.church_mobile_number,
                 record.next_of_kin_name,
                 record.next_of_kin_surname,
                 record.relationship,

@@ -30,6 +30,7 @@ class Config:
     def normalize_database_uri(cls):
         uri = cls.SQLALCHEMY_DATABASE_URI
         if uri.startswith("postgres://"):
-            return uri.replace("postgres://", "postgresql://", 1)
+            return uri.replace("postgres://", "postgresql+psycopg://", 1)
+        if uri.startswith("postgresql://"):
+            return uri.replace("postgresql://", "postgresql+psycopg://", 1)
         return uri
-

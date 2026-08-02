@@ -34,14 +34,10 @@
   <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='android-chrome-192.png') }}">
   <link rel="icon" type="image/png" sizes="512x512" href="{{ url_for('static', filename='android-chrome-512.png') }}">
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-
   <link rel="preload" href="{{ url_for('static', filename='css/styles.css') }}" as="style">
   <link rel="preload" href="{{ url_for('static', filename='img/martins-logo.png') }}" as="image">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css', v='20260314-2') }}">
-  <link rel="stylesheet" href="{{ url_for('static', filename='martins-theme.css', v='20260802-purple-login') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='martins-theme.css', v='20260802-arial-arial') }}">
 
   {% if current_user.is_authenticated %}
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css">

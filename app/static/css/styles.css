@@ -27,7 +27,7 @@ body {
 
 body {
   margin: 0;
-  font-family: "Inter", sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
   color: var(--text);
   background: linear-gradient(180deg, #f8f7fb 0%, #f1eff7 100%);
 }
@@ -1022,7 +1022,7 @@ td {
   border: 1px solid var(--line);
   border-radius: 12px;
   box-shadow: 0 12px 24px rgba(92, 74, 140, 0.14);
-  font-family: "Inter", sans-serif;
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 @media (max-width: 1180px) {

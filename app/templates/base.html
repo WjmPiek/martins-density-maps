@@ -57,36 +57,123 @@
 
   <div class="app-layout">
     {% if current_user.is_authenticated %}
-    <aside class="sidebar">
-      <div class="sidebar-brand">
+    <aside class="sidebar martins-modern-sidebar">
+      <div class="sidebar-brand martins-sidebar-brand-card">
         <img src="{{ url_for('static', filename='img/martins-logo.png') }}" class="sidebar-logo" alt="Martins logo">
         <div class="sidebar-brand-text">
-          <div class="eyebrow">Density Maps</div>
           <strong>Martins System</strong>
+          <span>Martins Funeral System</span>
         </div>
       </div>
 
-      <nav class="sidebar-nav">
-        <a href="{{ url_for('main.dashboard') }}#dashboardPanel">Dashboard</a>
-        <a href="{{ url_for('main.charts') }}">Charts</a>
+      <nav class="sidebar-nav martins-sidebar-nav">
+        <a class="martins-sidebar-item" href="{{ url_for('main.dashboard') }}#dashboardPanel">
+          <span class="martins-sidebar-icon">⌂</span>
+          <span class="martins-sidebar-copy">
+            <strong>Business Overview</strong>
+            <small>Company performance at a glance</small>
+          </span>
+        </a>
+
+        <div class="martins-sidebar-group">
+          <a class="martins-sidebar-item martins-sidebar-item-active" href="{{ url_for('main.charts') }}">
+            <span class="martins-sidebar-caret">⌄</span>
+            <span class="martins-sidebar-icon">●</span>
+            <span class="martins-sidebar-copy">
+              <strong>Graphs &amp; Analytics</strong>
+              <small>Visual trends and comparisons</small>
+            </span>
+            <span class="martins-sidebar-chevron">⌄</span>
+          </a>
+          <div class="sidebar-subnav martins-sidebar-panel" aria-label="Graph and analytics sections">
+            <a href="{{ url_for('main.charts') }}">
+              <strong>Performance Graphs</strong>
+              <small>Actual vs target, prior year and forecast</small>
+            </a>
+            <a href="{{ url_for('main.charts') }}">
+              <strong>Executive Analytics</strong>
+              <small>High-level trends for decision making</small>
+            </a>
+            <a href="{{ url_for('main.charts') }}">
+              <strong>Franchise Rankings</strong>
+              <small>Top and bottom performers</small>
+            </a>
+            <a href="{{ url_for('main.charts') }}">
+              <strong>Performance Insights</strong>
+              <small>Important changes and exceptions</small>
+            </a>
+            <a href="{{ url_for('main.charts') }}">
+              <strong>Decision Centre</strong>
+              <small>Actions based on business signals</small>
+            </a>
+            <a href="{{ url_for('main.charts') }}">
+              <strong>Targets</strong>
+              <small>Monthly and annual target tracking</small>
+            </a>
+            <a href="{{ url_for('main.charts') }}">
+              <strong>Annual Budget</strong>
+              <small>Budget planning and comparison</small>
+            </a>
+            <a href="{{ url_for('main.charts') }}">
+              <strong>Performance History</strong>
+              <small>Review previous reporting periods</small>
+            </a>
+          </div>
+        </div>
+
         {% if current_user.is_admin %}
-        <div class="sidebar-admin-group">
-          <a class="sidebar-admin-link" href="{{ url_for('admin.admin') }}">Admin</a>
-          <div class="sidebar-subnav" aria-label="Admin sections">
-            <a href="{{ url_for('admin.admin_users') }}">User management</a>
-            <a href="{{ url_for('main.dashboard') }}">View all users’ data</a>
-            <a href="{{ url_for('admin.admin_users') }}#user-status-tools">Activate/deactivate users</a>
-            <a href="{{ url_for('admin.admin') }}#system-tools">System tools</a>
+        <div class="sidebar-admin-group martins-sidebar-group">
+          <a class="sidebar-admin-link martins-sidebar-item" href="{{ url_for('admin.admin') }}">
+            <span class="martins-sidebar-caret">⌄</span>
+            <span class="martins-sidebar-icon">A</span>
+            <span class="martins-sidebar-copy">
+              <strong>Administration</strong>
+              <small>Users, system tools and downloads</small>
+            </span>
+            <span class="martins-sidebar-chevron">⌄</span>
+          </a>
+          <div class="sidebar-subnav martins-sidebar-panel" aria-label="Admin sections">
+            <a href="{{ url_for('admin.admin_users') }}">
+              <strong>User management</strong>
+              <small>Manage registered users</small>
+            </a>
+            <a href="{{ url_for('main.dashboard') }}">
+              <strong>All user data</strong>
+              <small>View combined dashboard records</small>
+            </a>
+            <a href="{{ url_for('admin.admin_users') }}#user-status-tools">
+              <strong>User status</strong>
+              <small>Activate or deactivate accounts</small>
+            </a>
+            <a href="{{ url_for('admin.admin') }}#system-tools">
+              <strong>System tools</strong>
+              <small>Maintenance and exports</small>
+            </a>
           </div>
         </div>
         {% endif %}
-        <a href="{{ url_for('auth.logout') }}">Logout</a>
+        <a class="martins-sidebar-item" href="{{ url_for('auth.logout') }}">
+          <span class="martins-sidebar-icon">↪</span>
+          <span class="martins-sidebar-copy">
+            <strong>Logout</strong>
+            <small>Sign out of Martins System</small>
+          </span>
+        </a>
       </nav>
 
-      <div class="sidebar-actions sidebar-actions-bottom sidebar-links-small">
-        <a class="sidebar-text-link" href="{{ url_for('main.upload_page') }}">Upload Excel File</a>
-        <a class="sidebar-text-link" href="{{ url_for('main.download_template') }}">Download Excel Template</a>
-        <a class="sidebar-text-link" href="{{ url_for('main.download_my_data') }}">Download My Data</a>
+      <div class="sidebar-actions sidebar-actions-bottom sidebar-links-small martins-sidebar-panel martins-sidebar-utility">
+        <a class="sidebar-text-link" href="{{ url_for('main.upload_page') }}">
+          <strong>Upload Excel File</strong>
+          <small>Import your latest data</small>
+        </a>
+        <a class="sidebar-text-link" href="{{ url_for('main.download_template') }}">
+          <strong>Download Excel Template</strong>
+          <small>Use the correct upload format</small>
+        </a>
+        <a class="sidebar-text-link" href="{{ url_for('main.download_my_data') }}">
+          <strong>Download My Data</strong>
+          <small>Export your current records</small>
+        </a>
       </div>
     </aside>
     {% endif %}

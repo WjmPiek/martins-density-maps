@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maps-v25';
+const CACHE_NAME = 'maps-v26';
 const APP_SHELL = [
   '/',
   '/charts',
@@ -7,7 +7,8 @@ const APP_SHELL = [
   '/static/apple-touch-icon.png',
   '/static/android-chrome-192.png',
   '/static/android-chrome-512.png',
-  '/static/favicon.ico'
+  '/static/favicon.ico',
+  '/static/robots.txt'
 ];
 
 self.addEventListener('install', (event) => {

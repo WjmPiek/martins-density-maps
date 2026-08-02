@@ -23,6 +23,11 @@ def favicon():
     return send_from_directory(current_app.static_folder, "favicon.ico", mimetype="image/png")
 
 
+@main_bp.route("/robots.txt")
+def robots_txt():
+    return send_from_directory(current_app.static_folder, "robots.txt", mimetype="text/plain")
+
+
 @main_bp.route("/dashboard")
 @login_required
 def dashboard():

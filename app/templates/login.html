@@ -3,20 +3,24 @@
 
 {% block content %}
 <section class="auth-wrap">
-  <div class="auth-card auth-card-wide">
-    <img
-      src="{{ url_for('static', filename='img/martins-logo.png') }}"
-      class="login-logo"
-      width="300"
-      height="110"
-      alt="Martins Logo"
-    >
-    <div class="login-brand-copy">
+  <div class="auth-card auth-card-wide martins-login-card">
+    <div class="martins-login-header">
+      <strong>Martins Login</strong>
+      <span>Density Maps</span>
+    </div>
+    <div class="martins-auth-brand">
+      <img
+        src="{{ url_for('static', filename='img/martins-logo.png') }}"
+        class="login-logo"
+        width="300"
+        height="110"
+        alt="Martins Logo"
+      >
       <strong>Martins System</strong>
       <span>Density Maps</span>
     </div>
 
-    <form method="POST" class="auth-form">
+    <form method="POST" class="auth-form martins-login-body">
       <label>
         Email
         <input type="email" name="email" required>

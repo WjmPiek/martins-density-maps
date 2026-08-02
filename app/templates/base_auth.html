@@ -10,11 +10,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-  <meta name="application-name" content="MAPS">
-  <meta name="description" content="Martins MAPS dashboard for maps, charts, and record management.">
-  <meta property="og:site_name" content="MAPS">
-  <meta property="og:title" content="MAPS">
-  <meta property="og:description" content="Martins MAPS dashboard for maps, charts, and record management.">
+  <meta name="application-name" content="Martins System">
+  <meta name="description" content="Martins System density maps module.">
+  <meta property="og:site_name" content="Martins System">
+  <meta property="og:title" content="Martins System · Density Maps">
+  <meta property="og:description" content="Martins System density maps module.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{ request.url }}">
   <meta property="og:image" content="{{ url_for('static', filename='maps-social-preview.png', _external=True) }}">
@@ -23,13 +23,13 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="MAPS">
-  <meta name="twitter:description" content="Martins MAPS dashboard for maps, charts, and record management.">
+  <meta name="twitter:title" content="Martins System · Density Maps">
+  <meta name="twitter:description" content="Martins System density maps module.">
   <meta name="twitter:image" content="{{ url_for('static', filename='maps-social-preview.png', _external=True) }}">
-  <meta name="theme-color" content="#8d6fd1">
+  <meta name="theme-color" content="#8b6f47">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="MAPS">
+  <meta name="apple-mobile-web-app-title" content="Martins System">
 </head>
 
 
@@ -87,7 +87,7 @@
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
       if (isStandalone) {
-        setInstallHelp("MAPS is already installed on this device.");
+        setInstallHelp("Martins System is already installed on this device.");
         return;
       }
 

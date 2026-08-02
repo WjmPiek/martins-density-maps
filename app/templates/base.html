@@ -3,18 +3,18 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Martins Density Map{% endblock %}</title>
+  <title>{% block title %}Martins System · Density Maps{% endblock %}</title>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='martins-theme.css', v='20260802') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
-  <meta name="application-name" content="MAPS">
-  <meta name="description" content="Martins MAPS dashboard for maps, charts, and record management.">
-  <meta property="og:site_name" content="MAPS">
-  <meta property="og:title" content="MAPS">
-  <meta property="og:description" content="Martins MAPS dashboard for maps, charts, and record management.">
+  <meta name="application-name" content="Martins System">
+  <meta name="description" content="Martins System dashboard for maps, charts, and record management.">
+  <meta property="og:site_name" content="Martins System">
+  <meta property="og:title" content="Martins System · Density Maps">
+  <meta property="og:description" content="Martins System density maps module.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{ request.url }}">
   <meta property="og:image" content="{{ url_for('static', filename='maps-social-preview.png', _external=True) }}">
@@ -23,13 +23,13 @@
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="MAPS">
-  <meta name="twitter:description" content="Martins MAPS dashboard for maps, charts, and record management.">
+  <meta name="twitter:title" content="Martins System · Density Maps">
+  <meta name="twitter:description" content="Martins System density maps module.">
   <meta name="twitter:image" content="{{ url_for('static', filename='maps-social-preview.png', _external=True) }}">
-  <meta name="theme-color" content="#6b2fa3">
+  <meta name="theme-color" content="#8b6f47">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="MAPS">
+  <meta name="apple-mobile-web-app-title" content="Martins System">
 
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='android-chrome-192.png') }}">
@@ -55,7 +55,7 @@
   {% if current_user.is_authenticated %}
   <div id="splash-screen">
     <img src="{{ url_for('static', filename='apple-touch-icon.png') }}" alt="Martins Density Map">
-    <h1>Martins Density Map</h1>
+    <h1>Martins System</h1>
   </div>
   {% endif %}
 
@@ -65,8 +65,8 @@
       <div class="sidebar-brand">
         <img src="{{ url_for('static', filename='img/martins-logo.png') }}" class="sidebar-logo" alt="Martins logo">
         <div class="sidebar-brand-text">
-          <div class="eyebrow">Martin's Franchising</div>
-          <strong>Admin dashboard</strong>
+          <div class="eyebrow">Density Maps</div>
+          <strong>Martins System</strong>
         </div>
       </div>
 
@@ -100,7 +100,8 @@
       <header class="mobile-app-header" aria-label="Mobile header">
         <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="mobile-app-header-logo">
         <div class="mobile-app-header-text">
-          <span class="mobile-app-header-title">MAPS</span>
+          <span class="mobile-app-header-title">Martins System</span>
+          <span class="mobile-app-header-module">Density Maps</span>
         </div>
       </header>
       {% endif %}
@@ -169,7 +170,7 @@
       buttons.forEach((button) => {
         button.addEventListener('click', async () => {
           if (isStandalone) {
-            setHelp('MAPS is already installed on this device.');
+            setHelp('Martins System is already installed on this device.');
             return;
           }
 

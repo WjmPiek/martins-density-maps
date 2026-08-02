@@ -157,3 +157,73 @@ th {
 .login-logo, .sidebar-logo img, .sidebar-brand img {
   object-fit: contain;
 }
+
+.sidebar-brand,
+.martins-brand,
+.executive-brand {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  gap: 8px !important;
+}
+
+.sidebar-logo,
+.martins-brand-logo,
+.sidebar-brand img,
+.executive-brand img {
+  width: 118px !important;
+  height: 64px !important;
+  object-fit: contain !important;
+}
+
+.sidebar-brand-text,
+.martins-brand-title,
+.executive-brand h1 {
+  display: block !important;
+  width: 100%;
+}
+
+.sidebar-brand strong,
+.martins-brand-title,
+.executive-brand h1 {
+  font-size: 18px !important;
+  line-height: 1.15 !important;
+  font-weight: 900 !important;
+}
+
+.sidebar-brand .eyebrow,
+.martins-brand-module,
+.mobile-app-header-module,
+.executive-brand p {
+  display: block !important;
+  color: rgba(255, 255, 255, 0.78) !important;
+  font-size: 12px !important;
+  line-height: 1.2 !important;
+  text-transform: none !important;
+}
+
+.login-brand-copy,
+.martins-login-header {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  text-align: center !important;
+  gap: 4px !important;
+  margin: 0 0 18px !important;
+}
+
+.login-brand-copy strong,
+.martins-login-header strong {
+  color: var(--martins-text) !important;
+  font-size: 22px !important;
+  line-height: 1.15 !important;
+  font-weight: 900 !important;
+}
+
+.login-brand-copy span,
+.martins-login-header span {
+  color: var(--martins-muted) !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+}

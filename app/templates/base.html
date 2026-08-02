@@ -5,12 +5,16 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}Martins Density Map{% endblock %}</title>
 
+  <link rel="stylesheet" href="http://127.0.0.1:5000/static/martins-theme.css">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="application-name" content="MAPS">
   <meta name="theme-color" content="#6b2fa3">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="HeatMap">
+  <meta name="apple-mobile-web-app-title" content="MAPS">
 
   <link rel="apple-touch-icon" sizes="180x180" href="{{ url_for('static', filename='apple-touch-icon.png') }}">
   <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', filename='android-chrome-192.png') }}">
@@ -81,7 +85,7 @@
       <header class="mobile-app-header" aria-label="Mobile header">
         <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="mobile-app-header-logo">
         <div class="mobile-app-header-text">
-          <span class="mobile-app-header-title">HeatMap</span>
+          <span class="mobile-app-header-title">MAPS</span>
         </div>
       </header>
       {% endif %}
@@ -150,7 +154,7 @@
       buttons.forEach((button) => {
         button.addEventListener('click', async () => {
           if (isStandalone) {
-            setHelp('HeatMap is already installed on this device.');
+            setHelp('MAPS is already installed on this device.');
             return;
           }
 

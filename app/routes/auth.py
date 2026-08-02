@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask import Blueprint, flash, session, redirect, render_template, request, url_for
 from flask_login import current_user, login_required, login_user, logout_user
 from sqlalchemy import func
 
@@ -84,8 +84,9 @@ def reset_password():
     return render_template('reset_password.html')
 
 
-@auth_bp.route('/logout')
+@auth_bp.route("/logout")
 @login_required
 def logout():
     logout_user()
-    return redirect(url_for('auth.login'))
+    session.clear()
+    return redirect("http://127.0.0.1:5000/dashboard")

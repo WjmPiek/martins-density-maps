@@ -10,10 +10,11 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
   <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
   <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+  <meta name="application-name" content="MAPS">
   <meta name="theme-color" content="#8d6fd1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="HeatMap">
+  <meta name="apple-mobile-web-app-title" content="MAPS">
 </head>
 
 
@@ -71,7 +72,7 @@
       const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
 
       if (isStandalone) {
-        setInstallHelp("HeatMap is already installed on this device.");
+        setInstallHelp("MAPS is already installed on this device.");
         return;
       }
 

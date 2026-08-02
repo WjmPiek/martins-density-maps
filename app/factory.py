@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from app.routes.sso import sso_bp
 from flask import Flask, url_for
 
 from .bootstrap import bootstrap_admin
@@ -39,6 +39,7 @@ def create_app():
     app.register_blueprint(admin_bp)
     app.register_blueprint(api_bp)
     app.register_blueprint(web_upload_bp)
+    app.register_blueprint(sso_bp)
 
     @app.context_processor
     def inject_globals():

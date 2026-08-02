@@ -1,8 +1,9 @@
 {
   "id": "/",
-  "name": "HeatMap",
-  "short_name": "HeatMap",
-  "description": "Martins HeatMap dashboard for maps, charts, and record management.",
+  "name": "MAPS",
+  "short_name": "MAPS",
+  "description": "Martins MAPS dashboard for maps, charts, and record management.",
+  "categories": ["maps", "business", "productivity"],
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -25,6 +26,11 @@
     {
       "src": "/static/apple-touch-icon.png",
       "sizes": "180x180",
+      "type": "image/png"
+    },
+    {
+      "src": "/static/favicon.ico",
+      "sizes": "64x64",
       "type": "image/png"
     }
   ]

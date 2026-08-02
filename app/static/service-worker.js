@@ -1,4 +1,4 @@
-const CACHE_NAME = 'heatmap-v23';
+const CACHE_NAME = 'maps-v24';
 const APP_SHELL = [
   '/',
   '/charts',

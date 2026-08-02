@@ -24,6 +24,7 @@ class Config:
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "")
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "")
     ADMIN_NAME = os.environ.get("ADMIN_NAME", "Martins Admin")
+    SESSION_COOKIE_NAME = "density_session"
 
     @classmethod
     def normalize_database_uri(cls):
@@ -31,3 +32,4 @@ class Config:
         if uri.startswith("postgres://"):
             return uri.replace("postgres://", "postgresql://", 1)
         return uri
+

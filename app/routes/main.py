@@ -1,6 +1,6 @@
 from io import BytesIO
 
-from flask import Blueprint, current_app, redirect, render_template, request, send_file, url_for
+from flask import Blueprint, current_app, redirect, render_template, request, send_file, send_from_directory, url_for
 from flask_login import current_user, login_required
 from openpyxl import Workbook
 
@@ -16,6 +16,11 @@ def index():
     if current_user.is_authenticated:
         return redirect(url_for("main.dashboard"))
     return redirect(url_for("auth.login"))
+
+
+@main_bp.route("/favicon.ico")
+def favicon():
+    return send_from_directory(current_app.static_folder, "favicon.ico", mimetype="image/png")
 
 
 @main_bp.route("/dashboard")

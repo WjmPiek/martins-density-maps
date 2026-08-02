@@ -1,8 +1,11 @@
-const CACHE_NAME = 'maps-v26';
+const CACHE_NAME = 'maps-v27';
 const APP_SHELL = [
   '/',
   '/charts',
   '/static/manifest.json',
+  '/static/css/safe-theme.css',
+  '/static/css/styles.css',
+  '/static/js/dashboard.js',
   '/static/maps-social-preview.png',
   '/static/apple-touch-icon.png',
   '/static/android-chrome-192.png',

@@ -89,4 +89,4 @@ def reset_password():
 def logout():
     logout_user()
     session.clear()
-    return redirect("http://127.0.0.1:5000/dashboard")
+    return redirect(url_for('auth.login'))

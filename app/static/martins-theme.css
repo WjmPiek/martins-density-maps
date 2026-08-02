@@ -1218,3 +1218,226 @@ table {
     margin-left: 0 !important;
   }
 }
+
+/* Screenshot-matched global typography and colours */
+:root {
+  --martins-page-bg: #f7f8fb;
+  --martins-ink: #101828;
+  --martins-copy: #5f6b7a;
+  --martins-soft-copy: #8793a1;
+  --martins-line: #dce2e8;
+  --martins-purple: #6B4AA0;
+  --martins-purple-dark: #583b88;
+  --martins-purple-soft-bg: #f4eff9;
+}
+
+html,
+body {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-weight: 400 !important;
+  color: var(--martins-ink) !important;
+  background: var(--martins-page-bg) !important;
+}
+
+body,
+.main-content,
+.shell {
+  background: var(--martins-page-bg) !important;
+}
+
+.main-content {
+  color: var(--martins-ink) !important;
+}
+
+h1,
+.page-title,
+.charts-page h1,
+.dashboard-hero h1,
+.panel h1 {
+  color: var(--martins-ink) !important;
+  font-size: 28px !important;
+  line-height: 1.16 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+
+h2,
+.panel h2,
+.section-title,
+.chart-title {
+  color: var(--martins-ink) !important;
+  font-size: 24px !important;
+  line-height: 1.18 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+
+h3,
+.card h3,
+.metric h3,
+.table-title {
+  color: var(--martins-ink) !important;
+  font-size: 18px !important;
+  line-height: 1.22 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+
+p,
+.muted,
+.panel p,
+.hero-copy,
+.chart-subtitle,
+.summary-copy,
+small {
+  color: var(--martins-copy) !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  font-weight: 400 !important;
+  letter-spacing: 0 !important;
+}
+
+label,
+th,
+.field-label,
+.filters label,
+.chart-toolbar label {
+  color: var(--martins-copy) !important;
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+
+input,
+select,
+textarea {
+  min-height: 52px !important;
+  color: var(--martins-ink) !important;
+  background: #ffffff !important;
+  border: 1px solid var(--martins-line) !important;
+  border-radius: 8px !important;
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
+  font-weight: 400 !important;
+  box-shadow: none !important;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--martins-purple) !important;
+  box-shadow: 0 0 0 3px rgba(107, 74, 160, 0.18) !important;
+  outline: none !important;
+}
+
+button,
+.btn,
+.primary-btn,
+.ghost-btn,
+.mobile-page-tab,
+.tab-button {
+  font-family: Arial, Helvetica, sans-serif !important;
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+  letter-spacing: 0 !important;
+}
+
+.primary-btn,
+button[type="submit"],
+.admin-tabs .primary-btn {
+  color: #ffffff !important;
+  background: var(--martins-purple) !important;
+  border-color: var(--martins-purple) !important;
+  border-radius: 10px !important;
+}
+
+.primary-btn:hover,
+button[type="submit"]:hover,
+.admin-tabs .primary-btn:hover {
+  background: var(--martins-purple-dark) !important;
+  border-color: var(--martins-purple-dark) !important;
+}
+
+.ghost-btn,
+.admin-tabs .ghost-btn,
+.mobile-page-tab {
+  color: var(--martins-purple) !important;
+  background: #ffffff !important;
+  border: 1px solid var(--martins-line) !important;
+  border-radius: 10px !important;
+}
+
+.card,
+.panel,
+.chart-toolbar,
+.charts-page-panel,
+.dashboard-grid > .panel,
+.table-card,
+.admin-card,
+.form-card {
+  background: #ffffff !important;
+  border: 1px solid var(--martins-line) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 16px 36px rgba(24, 32, 42, 0.08) !important;
+}
+
+.mobile-app-header,
+.topbar,
+.app-header,
+.page-header {
+  background: #ffffff !important;
+  border-bottom: 1px solid var(--martins-line) !important;
+  color: var(--martins-ink) !important;
+}
+
+.mobile-app-header-title,
+.app-header strong,
+.topbar strong {
+  color: var(--martins-ink) !important;
+  font-size: 26px !important;
+  line-height: 1.12 !important;
+  font-weight: 700 !important;
+}
+
+.mobile-app-header-module,
+.user-chip,
+.badge,
+.pill {
+  color: var(--martins-purple) !important;
+  background: var(--martins-purple-soft-bg) !important;
+  border-color: transparent !important;
+  font-size: 13px !important;
+  line-height: 1.2 !important;
+  font-weight: 700 !important;
+}
+
+a {
+  color: var(--martins-purple) !important;
+  font-weight: 700 !important;
+}
+
+.martins-modern-sidebar a,
+.martins-modern-sidebar .martins-sidebar-copy strong,
+.martins-modern-sidebar .sidebar-brand-text strong {
+  color: #ffffff !important;
+}
+
+.martins-modern-sidebar .martins-sidebar-copy small {
+  color: rgba(255, 255, 255, 0.62) !important;
+}
+
+.martins-modern-sidebar .martins-sidebar-panel a {
+  color: var(--martins-ink) !important;
+}
+
+.martins-modern-sidebar .martins-sidebar-panel a:first-child,
+.martins-modern-sidebar .martins-sidebar-panel a:hover {
+  color: var(--martins-purple) !important;
+}
+
+.martins-modern-sidebar .martins-sidebar-panel a small {
+  color: var(--martins-soft-copy) !important;
+}

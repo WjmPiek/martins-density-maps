@@ -47,7 +47,7 @@ body::before {
 h1, h2, h3, h4, h5, h6 {
   color: var(--martins-text);
   letter-spacing: 0 !important;
-  font-weight: 800;
+  font-weight: 700;
 }
 
 a {
@@ -104,7 +104,7 @@ button, .btn, .glass-button, .tab-button, .back-btn,
 .actions a, .top-toolbar a, .top-toolbar button,
 input[type="submit"], button[type="submit"] {
   border-radius: var(--martins-radius) !important;
-  font-weight: 800;
+  font-weight: 700;
   box-shadow: none !important;
 }
 
@@ -131,7 +131,7 @@ input, select, textarea, .form-control, .form-select {
 input:focus, select:focus, textarea:focus,
 .form-control:focus, .form-select:focus {
   border-color: var(--martins-primary) !important;
-  box-shadow: 0 0 0 3px rgba(139, 111, 71, 0.18) !important;
+  box-shadow: 0 0 0 3px rgba(107, 74, 160, 0.18) !important;
   outline: none !important;
 }
 
@@ -189,7 +189,7 @@ th {
 .executive-brand h1 {
   font-size: 18px !important;
   line-height: 1.15 !important;
-  font-weight: 900 !important;
+  font-weight: 700 !important;
 }
 
 .sidebar-brand .eyebrow,
@@ -218,7 +218,7 @@ th {
   color: var(--martins-text) !important;
   font-size: 22px !important;
   line-height: 1.15 !important;
-  font-weight: 900 !important;
+  font-weight: 700 !important;
 }
 
 .login-brand-copy span,
@@ -300,7 +300,7 @@ body.auth-body,
   font-size: 24px !important;
   line-height: 1.15 !important;
   color: #101828 !important;
-  font-weight: 800 !important;
+  font-weight: 700 !important;
   margin: 0 !important;
 }
 
@@ -708,5 +708,284 @@ body.app-body > .nav {
   .main--auth .card form,
   .auth-body {
     padding: 28px 24px 34px !important;
+  }
+}
+
+/* Martins Telesales standard: final local overrides */
+html,
+body,
+input,
+select,
+textarea,
+button,
+.btn {
+  font-family: Arial, Helvetica, sans-serif !important;
+  letter-spacing: 0 !important;
+}
+
+body,
+p,
+td,
+input,
+select,
+textarea,
+.muted,
+.small,
+small {
+  color: var(--martins-text);
+  font-weight: 400 !important;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+label,
+th,
+button,
+.btn,
+.sidebar a,
+.sidebar button,
+.sidebar-brand,
+.sidebar-brand strong,
+.sidebar-brand .eyebrow,
+.tab-button,
+.nav-link,
+.martins-login-header strong,
+.martins-login-header span,
+.martins-auth-brand strong,
+.martins-auth-brand span {
+  font-weight: 700 !important;
+}
+
+body.auth-body {
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 16px !important;
+  background: #f7f8fb !important;
+}
+
+.auth-wrap {
+  width: 100% !important;
+  min-height: 100vh !important;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+  padding: 72px 0 32px !important;
+}
+
+.martins-login-card,
+.auth-wrap > .auth-card {
+  width: 100% !important;
+  max-width: 1120px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  background: #fff !important;
+  border: 1px solid #dce2e8 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 14px 34px rgba(16, 24, 40, 0.14) !important;
+  overflow: hidden !important;
+}
+
+.martins-login-header {
+  width: 100% !important;
+  min-height: 74px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  justify-content: center !important;
+  align-items: flex-start !important;
+  gap: 4px !important;
+  box-sizing: border-box !important;
+  margin: 0 !important;
+  padding: 16px 24px !important;
+  background: #6B4AA0 !important;
+  color: #fff !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  text-align: left !important;
+}
+
+.martins-login-header strong {
+  color: #fff !important;
+  font-size: 20px !important;
+  line-height: 1.15 !important;
+}
+
+.martins-login-header span {
+  color: rgba(255, 255, 255, 0.78) !important;
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+}
+
+.martins-auth-brand {
+  display: grid !important;
+  place-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 34px 24px 16px !important;
+  text-align: center !important;
+}
+
+.martins-auth-brand img,
+.login-logo {
+  width: 220px !important;
+  height: 100px !important;
+  max-width: 220px !important;
+  max-height: 100px !important;
+  object-fit: contain !important;
+}
+
+.martins-auth-brand strong {
+  margin: 0 !important;
+  color: #18202a !important;
+  font-size: 24px !important;
+  line-height: 1.15 !important;
+}
+
+.martins-auth-brand span {
+  margin: 0 !important;
+  color: #64707d !important;
+  font-size: 14px !important;
+  line-height: 1.2 !important;
+}
+
+.martins-login-body {
+  width: 100% !important;
+  max-width: 560px !important;
+  margin: 0 auto !important;
+  box-sizing: border-box !important;
+  padding: 24px 32px 40px !important;
+}
+
+.martins-login-card label {
+  display: block !important;
+  margin: 0 0 14px !important;
+  color: #18202a !important;
+  font-size: 14px !important;
+  line-height: 1.25 !important;
+}
+
+.martins-login-card input,
+input,
+select,
+textarea {
+  min-height: 52px !important;
+  border: 1px solid #dce2e8 !important;
+  border-radius: 6px !important;
+  background: #fff !important;
+  color: #18202a !important;
+  box-shadow: none !important;
+}
+
+.martins-login-card input:focus,
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: #6B4AA0 !important;
+  box-shadow: 0 0 0 3px rgba(107, 74, 160, 0.18) !important;
+  outline: none !important;
+}
+
+.martins-login-card button,
+.martins-login-card .btn,
+.martins-login-submit,
+button[type="submit"],
+input[type="submit"] {
+  min-height: 52px !important;
+  border-radius: 6px !important;
+  background: #6B4AA0 !important;
+  border: 1px solid #6B4AA0 !important;
+  color: #fff !important;
+  font-weight: 700 !important;
+}
+
+.martins-login-card button:hover,
+.martins-login-card .btn:hover,
+.martins-login-submit:hover,
+button[type="submit"]:hover,
+input[type="submit"]:hover {
+  background: #583b88 !important;
+  border-color: #583b88 !important;
+}
+
+.sidebar,
+.app-sidebar,
+.executive-sidebar {
+  background: #6B4AA0 !important;
+}
+
+.sidebar a:hover,
+.sidebar button:hover,
+.sidebar .nav-link:hover,
+.sidebar .nav-link.is-active,
+.sidebar .tab-button:hover,
+.sidebar .tab-button.active,
+.sidebar-admin-group:hover > .sidebar-admin-link {
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #fff !important;
+}
+
+.sidebar-subnav,
+.side-submenu {
+  background: #fff !important;
+  color: #18202a !important;
+  border: 1px solid #dce2e8 !important;
+}
+
+.sidebar-subnav a,
+.side-submenu a {
+  color: #18202a !important;
+}
+
+.sidebar-subnav a:hover,
+.side-submenu a:hover {
+  background: rgba(107, 74, 160, 0.12) !important;
+  color: #583b88 !important;
+}
+
+.card,
+.glass-card,
+.form-card,
+.panel,
+.hero-panel,
+.status-panel,
+.today-card,
+.metric,
+.workspace-card,
+.exec-card,
+.dashboard-kpi,
+.security-checklist,
+.stat-card,
+.pipeline-card,
+.pipeline-column,
+.charts-page-panel,
+.chart-toolbar,
+table {
+  background: #fff !important;
+  border-color: #dce2e8 !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 26px rgba(24, 32, 42, 0.08) !important;
+}
+
+@media (max-width: 820px) {
+  body.auth-body {
+    padding: 0 16px !important;
+  }
+
+  .auth-wrap {
+    padding: 16px 0 24px !important;
+  }
+
+  .martins-login-card,
+  .auth-wrap > .auth-card {
+    max-width: 100% !important;
+  }
+
+  .martins-login-body {
+    padding: 22px 20px 28px !important;
   }
 }

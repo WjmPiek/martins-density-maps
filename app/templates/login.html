@@ -12,8 +12,8 @@
       <img
         src="{{ url_for('static', filename='img/martins-logo.png') }}"
         class="login-logo"
-        width="300"
-        height="110"
+        width="220"
+        height="100"
         alt="Martins Logo"
       >
       <strong>Martins System</strong>
@@ -31,7 +31,7 @@
         <input type="password" name="password" required>
       </label>
 
-      <button class="primary-btn" type="submit">Login</button>
+      <button class="primary-btn martins-login-submit" type="submit">Login</button>
 
       <div class="auth-footer">
         <div class="auth-footer-link">
@@ -41,7 +41,7 @@
       </div>
 
       <button class="auth-install" id="installApp" type="button" hidden>
-        <img src="{{ url_for('static', filename='favicon.ico') }}" alt="Install" class="install-favicon">
+        <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="install-favicon">
         <span>Install App</span>
       </button>
       <div class="auth-install-help" id="installHelp" hidden></div>

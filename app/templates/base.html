@@ -180,20 +180,6 @@
 
     <main class="main-content">
       {% if current_user.is_authenticated %}
-      <header class="martins-system-header" aria-label="Martins System header">
-        <div class="martins-system-title">
-          <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo">
-          <strong>Martins System</strong>
-        </div>
-        <div class="martins-system-account">
-          <span>Logged in as</span>
-          <strong>{{ current_user.name }}</strong>
-          {% if current_user.is_admin %}
-          <b>Admin</b>
-          {% endif %}
-          <a href="{{ url_for('auth.logout') }}">Logout</a>
-        </div>
-      </header>
       <header class="mobile-app-header" aria-label="Mobile header">
         <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="mobile-app-header-logo">
         <div class="mobile-app-header-text">

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maps-v27';
+const CACHE_NAME = 'maps-v28';
 const APP_SHELL = [
   '/',
   '/charts',
@@ -27,11 +27,16 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.pathname === '/logout' || url.pathname.startsWith('/api/')) return;
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        const copy = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => null);
+        if (response.ok && response.type === 'basic') {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy)).catch(() => null);
+        }
         return response;
       })
       .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/')))

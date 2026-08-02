@@ -1370,3 +1370,98 @@ button[type="submit"]:hover,
     display: flex !important;
   }
 }
+
+/* Sidebar compact professional fix */
+.sidebar {
+  width: 300px !important;
+  padding: 16px 14px 18px !important;
+  gap: 14px !important;
+  overflow-y: auto !important;
+}
+
+.main-content {
+  margin-left: 300px !important;
+}
+
+.sidebar-brand {
+  min-height: 150px !important;
+  padding: 16px 14px 14px !important;
+  margin: 0 0 6px !important;
+  gap: 8px !important;
+  border-radius: 12px !important;
+}
+
+.sidebar-logo {
+  width: 178px !important;
+  height: 76px !important;
+}
+
+.sidebar-brand strong {
+  font-size: 18px !important;
+  line-height: 1.12 !important;
+}
+
+.sidebar-brand .eyebrow {
+  font-size: 14px !important;
+  line-height: 1.15 !important;
+}
+
+.sidebar-nav {
+  display: grid !important;
+  gap: 8px !important;
+  margin: 0 !important;
+}
+
+.sidebar-nav > a,
+.sidebar-admin-link {
+  min-height: 44px !important;
+  padding: 10px 12px !important;
+  border-radius: 10px !important;
+  font-size: 15px !important;
+  line-height: 1.15 !important;
+}
+
+.sidebar-admin-group {
+  gap: 8px !important;
+}
+
+.sidebar-subnav {
+  gap: 4px !important;
+  padding: 10px !important;
+  border-radius: 12px !important;
+}
+
+.sidebar-subnav a {
+  min-height: 38px !important;
+  padding: 9px 10px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+}
+
+.sidebar-nav > a:last-child {
+  margin-top: 4px !important;
+  background: transparent !important;
+  color: #ffffff !important;
+}
+
+.sidebar-actions {
+  gap: 4px !important;
+  margin: 4px 0 0 !important;
+  padding: 10px !important;
+  border-radius: 12px !important;
+}
+
+.sidebar-text-link {
+  min-height: 36px !important;
+  padding: 8px 10px !important;
+  border-radius: 8px !important;
+  font-size: 12px !important;
+  line-height: 1.15 !important;
+}
+
+@media (max-width: 980px) {
+  .main-content {
+    margin-left: 0 !important;
+  }
+}

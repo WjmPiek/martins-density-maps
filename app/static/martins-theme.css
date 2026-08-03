@@ -1465,3 +1465,106 @@ button[type="submit"]:hover,
     margin-left: 0 !important;
   }
 }
+
+/* Final sidebar readability fix */
+.sidebar {
+  width: 280px !important;
+  padding: 14px 12px 16px !important;
+  gap: 12px !important;
+  background: #6B4AA0 !important;
+}
+
+.main-content {
+  margin-left: 280px !important;
+}
+
+.sidebar-brand {
+  min-height: 118px !important;
+  padding: 12px !important;
+  margin: 0 0 4px !important;
+  gap: 6px !important;
+  border-radius: 10px !important;
+}
+
+.sidebar-logo {
+  width: 145px !important;
+  height: 58px !important;
+}
+
+.sidebar-brand strong {
+  font-size: 15px !important;
+  line-height: 1.1 !important;
+}
+
+.sidebar-brand .eyebrow {
+  font-size: 12px !important;
+  line-height: 1.15 !important;
+}
+
+.sidebar-nav {
+  gap: 7px !important;
+}
+
+.sidebar-nav > a,
+.sidebar-admin-link {
+  min-height: 38px !important;
+  justify-content: flex-start !important;
+  padding: 9px 12px !important;
+  border-radius: 8px !important;
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+  text-align: left !important;
+}
+
+.sidebar-admin-link {
+  background: rgba(255, 255, 255, 0.16) !important;
+}
+
+.sidebar-admin-group {
+  gap: 7px !important;
+}
+
+.sidebar-subnav {
+  gap: 3px !important;
+  padding: 8px !important;
+  border-radius: 10px !important;
+}
+
+.sidebar-subnav a {
+  min-height: 32px !important;
+  justify-content: flex-start !important;
+  padding: 7px 9px !important;
+  border-radius: 7px !important;
+  font-size: 12px !important;
+  line-height: 1.15 !important;
+  text-align: left !important;
+}
+
+.sidebar-nav > a:last-child {
+  min-height: 38px !important;
+  margin-top: 2px !important;
+  justify-content: flex-start !important;
+}
+
+.sidebar-actions {
+  gap: 3px !important;
+  margin: 2px 0 0 !important;
+  padding: 8px !important;
+  border-radius: 10px !important;
+}
+
+.sidebar-text-link {
+  min-height: 30px !important;
+  justify-content: flex-start !important;
+  padding: 7px 9px !important;
+  border-radius: 7px !important;
+  font-size: 11px !important;
+  line-height: 1.15 !important;
+  text-align: left !important;
+}
+
+@media (max-width: 980px) {
+  .main-content {
+    margin-left: 0 !important;
+  }
+}

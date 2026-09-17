@@ -94,6 +94,18 @@
 
     <main class="main-content">
       {% if current_user.is_authenticated %}
+      <header class="martins-module-topbar desktop-app-header" aria-label="Application header">
+        <a class="martins-module-brand" href="https://martinssystem.co.za/">
+          <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo">
+          <strong>Martins System</strong>
+        </a>
+        <div class="martins-module-account">
+          <span>Logged in as</span>
+          <strong>{{ current_user.name }}</strong>
+          <span class="role-pill">{{ 'Admin' if current_user.is_admin else 'User' }}</span>
+          <a href="{{ url_for('auth.logout') }}">Logout</a>
+        </div>
+      </header>
       <header class="mobile-app-header" aria-label="Mobile header">
         <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="mobile-app-header-logo">
         <div class="mobile-app-header-text">

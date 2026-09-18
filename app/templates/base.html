@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Martins System · Density Maps{% endblock %}</title>
+  <title>{% block title %}Martins System Â· Density Maps{% endblock %}</title>
 
   <link rel="stylesheet" href="{{ url_for('static', filename='css/safe-theme.css') }}">
 
@@ -12,7 +12,7 @@
   <meta name="application-name" content="Martins System">
   <meta name="description" content="Martins System dashboard for maps, charts, and record management.">
   <meta property="og:site_name" content="Martins System">
-  <meta property="og:title" content="Martins System · Density Maps">
+  <meta property="og:title" content="Martins System Â· Density Maps">
   <meta property="og:description" content="Martins System density maps module.">
   <meta property="og:type" content="website">
   <meta property="og:url" content="{{ request.url }}">
@@ -22,7 +22,7 @@
   <meta property="og:image:width" content="512">
   <meta property="og:image:height" content="512">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Martins System · Density Maps">
+  <meta name="twitter:title" content="Martins System Â· Density Maps">
   <meta name="twitter:description" content="Martins System density maps module.">
   <meta name="twitter:image" content="{{ url_for('static', filename='img/martins-logo.png', _external=True) }}">
   <meta name="theme-color" content="#6B4AA0">
@@ -50,24 +50,22 @@
 <link rel="icon" type="image/x-icon" href="/static/brand/favicon.ico?v=20260918-brand" sizes="any">
 <link rel="icon" type="image/png" href="/static/brand/icon-192.png?v=20260918-brand" sizes="192x192">
 <link rel="apple-touch-icon" href="/static/brand/icon-180.png?v=20260918-brand" sizes="180x180">
+<link rel="stylesheet" href="/static/css/module-shell.css?v=20260918-shell">
 </head>
 <body>
   {% if current_user.is_authenticated %}
   <div id="splash-screen">
     <img src="{{ url_for('static', filename='apple-touch-icon.png') }}" alt="Martins Density Map">
-    <h1>Martins System</h1>
+    <h1>Martin's Funerals System</h1>
   </div>
   {% endif %}
 
-  <div class="app-layout">
+  <div class="app-layout ms-shell">
     {% if current_user.is_authenticated %}
-    <aside class="sidebar">
-      <div class="sidebar-brand">
+    <aside class="sidebar ms-sidebar">
+      <div class="sidebar-brand ms-brand">
         <img src="{{ url_for('static', filename='img/martins-logo.png') }}" class="sidebar-logo" alt="Martins logo">
-        <div class="sidebar-brand-text">
-          <div class="eyebrow">Density Maps</div>
-          <strong>Martins System</strong>
-        </div>
+        <div class="sidebar-brand-text ms-brand-copy"><strong class="ms-brand-title">Martin's Funerals</strong><span class="ms-brand-module">Heatmap</span></div>
       </div>
 
       <nav class="sidebar-nav">
@@ -78,7 +76,7 @@
           <a class="sidebar-admin-link" href="{{ url_for('admin.admin') }}">Admin</a>
           <div class="sidebar-subnav" aria-label="Admin sections">
             <a href="{{ url_for('admin.admin_users') }}">User management</a>
-            <a href="{{ url_for('main.dashboard') }}">View all users’ data</a>
+            <a href="{{ url_for('main.dashboard') }}">View all usersâ€™ data</a>
             <a href="{{ url_for('admin.admin_users') }}#user-status-tools">Activate/deactivate users</a>
             <a href="{{ url_for('admin.admin') }}#system-tools">System tools</a>
           </div>
@@ -95,12 +93,12 @@
     </aside>
     {% endif %}
 
-    <main class="main-content">
+    <main class="main-content ms-main">
       {% if current_user.is_authenticated %}
-      <header class="martins-module-topbar desktop-app-header" aria-label="Application header">
-        <a class="martins-module-brand" href="https://martinssystem.co.za/">
+      <header class="martins-module-topbar desktop-app-header ms-topbar" aria-label="Application header">
+        <a class="martins-module-brand ms-topbar-brand" href="https://martinssystem.co.za/">
           <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo">
-          <strong>Martins System</strong>
+          <strong>Martin's Funerals System</strong>
         </a>
         <div class="martins-module-account">
           <span>Logged in as</span>
@@ -112,7 +110,7 @@
       <header class="mobile-app-header" aria-label="Mobile header">
         <img src="{{ url_for('static', filename='img/martins-logo.png') }}" alt="Martins logo" class="mobile-app-header-logo">
         <div class="mobile-app-header-text">
-          <span class="mobile-app-header-title">Martins System</span>
+          <span class="mobile-app-header-title">Martin's Funerals System</span>
           <span class="mobile-app-header-module">Density Maps</span>
         </div>
       </header>

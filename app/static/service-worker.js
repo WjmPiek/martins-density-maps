@@ -1,4 +1,4 @@
-const CACHE_NAME = 'maps-v28';
+const CACHE_NAME = 'maps-v28-brand-20260918';
 const APP_SHELL = [
   '/',
   '/charts',
